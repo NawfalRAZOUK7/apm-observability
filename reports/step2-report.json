@@ -5,7 +5,7 @@
     },
     "item": [
       {
-        "id": "01ad9fa1-7580-4828-a626-e86107d553f3",
+        "id": "a69f774f-118d-49ab-9c1c-3d4ee0c57ec7",
         "name": "Ingest — valid (raw list)",
         "request": {
           "url": {
@@ -38,7 +38,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "b71901eb-251f-4438-b234-c1d3c878a675",
+              "id": "d0270a9c-8b5e-4914-ad58-74ca0fcabad9",
               "type": "text/javascript",
               "exec": [
                 "pm.test('status is 200', function () {",
@@ -53,13 +53,13 @@
                 "  pm.expect(json.rejected).to.eql(0);",
                 "});"
               ],
-              "_lastExecutionId": "ff3c164d-b679-44f1-b248-cc4032aa2830"
+              "_lastExecutionId": "1e4e9f46-d844-4ea4-b90c-586af1dae278"
             }
           }
         ]
       },
       {
-        "id": "32ce08c9-342b-4457-ae7c-6ffc5f7c30fb",
+        "id": "165ed20b-380a-4233-819d-7b7f111c0e00",
         "name": "Ingest — mixed invalid (raw list)",
         "request": {
           "url": {
@@ -92,7 +92,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "ac30cd68-9304-42ad-a222-048eff19ac0d",
+              "id": "8fd87607-9f3b-4670-acd1-ef3f87cea2b2",
               "type": "text/javascript",
               "exec": [
                 "pm.test('status is 200', function () {",
@@ -112,13 +112,13 @@
                 "  pm.expect(json.errors[0]).to.have.property('index', 1);",
                 "});"
               ],
-              "_lastExecutionId": "aeef189a-3399-496a-8c43-28133d46561c"
+              "_lastExecutionId": "1db9e5bf-370e-468f-bffd-15cef4a99219"
             }
           }
         ]
       },
       {
-        "id": "a4fca4bb-5f8d-476e-9abb-8702a84b303e",
+        "id": "16baf32d-8fa9-4fc4-96d3-5b2fd71b3e98",
         "name": "Ingest — wrapper {events: [...]}",
         "request": {
           "url": {
@@ -151,7 +151,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "0137f49a-957c-4724-90f4-c0499b1e3b29",
+              "id": "21b25773-895a-454d-b80b-74a8c8cfa885",
               "type": "text/javascript",
               "exec": [
                 "pm.test('status is 200', function () {",
@@ -166,13 +166,13 @@
                 "  pm.expect(json.rejected).to.eql(0);",
                 "});"
               ],
-              "_lastExecutionId": "688d60ba-a0be-4dba-b732-20180b91cc60"
+              "_lastExecutionId": "3fd50834-9b01-48c9-84e2-73e9094d2ad6"
             }
           }
         ]
       },
       {
-        "id": "e9670760-e5c2-441c-ac92-25e950bf45bd",
+        "id": "1ef3adbf-6811-4af1-85d7-b2ca9fadff5f",
         "name": "Ingest — strict=true (mixed invalid)",
         "request": {
           "url": {
@@ -210,7 +210,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "8f046d69-59dc-4c03-a4d4-6ad33a3df05a",
+              "id": "10ebf479-24be-4aee-a11b-ce6ea23a1d48",
               "type": "text/javascript",
               "exec": [
                 "pm.test('status is 400', function () {",
@@ -225,7 +225,7 @@
                 "  pm.expect(json.rejected).to.be.above(0);",
                 "});"
               ],
-              "_lastExecutionId": "469e7a03-4ef5-40f3-8dd9-910a1a2e6ca1"
+              "_lastExecutionId": "43afb895-af57-47fb-a23c-083dfcec23f1"
             }
           }
         ]
@@ -244,7 +244,7 @@
       "postman_variable_scope": "environment",
       "postman_exported_using": "Newman"
     },
-    "id": "02fa8bf4-e5b0-4ec3-b52c-94caf2e2bda9",
+    "id": "a2342e4a-b0ee-4f76-b2e9-d0a5a1c5d5ed",
     "name": "APM Observability - Local",
     "values": [
       {
@@ -270,7 +270,7 @@
     ]
   },
   "globals": {
-    "id": "ef6aa971-cd07-4bee-aef3-0df9c9e696bb",
+    "id": "c2a4ed5a-c47b-4be3-a30d-c821175b10c8",
     "values": []
   },
   "run": {
@@ -322,10 +322,10 @@
       }
     },
     "timings": {
-      "responseAverage": 14.75,
-      "responseMin": 4,
-      "responseMax": 43,
-      "responseSd": 16.330569494050106,
+      "responseAverage": 23,
+      "responseMin": 8,
+      "responseMax": 65,
+      "responseSd": 24.259018941416407,
       "dnsAverage": 0,
       "dnsMin": 0,
       "dnsMax": 0,
@@ -334,8 +334,8 @@
       "firstByteMin": 0,
       "firstByteMax": 0,
       "firstByteSd": 0,
-      "started": 1765700016281,
-      "completed": 1765700016419
+      "started": 1765738489754,
+      "completed": 1765738489973
     },
     "executions": [
       {
@@ -348,11 +348,11 @@
           "eof": false,
           "bof": true,
           "cr": false,
-          "ref": "190053dd-803b-4952-989a-75ba7df30adb",
-          "httpRequestId": "40cd628b-950e-4ed3-abd8-cd488644cb1c"
+          "ref": "eaccda71-106e-46bb-8567-5bff58aec1ca",
+          "httpRequestId": "e0606c61-02cd-49b9-abfe-3bf7c366570b"
         },
         "item": {
-          "id": "01ad9fa1-7580-4828-a626-e86107d553f3",
+          "id": "a69f774f-118d-49ab-9c1c-3d4ee0c57ec7",
           "name": "Ingest — valid (raw list)",
           "request": {
             "url": {
@@ -385,7 +385,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "b71901eb-251f-4438-b234-c1d3c878a675",
+                "id": "d0270a9c-8b5e-4914-ad58-74ca0fcabad9",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status is 200', function () {",
@@ -400,7 +400,7 @@
                   "  pm.expect(json.rejected).to.eql(0);",
                   "});"
                 ],
-                "_lastExecutionId": "ff3c164d-b679-44f1-b248-cc4032aa2830"
+                "_lastExecutionId": "1e4e9f46-d844-4ea4-b90c-586af1dae278"
               }
             }
           ]
@@ -446,7 +446,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "a98dab70-53e7-4ccd-b188-dbcafffeb8aa",
+              "value": "caae5fbf-c4ef-4e92-b173-8e724540beed",
               "system": true
             },
             {
@@ -477,13 +477,13 @@
           }
         },
         "response": {
-          "id": "03bf0092-c759-4e74-a60e-457132e1b926",
+          "id": "1a451960-704b-4c81-bbf2-941030bbe5c6",
           "status": "OK",
           "code": 200,
           "header": [
             {
               "key": "Date",
-              "value": "Sun, 14 Dec 2025 08:13:36 GMT"
+              "value": "Sun, 14 Dec 2025 18:54:49 GMT"
             },
             {
               "key": "Server",
@@ -492,10 +492,6 @@
             {
               "key": "Content-Type",
               "value": "application/json"
-            },
-            {
-              "key": "Vary",
-              "value": "Accept, Cookie"
             },
             {
               "key": "Allow",
@@ -508,6 +504,10 @@
             {
               "key": "Content-Length",
               "value": "39"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -567,10 +567,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 43,
+          "responseTime": 65,
           "responseSize": 39
         },
-        "id": "01ad9fa1-7580-4828-a626-e86107d553f3",
+        "id": "a69f774f-118d-49ab-9c1c-3d4ee0c57ec7",
         "assertions": [
           {
             "assertion": "status is 200",
@@ -588,15 +588,15 @@
       },
       {
         "cursor": {
-          "ref": "03f24f5c-7fda-46cd-8a61-38588f6f6953",
+          "ref": "94bb1c65-ff51-414d-9f89-916e80123418",
           "length": 4,
           "cycles": 1,
           "position": 1,
           "iteration": 0,
-          "httpRequestId": "4eec309c-3ac2-40c5-8cd0-1377b5660a6b"
+          "httpRequestId": "7a82bbea-02ae-40f7-bb7a-e925ee487e02"
         },
         "item": {
-          "id": "32ce08c9-342b-4457-ae7c-6ffc5f7c30fb",
+          "id": "165ed20b-380a-4233-819d-7b7f111c0e00",
           "name": "Ingest — mixed invalid (raw list)",
           "request": {
             "url": {
@@ -629,7 +629,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "ac30cd68-9304-42ad-a222-048eff19ac0d",
+                "id": "8fd87607-9f3b-4670-acd1-ef3f87cea2b2",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status is 200', function () {",
@@ -649,7 +649,7 @@
                   "  pm.expect(json.errors[0]).to.have.property('index', 1);",
                   "});"
                 ],
-                "_lastExecutionId": "aeef189a-3399-496a-8c43-28133d46561c"
+                "_lastExecutionId": "1db9e5bf-370e-468f-bffd-15cef4a99219"
               }
             }
           ]
@@ -695,7 +695,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "79d78c73-74a9-473d-88ff-259a3aa1fa85",
+              "value": "57872705-73f3-44d8-a15f-ba5e5f3bc760",
               "system": true
             },
             {
@@ -726,13 +726,13 @@
           }
         },
         "response": {
-          "id": "e2351f13-37e3-455d-8c1d-c8eee29eb0c5",
+          "id": "63f14f8e-0a28-4bb5-9c30-83cc6384aa21",
           "status": "OK",
           "code": 200,
           "header": [
             {
               "key": "Date",
-              "value": "Sun, 14 Dec 2025 08:13:36 GMT"
+              "value": "Sun, 14 Dec 2025 18:54:49 GMT"
             },
             {
               "key": "Server",
@@ -741,10 +741,6 @@
             {
               "key": "Content-Type",
               "value": "application/json"
-            },
-            {
-              "key": "Vary",
-              "value": "Accept, Cookie"
             },
             {
               "key": "Allow",
@@ -757,6 +753,10 @@
             {
               "key": "Content-Length",
               "value": "131"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -908,10 +908,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 6,
+          "responseTime": 10,
           "responseSize": 131
         },
-        "id": "32ce08c9-342b-4457-ae7c-6ffc5f7c30fb",
+        "id": "165ed20b-380a-4233-819d-7b7f111c0e00",
         "assertions": [
           {
             "assertion": "status is 200",
@@ -933,15 +933,15 @@
       },
       {
         "cursor": {
-          "ref": "3cb61030-cf03-4979-98a3-4d66f2579dfc",
+          "ref": "1f068817-92ed-4a3a-b2db-184c81de21f6",
           "length": 4,
           "cycles": 1,
           "position": 2,
           "iteration": 0,
-          "httpRequestId": "64cf09b1-d8e7-4fdf-971b-0b4036261298"
+          "httpRequestId": "343b8179-cfe9-402e-8c70-9fe257dfe80e"
         },
         "item": {
-          "id": "a4fca4bb-5f8d-476e-9abb-8702a84b303e",
+          "id": "16baf32d-8fa9-4fc4-96d3-5b2fd71b3e98",
           "name": "Ingest — wrapper {events: [...]}",
           "request": {
             "url": {
@@ -974,7 +974,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "0137f49a-957c-4724-90f4-c0499b1e3b29",
+                "id": "21b25773-895a-454d-b80b-74a8c8cfa885",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status is 200', function () {",
@@ -989,7 +989,7 @@
                   "  pm.expect(json.rejected).to.eql(0);",
                   "});"
                 ],
-                "_lastExecutionId": "688d60ba-a0be-4dba-b732-20180b91cc60"
+                "_lastExecutionId": "3fd50834-9b01-48c9-84e2-73e9094d2ad6"
               }
             }
           ]
@@ -1035,7 +1035,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "dd860d65-1ba5-4cd4-b4eb-e5689e0baa85",
+              "value": "d8cb6008-88cd-4f50-87fd-61fd3e621a89",
               "system": true
             },
             {
@@ -1066,13 +1066,13 @@
           }
         },
         "response": {
-          "id": "8af2c524-99fb-458e-8f2c-c0fbb5833811",
+          "id": "9517f101-8987-4e4b-b7ca-3869d43bd255",
           "status": "OK",
           "code": 200,
           "header": [
             {
               "key": "Date",
-              "value": "Sun, 14 Dec 2025 08:13:36 GMT"
+              "value": "Sun, 14 Dec 2025 18:54:49 GMT"
             },
             {
               "key": "Server",
@@ -1081,10 +1081,6 @@
             {
               "key": "Content-Type",
               "value": "application/json"
-            },
-            {
-              "key": "Vary",
-              "value": "Accept, Cookie"
             },
             {
               "key": "Allow",
@@ -1097,6 +1093,10 @@
             {
               "key": "Content-Length",
               "value": "39"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -1156,10 +1156,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 6,
+          "responseTime": 9,
           "responseSize": 39
         },
-        "id": "a4fca4bb-5f8d-476e-9abb-8702a84b303e",
+        "id": "16baf32d-8fa9-4fc4-96d3-5b2fd71b3e98",
         "assertions": [
           {
             "assertion": "status is 200",
@@ -1177,15 +1177,15 @@
       },
       {
         "cursor": {
-          "ref": "09a72169-d517-4454-93df-13aefed55090",
+          "ref": "d76ad98f-fd58-43c6-8c07-0f84057c9dfe",
           "length": 4,
           "cycles": 1,
           "position": 3,
           "iteration": 0,
-          "httpRequestId": "7b782462-522f-4ddf-af67-697710e9551b"
+          "httpRequestId": "94748244-2a35-47d0-8043-3658b0dada7b"
         },
         "item": {
-          "id": "e9670760-e5c2-441c-ac92-25e950bf45bd",
+          "id": "1ef3adbf-6811-4af1-85d7-b2ca9fadff5f",
           "name": "Ingest — strict=true (mixed invalid)",
           "request": {
             "url": {
@@ -1223,7 +1223,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "8f046d69-59dc-4c03-a4d4-6ad33a3df05a",
+                "id": "10ebf479-24be-4aee-a11b-ce6ea23a1d48",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('status is 400', function () {",
@@ -1238,7 +1238,7 @@
                   "  pm.expect(json.rejected).to.be.above(0);",
                   "});"
                 ],
-                "_lastExecutionId": "469e7a03-4ef5-40f3-8dd9-910a1a2e6ca1"
+                "_lastExecutionId": "43afb895-af57-47fb-a23c-083dfcec23f1"
               }
             }
           ]
@@ -1289,7 +1289,7 @@
             },
             {
               "key": "Postman-Token",
-              "value": "30fc8d2f-dbc6-411e-88bb-0c17003c69cb",
+              "value": "5a00e9aa-becd-4098-a02a-1fb76f34be5a",
               "system": true
             },
             {
@@ -1320,13 +1320,13 @@
           }
         },
         "response": {
-          "id": "a58228e0-c0a9-405f-81bd-d82752849d78",
+          "id": "ad899c0c-be16-45af-9c93-c342f54329b6",
           "status": "Bad Request",
           "code": 400,
           "header": [
             {
               "key": "Date",
-              "value": "Sun, 14 Dec 2025 08:13:36 GMT"
+              "value": "Sun, 14 Dec 2025 18:54:49 GMT"
             },
             {
               "key": "Server",
@@ -1335,10 +1335,6 @@
             {
               "key": "Content-Type",
               "value": "application/json"
-            },
-            {
-              "key": "Vary",
-              "value": "Accept, Cookie"
             },
             {
               "key": "Allow",
@@ -1351,6 +1347,10 @@
             {
               "key": "Content-Length",
               "value": "217"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -1588,10 +1588,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 4,
+          "responseTime": 8,
           "responseSize": 217
         },
-        "id": "e9670760-e5c2-441c-ac92-25e950bf45bd",
+        "id": "1ef3adbf-6811-4af1-85d7-b2ca9fadff5f",
         "assertions": [
           {
             "assertion": "status is 400",
