@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="APM Observability — Step 4 (Daily)" tests="2" time="0.137">
-  <testsuite name="Daily — last 7 days" id="d377e2d4-177e-4329-98a8-fec40c807736" timestamp="2025-12-14T10:55:42.020Z" tests="4" failures="0" errors="0" time="0.106">
-    <testcase name="Status code is 200" time="0.106" classname="DailyLast7Days"/>
-    <testcase name="Response is an array" time="0.106" classname="DailyLast7Days"/>
-    <testcase name="If array has items, keys exist" time="0.106" classname="DailyLast7Days"/>
-    <testcase name="Types look correct when present" time="0.106" classname="DailyLast7Days"/>
+<testsuites name="APM Observability — Step 4 (Daily)" tests="2" time="0.130">
+  <testsuite name="Daily — last 7 days" id="7fe21ebc-8630-404b-81cc-cae67e3da9a7" timestamp="2025-12-14T19:00:30.676Z" tests="4" failures="0" errors="0" time="0.115">
+    <testcase name="Status code is 200" time="0.115" classname="DailyLast7Days"/>
+    <testcase name="Response is an array" time="0.115" classname="DailyLast7Days"/>
+    <testcase name="If array has items, keys exist" time="0.115" classname="DailyLast7Days"/>
+    <testcase name="Types look correct when present" time="0.115" classname="DailyLast7Days"/>
   </testsuite>
-  <testsuite name="Daily — filtered by service/endpoint" id="11b9979a-9859-462b-8a91-fce4db938678" timestamp="2025-12-14T10:55:42.020Z" tests="3" failures="0" errors="0" time="0.031">
-    <testcase name="Status code is 200" time="0.031" classname="DailyFilteredByServiceEndpoint"/>
-    <testcase name="Response is an array" time="0.031" classname="DailyFilteredByServiceEndpoint"/>
-    <testcase name="If array has items, it matches filter" time="0.031" classname="DailyFilteredByServiceEndpoint"/>
+  <testsuite name="Daily — filtered by service/endpoint" id="3e26c11e-5fb0-4e1f-ab5b-0b4690381458" timestamp="2025-12-14T19:00:30.676Z" tests="3" failures="0" errors="0" time="0.015">
+    <testcase name="Status code is 200" time="0.015" classname="DailyFilteredByServiceEndpoint"/>
+    <testcase name="Response is an array" time="0.015" classname="DailyFilteredByServiceEndpoint"/>
+    <testcase name="If array has items, it matches filter" time="0.015" classname="DailyFilteredByServiceEndpoint"/>
   </testsuite>
 </testsuites>
