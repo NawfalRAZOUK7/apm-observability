@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: apm_timescaledb
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  db_data:
