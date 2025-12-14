@@ -127,7 +127,7 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
             "PORT": POSTGRES_PORT,
             "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
             # psycopg/Django expects a dict here
-+           "OPTIONS": DB_OPTIONS,
+            "OPTIONS": DB_OPTIONS,
             "TEST": {
                 "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
             },
