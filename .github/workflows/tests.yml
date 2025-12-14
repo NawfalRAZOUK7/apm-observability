@@ -325,6 +325,8 @@ jobs:
             psql -U apm -d apm -c "create extension if not exists timescaledb;"
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
             psql -U apm -d apm -f /docker-entrypoint-initdb.d/001_roles.sql
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+            psql -U apm -d apm -c "alter role apm_app createdb;"
 
       - name: Run checks + migrate + tests (one-off web container)
         run: |
