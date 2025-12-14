@@ -35,7 +35,7 @@ DEBUG = _env_bool_top("DJANGO_DEBUG", default=True)
 
 # Comma-separated: "localhost,127.0.0.1"
 ALLOWED_HOSTS = [
-    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
+    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h.strip()
 ]
 
 # Application definition
