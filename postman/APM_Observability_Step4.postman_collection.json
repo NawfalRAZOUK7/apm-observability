@@ -1,0 +1,148 @@
+{
+  "info": {
+    "_postman_id": "b9f2c2e8-2f2d-4f59-9c7b-6c4f5c6a0004",
+    "name": "APM Observability — Step 4 (Daily)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Daily — last 7 days",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/requests/daily/?limit=50",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "daily",
+            ""
+          ],
+          "query": [
+            { "key": "limit", "value": "50" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(Array.isArray(json)).to.eql(true);",
+              "});",
+              "",
+              "pm.test('If array has items, keys exist', function () {",
+              "  var json = pm.response.json();",
+              "  if (json.length === 0) {",
+              "    pm.expect(json.length).to.eql(0);",
+              "    return;",
+              "  }",
+              "  var row = json[0];",
+              "  pm.expect(row).to.have.property('bucket');",
+              "  pm.expect(row).to.have.property('service');",
+              "  pm.expect(row).to.have.property('endpoint');",
+              "  pm.expect(row).to.have.property('hits');",
+              "  pm.expect(row).to.have.property('errors');",
+              "  pm.expect(row).to.have.property('avg_latency_ms');",
+              "  pm.expect(row).to.have.property('p95_latency_ms');",
+              "  pm.expect(row).to.have.property('max_latency_ms');",
+              "});",
+              "",
+              "pm.test('Types look correct when present', function () {",
+              "  var json = pm.response.json();",
+              "  if (!json.length) return;",
+              "  var row = json[0];",
+              "  pm.expect(typeof row.bucket).to.eql('string');",
+              "  pm.expect(typeof row.service).to.eql('string');",
+              "  pm.expect(typeof row.endpoint).to.eql('string');",
+              "  pm.expect(typeof row.hits).to.eql('number');",
+              "  pm.expect(typeof row.errors).to.eql('number');",
+              "  // avg/p95 can be null when no data or p95 disabled in CAGG",
+              "  if (row.avg_latency_ms !== null) pm.expect(typeof row.avg_latency_ms).to.eql('number');",
+              "  if (row.p95_latency_ms !== null && row.p95_latency_ms !== undefined) pm.expect(typeof row.p95_latency_ms).to.eql('number');",
+              "  if (row.max_latency_ms !== null && row.max_latency_ms !== undefined) pm.expect(typeof row.max_latency_ms).to.eql('number');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily — filtered by service/endpoint",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/requests/daily/?service={{service}}&endpoint={{endpoint}}&limit=50",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "daily",
+            ""
+          ],
+          "query": [
+            { "key": "service", "value": "{{service}}" },
+            { "key": "endpoint", "value": "{{endpoint}}" },
+            { "key": "limit", "value": "50" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is an array', function () {",
+              "  var json = pm.response.json();",
+              "  pm.expect(Array.isArray(json)).to.eql(true);",
+              "});",
+              "",
+              "pm.test('If array has items, it matches filter', function () {",
+              "  var json = pm.response.json();",
+              "  if (!json.length) return;",
+              "  var svc = pm.variables.get('service');",
+              "  var ep = pm.variables.get('endpoint');",
+              "  for (var i = 0; i < json.length; i++) {",
+              "    pm.expect(json[i].service).to.eql(svc);",
+              "    pm.expect(json[i].endpoint).to.eql(ep);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "service",
+      "value": "api"
+    },
+    {
+      "key": "endpoint",
+      "value": "/health"
+    }
+  ]
+}

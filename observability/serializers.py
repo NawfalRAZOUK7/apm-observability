@@ -1,5 +1,13 @@
 # observability/serializers.py
+from __future__ import annotations
+
+from datetime import datetime, time, timezone as dt_timezone
+from typing import Any, Optional
+
+from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework import serializers
+
 from .models import ApiRequest
 
 
@@ -77,3 +85,113 @@ class ApiRequestIngestItemSerializer(ApiRequestSerializer):
             "user_ref": {"required": False, "allow_null": True, "allow_blank": True},
             "tags": {"required": False},
         }
+
+
+# ----------------------------
+# Step 4: Query params validation
+# ----------------------------
+class IsoDateTimeOrDateField(serializers.Field):
+    """
+    Accepts either:
+      - ISO datetime (e.g. 2025-12-14T10:00:00Z)
+      - ISO date (e.g. 2025-12-14)
+
+    Returns:
+      - aware datetime in UTC
+
+    If a date is provided:
+      - end_of_day=False -> 00:00:00.000000Z
+      - end_of_day=True  -> 23:59:59.999999Z
+    """
+
+    default_error_messages = {
+        "invalid": "Must be an ISO datetime or date (e.g. 2025-12-14T10:00:00Z or 2025-12-14)."
+    }
+
+    def __init__(self, *args, end_of_day: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.end_of_day = end_of_day
+
+    def to_internal_value(self, data: Any) -> Optional[datetime]:
+        if data is None or data == "":
+            return None
+
+        s = str(data).strip()
+
+        # Try datetime first
+        dt = parse_datetime(s)
+        if dt is not None:
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
+            return dt.astimezone(dt_timezone.utc)
+
+        # Then try date
+        d = parse_date(s)
+        if d is not None:
+            if self.end_of_day:
+                dt2 = datetime.combine(d, time(23, 59, 59, 999999))
+            else:
+                dt2 = datetime.combine(d, time(0, 0, 0))
+            dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
+            return dt2.astimezone(dt_timezone.utc)
+
+        self.fail("invalid")
+
+    def to_representation(self, value: Any) -> Any:
+        # Not needed for query params usage, but keep it sane
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z")
+        return str(value)
+
+
+class DailyQueryParamsSerializer(serializers.Serializer):
+    """
+    Validates query params for GET /api/requests/daily/
+
+    - start/end can be ISO datetime or ISO date
+    - ensures start <= end
+    - validates limit bounds
+    """
+
+    start = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=False)
+    end = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=True)
+
+    service = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    endpoint = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+
+    limit = serializers.IntegerField(required=False, default=500, min_value=1, max_value=5000)
+
+    def validate(self, attrs):
+        start = attrs.get("start")
+        end = attrs.get("end")
+
+        if start is not None and end is not None and start > end:
+            raise serializers.ValidationError({"detail": "`start` must be <= `end`."})
+
+        return attrs
+
+
+# ----------------------------
+# Step 4: Daily analytics response serializer
+# ----------------------------
+class DailyAggRowSerializer(serializers.Serializer):
+    """
+    Response schema for /api/requests/daily/
+
+    Note:
+      - bucket is returned as ISO string via DRF DateTimeField.
+      - p95_latency_ms may be null if the CAGG was created without p95 support.
+    """
+
+    bucket = serializers.DateTimeField()
+    service = serializers.CharField()
+    endpoint = serializers.CharField()
+
+    hits = serializers.IntegerField()
+    errors = serializers.IntegerField()
+
+    avg_latency_ms = serializers.FloatField(allow_null=True)
+    p95_latency_ms = serializers.FloatField(allow_null=True, required=False)
+    max_latency_ms = serializers.IntegerField(allow_null=True, required=False)

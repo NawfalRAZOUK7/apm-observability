@@ -1,14 +1,14 @@
 # observability/views.py
 from __future__ import annotations
 
-from datetime import timedelta, timezone as dt_timezone
+from datetime import datetime, time, timedelta, timezone as dt_timezone
 from typing import Any, Dict, List, Optional
 
 from django.conf import settings
 from django.db import connection, transaction
 from django.db.utils import ProgrammingError
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 from django_filters import rest_framework as df_filters
 from rest_framework import filters as drf_filters, status, viewsets
 from rest_framework.decorators import action
@@ -17,7 +17,12 @@ from rest_framework.response import Response
 
 from .guards import postgres_required
 from .models import ApiRequest
-from .serializers import ApiRequestIngestItemSerializer, ApiRequestSerializer
+from .serializers import (
+    ApiRequestIngestItemSerializer,
+    ApiRequestSerializer,
+    DailyAggRowSerializer,
+    DailyQueryParamsSerializer,
+)
 
 
 class NumberInFilter(df_filters.BaseInFilter, df_filters.NumberFilter):
@@ -131,23 +136,44 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
 
         raise ValidationError({name: "Must be a boolean (true/false)."})
 
-    def _get_dt_qp(self, request, name: str):
+    def _get_dt_or_date_qp(self, request, name: str, *, end_of_day: bool = False):
         """
-        Reads ISO datetime from query params.
+        Reads ISO datetime OR ISO date from query params.
         Returns an aware datetime (UTC) or None if not provided.
+
+        Examples:
+          - 2025-12-14T10:00:00Z
+          - 2025-12-14
+        If a date is provided:
+          - start uses 00:00:00Z
+          - end uses 23:59:59.999999Z (when end_of_day=True)
         """
         raw = request.query_params.get(name)
         if raw is None or raw == "":
             return None
 
-        dt = parse_datetime(str(raw))
-        if dt is None:
-            raise ValidationError({name: "Must be an ISO datetime (e.g. 2025-12-14T10:00:00Z)."})
+        s = str(raw).strip()
 
-        if timezone.is_naive(dt):
-            dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
+        # Try datetime first
+        dt = parse_datetime(s)
+        if dt is not None:
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
+            return dt.astimezone(dt_timezone.utc)
 
-        return dt.astimezone(dt_timezone.utc)
+        # Then try date (YYYY-MM-DD)
+        d = parse_date(s)
+        if d is not None:
+            if end_of_day:
+                dt2 = datetime.combine(d, time(23, 59, 59, 999999))
+            else:
+                dt2 = datetime.combine(d, time(0, 0, 0))
+            dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
+            return dt2.astimezone(dt_timezone.utc)
+
+        raise ValidationError(
+            {name: "Must be an ISO datetime or date (e.g. 2025-12-14T10:00:00Z or 2025-12-14)."}
+        )
 
     def _parse_ingest_payload(self, data: Any) -> List[Any]:
         """
@@ -261,16 +287,16 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         Reads from Timescale continuous aggregate view: apirequest_hourly.
 
         Query params:
-          - start: ISO datetime (optional; default now-24h)
-          - end: ISO datetime (optional; default now)
+          - start: ISO datetime OR date (optional; default now-24h)
+          - end: ISO datetime OR date (optional; default now)
           - service: string (optional)
           - endpoint: string (optional)
           - limit: int (optional; default 500; max 5000)
         """
         limit = self._get_int_qp(request, "limit", default=500, min_value=1, max_value=5000)
 
-        start = self._get_dt_qp(request, "start")
-        end = self._get_dt_qp(request, "end")
+        start = self._get_dt_or_date_qp(request, "start", end_of_day=False)
+        end = self._get_dt_or_date_qp(request, "end", end_of_day=True)
 
         now = timezone.now().astimezone(dt_timezone.utc)
         if end is None:
@@ -347,3 +373,107 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
             )
 
         return Response(results, status=status.HTTP_200_OK)
+
+    # ----------------------------
+    # Step 4 endpoint: /api/requests/daily/
+    # ----------------------------
+    @action(detail=False, methods=["get"], url_path="daily")
+    @postgres_required("Daily analytics requires PostgreSQL + TimescaleDB (daily CAGG).")
+    def daily(self, request, *args, **kwargs):
+        """
+        Reads from Timescale continuous aggregate view: apirequest_daily.
+
+        Query params:
+          - start: ISO datetime OR ISO date (optional; default end-7d)
+          - end: ISO datetime OR ISO date (optional; default now)
+          - service: string (optional)
+          - endpoint: string (optional)
+          - limit: int (optional; default 500; max 5000)
+        """
+        qp = DailyQueryParamsSerializer(data=request.query_params)
+        qp.is_valid(raise_exception=True)
+        v = qp.validated_data
+
+        limit = v.get("limit", 500)
+        start = v.get("start")
+        end = v.get("end")
+        service = v.get("service")
+        endpoint = v.get("endpoint")
+
+        now = timezone.now().astimezone(dt_timezone.utc)
+        if end is None:
+            end = now
+        if start is None:
+            start = end - timedelta(days=7)
+
+        if start > end:
+            raise ValidationError({"detail": "`start` must be <= `end`."})
+
+        where_clauses: List[str] = ["bucket >= %s", "bucket <= %s"]
+        params: List[Any] = [start, end]
+
+        if service:
+            where_clauses.append("service = %s")
+            params.append(service)
+
+        if endpoint:
+            where_clauses.append("endpoint = %s")
+            params.append(endpoint)
+
+        where_sql = " AND ".join(where_clauses)
+
+        sql = f"""
+            SELECT
+                bucket,
+                service,
+                endpoint,
+                hits,
+                errors,
+                avg_latency_ms,
+                p95_latency_ms,
+                max_latency_ms
+            FROM apirequest_daily
+            WHERE {where_sql}
+            ORDER BY bucket DESC, service ASC, endpoint ASC
+            LIMIT %s
+        """
+        params.append(limit)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
+        except ProgrammingError as e:
+            return Response(
+                {
+                    "detail": "Daily aggregate view is not available yet. Did you apply Step 4 migrations?",
+                    "hint": "Run: python manage.py migrate",
+                    "error": str(e),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        items: List[Dict[str, Any]] = []
+        for bucket, svc, ep, hits, errors, avg_latency_ms, p95_latency_ms, max_latency_ms in rows:
+            # Ensure UTC-aware datetime for serializer
+            if bucket is not None:
+                if hasattr(bucket, "astimezone"):
+                    bucket = bucket.astimezone(dt_timezone.utc)
+                elif timezone.is_naive(bucket):
+                    bucket = timezone.make_aware(bucket, timezone=dt_timezone.utc)
+
+            items.append(
+                {
+                    "bucket": bucket,
+                    "service": svc,
+                    "endpoint": ep,
+                    "hits": int(hits) if hits is not None else 0,
+                    "errors": int(errors) if errors is not None else 0,
+                    "avg_latency_ms": float(avg_latency_ms) if avg_latency_ms is not None else None,
+                    "p95_latency_ms": float(p95_latency_ms) if p95_latency_ms is not None else None,
+                    "max_latency_ms": int(max_latency_ms) if max_latency_ms is not None else None,
+                }
+            )
+
+        out = DailyAggRowSerializer(items, many=True)
+        return Response(out.data, status=status.HTTP_200_OK)
