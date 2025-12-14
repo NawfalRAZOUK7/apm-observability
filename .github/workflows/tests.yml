@@ -213,6 +213,10 @@ jobs:
           cp .env.docker .env.docker.ci
           sed -i 's/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-not-secret/' .env.docker.ci
           sed -i 's/^DJANGO_DEBUG=.*/DJANGO_DEBUG=0/' .env.docker.ci
+
+          echo "POSTGRES_HOST=db" >> .env.docker.ci
+          echo "POSTGRES_PORT=5432" >> .env.docker.ci
+
           # Reduce any accidental runtime overhead if web ever starts
           echo "GUNICORN_WORKERS=1" >> .env.docker.ci
           echo "GUNICORN_TIMEOUT=60" >> .env.docker.ci
@@ -227,6 +231,22 @@ jobs:
           set -euxo pipefail
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d db
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps
+      
+      - name: Wait for DB ready (pg_isready)
+        run: |
+          set -euxo pipefail
+          for i in {1..40}; do
+            if docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+              pg_isready -h 127.0.0.1 -p 5432 -U "${POSTGRES_USER:-apm}" -d "${POSTGRES_DB:-apm}" >/dev/null 2>&1; then
+              echo "DB is ready"
+              exit 0
+            fi
+            echo "Waiting for DB... ($i/40)"
+            sleep 2
+          done
+          echo "DB never became ready"
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs db --tail=200 || true
+          exit 1
 
       - name: Run checks + migrate + tests (one-off web container)
         run: |
