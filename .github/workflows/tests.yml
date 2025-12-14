@@ -206,6 +206,12 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      
+      - name: Verify env files
+        run: |
+          set -euxo pipefail
+          ls -la .env* || true
+          test -f .env.docker
 
       - name: Prepare CI env
         run: |
@@ -254,8 +260,8 @@ jobs:
       - name: Dump logs on failure
         if: failure()
         run: |
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs --no-color > compose.log || true
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps || true
+          docker compose -f docker/docker-compose.yml logs --no-color > compose.log || true
+          docker compose -f docker/docker-compose.yml ps || true
 
       - name: Upload compose logs on failure
         if: failure()
@@ -267,4 +273,4 @@ jobs:
       - name: Shutdown
         if: always()
         run: |
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci down -v --remove-orphans
+          docker compose -f docker/docker-compose.yml down -v --remove-orphans || true
