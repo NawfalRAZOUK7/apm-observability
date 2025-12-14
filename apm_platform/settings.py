@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -83,32 +84,57 @@ WSGI_APPLICATION = 'apm_platform.wsgi.application'
 
 # --- Database (env-first, docker-friendly) ---
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-# Supports either POSTGRES_* or DB_* env vars.
-DB_NAME = os.environ.get("POSTGRES_DB") or os.environ.get("DB_NAME")
-DB_USER = os.environ.get("POSTGRES_USER") or os.environ.get("DB_USER")
-DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD") or os.environ.get("DB_PASSWORD")
-DB_HOST = os.environ.get("POSTGRES_HOST") or os.environ.get("DB_HOST", "localhost")
-DB_PORT = os.environ.get("POSTGRES_PORT") or os.environ.get("DB_PORT", "5432")
 
+RUNNING_TESTS = any(arg in sys.argv for arg in ["test", "pytest"])
 
-if DB_NAME and DB_USER:
+def _env(name: str, default: str = "") -> str:
+    return os.environ.get(name, default).strip()
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    val = _env(name, "")
+    if not val:
+        return default
+    return val.lower() in {"1", "true", "yes", "y", "on"}
+
+FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
+
+POSTGRES_NAME = _env("POSTGRES_DB") or _env("DB_NAME")
+POSTGRES_USER = _env("POSTGRES_USER") or _env("DB_USER")
+POSTGRES_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
+POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
+POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
+
+HAS_POSTGRES_ENV = all([POSTGRES_NAME, POSTGRES_USER, POSTGRES_PASSWORD])
+
+if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": DB_NAME,
-            "USER": DB_USER,
-            "PASSWORD": DB_PASSWORD or "",
-            "HOST": DB_HOST,
-            "PORT": DB_PORT,
+            "NAME": POSTGRES_NAME,
+            "USER": POSTGRES_USER,
+            "PASSWORD": POSTGRES_PASSWORD,
+            "HOST": POSTGRES_HOST,
+            "PORT": POSTGRES_PORT,
             "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+            "OPTIONS": {
+                # Keep it empty by default; add sslmode here if needed.
+            },
+            "TEST": {
+                "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
+            },
         }
     }
 else:
-    # Fallback for quick local runs if env vars aren't set
+    # SQLite fallback (great for quick local runs / CI without Postgres)
+    BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
+    if BASE_DIR is None:
+        from pathlib import Path
+        BASE_DIR = Path(__file__).resolve().parent.parent
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": ":memory:" if RUNNING_TESTS else (BASE_DIR / "db.sqlite3"),
         }
     }
 
@@ -158,8 +184,15 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
         "rest_framework.filters.SearchFilter",
     ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("DRF_PAGE_SIZE", "50")),
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
 # --- APM ingestion defaults (Step 2) ---

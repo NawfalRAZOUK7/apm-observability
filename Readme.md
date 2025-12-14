@@ -17,8 +17,8 @@ Backend API to store API request logs (service, endpoint, latency, status codes)
 * `observability/` — app: model, serializers, views, filters, tests, migrations
 * `docker/` — docker compose (db services)
 * `postman/` — Postman collections + environments
-* `scripts/` — test runner scripts (Newman)
-* `reports/` — generated test reports (Newman)
+* `scripts/` — test runner scripts
+* `reports/` — generated test reports (Newman / Step 6 logs)
 
 ---
 
@@ -42,7 +42,7 @@ docker compose -f docker/docker-compose.yml up -d
 
 #### Option B — Local Postgres
 
-Update your `apm_platform/settings.py` database settings accordingly.
+Update your Postgres env vars (see below) or update your `apm_platform/settings.py` accordingly.
 
 ### 3) Load env (important for Postgres/Timescale)
 
@@ -62,6 +62,31 @@ python manage.py runserver
 ```
 
 API base: `http://127.0.0.1:8000`
+
+---
+
+## Database notes (Postgres / Timescale)
+
+This project supports:
+
+* **PostgreSQL + TimescaleDB** (recommended) — enables hypertables, continuous aggregates (`hourly`, `daily`) and fast analytics.
+* **Plain PostgreSQL** — KPI endpoints still work (raw queries + `percentile_cont`), but Timescale-specific features are unavailable.
+* **SQLite** — supported as a **fallback** for local dev and basic CRUD/ingest tests. Analytics endpoints that require Postgres/Timescale may return 501/503 or be skipped in tests.
+
+### Environment variables used by `settings.py`
+
+The settings are **env-first**. If the following are set, Django will use PostgreSQL:
+
+* `POSTGRES_DB`
+* `POSTGRES_USER`
+* `POSTGRES_PASSWORD`
+* `POSTGRES_HOST` (default `localhost`)
+* `POSTGRES_PORT` (default `5432`)
+
+Optional:
+
+* `POSTGRES_TEST_DB` (defaults to `${POSTGRES_DB}_test`)
+* `FORCE_SQLITE=1` (forces SQLite even if Postgres vars exist)
 
 ---
 
@@ -270,17 +295,17 @@ Returns overall KPIs over a time window.
 
 `source` is one of: `hourly`, `daily`, `raw`.
 
-#### Query params (table)
+#### Query params
 
-| Param         | Type                  | Default     | Notes                                               |
-| ------------- | --------------------- | ----------- | --------------------------------------------------- |
-| `start`       | ISO datetime/date     | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`    |
-| `end`         | ISO datetime/date     | `now`       | Date-only end uses end-of-day                       |
-| `service`     | string                | —           | Exact match                                         |
-| `endpoint`    | string                | —           | Exact match                                         |
-| `method`      | string                | —           | **Forces raw path** (CAGGs do not include method)   |
-| `error_from`  | int                   | `500`       | If not 500, **forces raw path**                     |
-| `granularity` | `auto\|hourly\|daily` | `auto`      | When `auto`: small ranges → hourly, otherwise daily |
+| Param         | Type              | Default     | Notes                                             |        |                                                     |
+| ------------- | ----------------- | ----------- | ------------------------------------------------- | ------ | --------------------------------------------------- |
+| `start`       | ISO datetime/date | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`  |        |                                                     |
+| `end`         | ISO datetime/date | `now`       | Date-only end uses end-of-day                     |        |                                                     |
+| `service`     | string            | —           | Exact match                                       |        |                                                     |
+| `endpoint`    | string            | —           | Exact match                                       |        |                                                     |
+| `method`      | string            | —           | **Forces raw path** (CAGGs do not include method) |        |                                                     |
+| `error_from`  | int               | `500`       | If not 500, **forces raw path**                   |        |                                                     |
+| `granularity` | `auto             | hourly      | daily`                                            | `auto` | When `auto`: small ranges → hourly, otherwise daily |
 
 #### cURL examples
 
@@ -337,21 +362,21 @@ Returns ranked endpoints with metrics.
 ]
 ```
 
-#### Query params (table)
+#### Query params
 
-| Param         | Type                  | Default     | Notes                                                                                |
-| ------------- | --------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| `start`       | ISO datetime/date     | `end - 24h` | Time window                                                                          |
-| `end`         | ISO datetime/date     | `now`       | Time window                                                                          |
-| `service`     | string                | —           | Filter rows                                                                          |
-| `endpoint`    | string                | —           | Filter rows                                                                          |
-| `method`      | string                | —           | **Forces raw**                                                                       |
-| `error_from`  | int                   | `500`       | If not 500, **forces raw**                                                           |
-| `granularity` | `auto\|hourly\|daily` | `auto`      | Used when fast-path is allowed                                                       |
-| `limit`       | int                   | `20`        | Max `200`                                                                            |
-| `sort_by`     | string                | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |
-| `direction`   | `asc\|desc`           | `desc`      | Sort direction                                                                       |
-| `with_p95`    | bool                  | `false`     | If true: computes p95 per returned endpoint (raw query)                              |
+| Param         | Type              | Default     | Notes                                                                                |                |                                |
+| ------------- | ----------------- | ----------- | ------------------------------------------------------------------------------------ | -------------- | ------------------------------ |
+| `start`       | ISO datetime/date | `end - 24h` | Time window                                                                          |                |                                |
+| `end`         | ISO datetime/date | `now`       | Time window                                                                          |                |                                |
+| `service`     | string            | —           | Filter rows                                                                          |                |                                |
+| `endpoint`    | string            | —           | Filter rows                                                                          |                |                                |
+| `method`      | string            | —           | **Forces raw**                                                                       |                |                                |
+| `error_from`  | int               | `500`       | If not 500, **forces raw**                                                           |                |                                |
+| `granularity` | `auto             | hourly      | daily`                                                                               | `auto`         | Used when fast-path is allowed |
+| `limit`       | int               | `20`        | Max `200`                                                                            |                |                                |
+| `sort_by`     | string            | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |                |                                |
+| `direction`   | `asc              | desc`       | `desc`                                                                               | Sort direction |                                |
+| `with_p95`    | bool              | `false`     | If true: computes p95 per returned endpoint (raw query)                              |                |                                |
 
 #### Notes
 
@@ -404,15 +429,44 @@ python manage.py refresh_apirequest_daily --start 2025-12-01 --end 2025-12-14
 
 ---
 
-## Running tests
+## Running tests (Step 6)
 
-### Django tests
+### 1) Django unit/API tests
+
+Run the whole test suite:
 
 ```bash
 python manage.py test
 ```
 
-### Newman (Postman) tests
+Or using Makefile:
+
+```bash
+make test
+```
+
+### 2) Step 6 strict test runner
+
+Step 6 includes a stricter runner that:
+
+* checks that migrations are up-to-date (`makemigrations --check`)
+* runs migrations
+* runs the full Django test suite
+* writes output to `reports/step6_tests.log`
+
+```bash
+chmod +x scripts/step6_test.sh
+./scripts/step6_test.sh
+```
+
+### Notes about database support in tests
+
+* Tests that require PostgreSQL / Timescale (e.g. p95 via `percentile_cont`, or caggs/views) will **auto-skip** when the DB is not PostgreSQL.
+* Hourly/Daily endpoint tests will also auto-skip if the underlying Timescale views are missing.
+
+---
+
+## Newman (Postman) tests
 
 1. Install:
 
