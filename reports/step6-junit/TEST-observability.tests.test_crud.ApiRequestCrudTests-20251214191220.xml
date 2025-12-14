@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_crud.ApiRequestCrudTests-20251214191220" tests="5" file="observability/tests/test_crud.py" time="0.534" timestamp="2025-12-14T19:12:21" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_delete_removes_resource" time="0.096" timestamp="2025-12-14T19:12:20" file="observability/tests/test_crud.py" line="164"/>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_get_list_default_ordering_is_time_desc" time="0.117" timestamp="2025-12-14T19:12:21" file="observability/tests/test_crud.py" line="50">
+		<!--
+Acceptance: GET /api/requests/ lists ordered by -time (newest first).
+-->
+	</testcase>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_patch_updates_fields" time="0.071" timestamp="2025-12-14T19:12:21" file="observability/tests/test_crud.py" line="102"/>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_post_create_then_get_detail" time="0.104" timestamp="2025-12-14T19:12:21" file="observability/tests/test_crud.py" line="17"/>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_put_replaces_resource" time="0.146" timestamp="2025-12-14T19:12:21" file="observability/tests/test_crud.py" line="127"/>
+</testsuite>

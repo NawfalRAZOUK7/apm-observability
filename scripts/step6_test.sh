@@ -3,8 +3,10 @@ set -euo pipefail
 
 REPORT_DIR="${REPORT_DIR:-reports}"
 PY="${PYTHON:-python}"
+JUNIT_DIR="${JUNIT_DIR:-${REPORT_DIR}/step6-junit}"
 
 mkdir -p "$REPORT_DIR"
+mkdir -p "$JUNIT_DIR"
 LOG="$REPORT_DIR/step6_tests.log"
 
 # Optional: if you use docker for TimescaleDB
@@ -23,7 +25,9 @@ echo "---- Step 6: migrate (dev DB) ----"
 $PY manage.py migrate --noinput
 
 echo "---- Step 6: run Django tests ----"
-# rely on exit code (most reliable)
+# JUnit XML output goes to $JUNIT_DIR via xmlrunner. Falls back to default runner if not installed.
+DJANGO_TEST_RUNNER="xmlrunner.extra.djangotestrunner.XMLTestRunner" \
+TEST_OUTPUT_DIR="$JUNIT_DIR" \
 $PY manage.py test -v 2 2>&1 | tee "$LOG"
 
 echo "✅ All tests passed. Log: $LOG"

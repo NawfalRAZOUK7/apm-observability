@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_smoke.SmokeTests-20251214191220" tests="1" file="observability/tests/test_smoke.py" time="0.001" timestamp="2025-12-14T19:12:25" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_smoke.SmokeTests" name="test_test_discovery_works" time="0.001" timestamp="2025-12-14T19:12:25" file="observability/tests/test_smoke.py" line="5"/>
+</testsuite>

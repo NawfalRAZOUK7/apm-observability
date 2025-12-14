@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_filters.ApiRequestFilterTests-20251214191220" tests="8" file="observability/tests/test_filters.py" time="0.949" timestamp="2025-12-14T19:12:22" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_endpoint" time="0.096" timestamp="2025-12-14T19:12:21" file="observability/tests/test_filters.py" line="171"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_method" time="0.104" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="179"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_service" time="0.124" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="163"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_status_code" time="0.131" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="187"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_time_range" time="0.145" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="198"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_ordering_time_asc" time="0.139" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="222"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_ordering_time_desc" time="0.122" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="233"/>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_search_login_if_present" time="0.089" timestamp="2025-12-14T19:12:22" file="observability/tests/test_filters.py" line="244">
+		<!--
+If SearchFilter is enabled AND search_fields are configured on the ViewSet,
+search=login should return only /login endpoints (r4, r5).
+
+If search is not configured (returns unfiltered full dataset), we skip.
+-->
+	</testcase>
+</testsuite>

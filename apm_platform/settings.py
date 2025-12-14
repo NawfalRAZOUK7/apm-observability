@@ -202,6 +202,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Test runner can be overridden for CI/reporting (e.g., xmlrunner)
+TEST_RUNNER = os.environ.get("DJANGO_TEST_RUNNER", "django.test.runner.DiscoverRunner")
+# If using xmlrunner, this directs where JUnit XML files are written
+TEST_OUTPUT_DIR = os.environ.get("TEST_OUTPUT_DIR")
+
 # --- Django REST Framework defaults ---
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
