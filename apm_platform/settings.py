@@ -105,8 +105,9 @@ def _env_bool(name: str, default: bool = False) -> bool:
 FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
 
 POSTGRES_NAME = _env("POSTGRES_DB") or _env("DB_NAME")
-POSTGRES_USER = _env("POSTGRES_USER") or _env("DB_USER")
-POSTGRES_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
+# Prefer dedicated app user if provided; fallback to legacy POSTGRES_USER/DB_USER
+POSTGRES_USER = _env("POSTGRES_APP_USER") or _env("POSTGRES_USER") or _env("DB_USER")
+POSTGRES_PASSWORD = _env("POSTGRES_APP_PASSWORD") or _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
 POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
 POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
 

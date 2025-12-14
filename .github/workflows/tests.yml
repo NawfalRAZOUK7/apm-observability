@@ -217,8 +217,8 @@ jobs:
 
     env:
       POSTGRES_DB: apm
-      POSTGRES_USER: apm
-      POSTGRES_PASSWORD: apm
+      POSTGRES_USER: apm_app
+      POSTGRES_PASSWORD: apm_app_pass
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: "5432"
 
