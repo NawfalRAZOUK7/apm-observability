@@ -232,6 +232,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
+      - name: Bootstrap roles and extension (superuser)
+        env:
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        run: |
+          set -euxo pipefail
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -f docker/initdb/001_roles.sql
+
       - name: Wait for DB ready
         run: |
           set -euxo pipefail

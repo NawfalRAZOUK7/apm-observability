@@ -24,7 +24,7 @@ Goal: backend uses a non-superuser role; analytics gets read-only; DB is not exp
 ## Privileges
 
 - Public create is revoked on schema `public`.
-- `apm_app`: CONNECT, USAGE on schema, CRUD on tables, SELECT/USAGE on sequences, default privileges aligned.
+- `apm_app`: CONNECT, USAGE/CREATE on schema, CRUD on tables, SELECT/USAGE on sequences, default privileges aligned.
 - `apm_readonly`: CONNECT, USAGE on schema, SELECT on tables/sequences, default privileges aligned.
 - No write for `apm_readonly`.
 
