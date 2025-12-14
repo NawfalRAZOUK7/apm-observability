@@ -43,15 +43,15 @@ Deux options : exécuter le script prêt à l’emploi ou saisir les commandes �
 
 - Depuis le host (psql installé) :
   - `psql postgres://apm:apm@localhost:5432/apm -f scripts/db_quick_demo.sql`
-- Ou depuis le container :
-  - `docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm -f /app/scripts/db_quick_demo.sql`
+- Ou via le container (pas de montage du repo, on pipe depuis le host) :
+  - `cat scripts/db_quick_demo.sql | docker compose -f docker/docker-compose.yml exec -T db psql -U apm -d apm`
 
 ### 2) Commandes manuelles (résumé du script)
 
 - Vérifier l’extension Timescale :
   - `SELECT extname FROM pg_extension WHERE extname = 'timescaledb';`
 - Lister les hypertables existantes :
-  - `SELECT hypertable_name, table_schema, table_name FROM timescaledb_information.hypertables;`
+  - `SELECT hypertable_schema, hypertable_name, num_dimensions, num_chunks, compression_enabled FROM timescaledb_information.hypertables ORDER BY hypertable_schema, hypertable_name;`
 - Créer une table de démo et l’hypertable :
   - `DROP TABLE IF EXISTS demo_requests;`
   - `CREATE TABLE demo_requests (time timestamptz NOT NULL, service text NOT NULL, latency_ms integer NOT NULL);`

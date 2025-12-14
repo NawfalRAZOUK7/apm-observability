@@ -194,6 +194,67 @@ jobs:
             showmigrations-timescale.log
             test-timescale.log
 
+  demo-sql:
+    name: Demo SQL (Timescale script)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: preflight
+
+    services:
+      db:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_DB: apm
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apm -d apm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install postgres client tools
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for DB ready
+        run: |
+          set -euxo pipefail
+          pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
+
+      - name: Ensure timescaledb extension
+        run: |
+          set -euxo pipefail
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+
+      - name: Run demo SQL script
+        run: |
+          set -euxo pipefail
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -f scripts/db_quick_demo.sql
+
+      - name: Upload demo SQL output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-sql-logs
+          path: |
+            scripts/db_quick_demo.sql
+
   docker-compose-smoke:
     name: Docker Compose smoke (build + migrate + tests)
     runs-on: ubuntu-latest
@@ -231,7 +292,7 @@ jobs:
           set -euxo pipefail
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d db
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps
-      
+
       - name: Wait for DB ready (pg_isready)
         run: |
           set -euxo pipefail

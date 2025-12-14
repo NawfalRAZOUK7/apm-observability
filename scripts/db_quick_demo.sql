@@ -2,8 +2,9 @@
 SELECT extname FROM pg_extension WHERE extname = 'timescaledb';
 
 \echo '--- List existing hypertables'
-SELECT hypertable_name, table_schema, table_name
-FROM timescaledb_information.hypertables;
+SELECT hypertable_schema, hypertable_name, num_dimensions, num_chunks, compression_enabled
+FROM timescaledb_information.hypertables
+ORDER BY hypertable_schema, hypertable_name;
 
 \echo '--- Demo table setup (drop/create)'
 DROP TABLE IF EXISTS demo_requests;
