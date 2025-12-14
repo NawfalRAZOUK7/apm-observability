@@ -54,7 +54,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
 
   pgbackrest:
-    image: pgbackrest/pgbackrest:2.51
+    image: ghcr.io/pgbackrest/pgbackrest:latest
     container_name: apm_pgbackrest
     depends_on:
       db:
@@ -78,7 +78,7 @@ services:
       tail -f /dev/null
 
   pgbackrest-cron:
-    image: pgbackrest/pgbackrest:2.51
+    image: ghcr.io/pgbackrest/pgbackrest:latest
     container_name: apm_pgbackrest_cron
     depends_on:
       db:
