@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="APM Observability — Step 3 (Timescale Hourly)" tests="3" time="0.043">
-  <testsuite name="Seed — ingest sample (strict=true)" id="90d8b163-ae65-434a-a7c4-01694545a4c6" timestamp="2025-12-14T09:40:23.072Z" tests="4" failures="0" errors="0" time="0.037">
-    <testcase name="Status is 200" time="0.037" classname="SeedIngestSampleStrictTrue"/>
-    <testcase name="Has inserted/rejected fields" time="0.037" classname="SeedIngestSampleStrictTrue"/>
-    <testcase name="Inserted >= 1" time="0.037" classname="SeedIngestSampleStrictTrue"/>
-    <testcase name="Errors is an array" time="0.037" classname="SeedIngestSampleStrictTrue"/>
+<testsuites name="APM Observability — Step 3 (Timescale Hourly)" tests="3" time="0.085">
+  <testsuite name="Seed — ingest sample (strict=true)" id="65d9c07d-3e70-4654-8ad0-bc05c09fe478" timestamp="2025-12-14T18:58:59.860Z" tests="4" failures="0" errors="0" time="0.066">
+    <testcase name="Status is 200" time="0.066" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Has inserted/rejected fields" time="0.066" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Inserted >= 1" time="0.066" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Errors is an array" time="0.066" classname="SeedIngestSampleStrictTrue"/>
   </testsuite>
-  <testsuite name="Hourly — billing /x (last 4h)" id="514d1ea3-2af1-4d36-84f9-c91448065a84" timestamp="2025-12-14T09:40:23.072Z" tests="2" failures="0" errors="0" time="0.003">
-    <testcase name="Status is 200 (or 501 if SQLite)" time="0.003" classname="HourlyBillingXLast4H"/>
-    <testcase name="Has detail for SQLite guard" time="0.003" classname="HourlyBillingXLast4H"/>
+  <testsuite name="Hourly — billing /x (last 4h)" id="c145086c-d257-419e-a289-0dd7e1e759f5" timestamp="2025-12-14T18:58:59.860Z" tests="6" failures="0" errors="0" time="0.014">
+    <testcase name="Status is 200 (or 501 if SQLite)" time="0.014" classname="HourlyBillingXLast4H"/>
+    <testcase name="Response is an array" time="0.014" classname="HourlyBillingXLast4H"/>
+    <testcase name="At least 1 row" time="0.014" classname="HourlyBillingXLast4H"/>
+    <testcase name="Row has required fields" time="0.014" classname="HourlyBillingXLast4H"/>
+    <testcase name="Types look correct" time="0.014" classname="HourlyBillingXLast4H"/>
+    <testcase name="bucket is UTC-like (ends with Z)" time="0.014" classname="HourlyBillingXLast4H"/>
   </testsuite>
-  <testsuite name="Hourly — all services (last 4h)" id="d2dc1f2e-ff13-48ee-af27-af86a177b4aa" timestamp="2025-12-14T09:40:23.072Z" tests="1" failures="0" errors="0" time="0.003">
-    <testcase name="Status is 200 (or 501 if SQLite)" time="0.003" classname="HourlyAllServicesLast4H"/>
+  <testsuite name="Hourly — all services (last 4h)" id="e09f8547-5884-4bfe-9054-2281cba1be21" timestamp="2025-12-14T18:58:59.860Z" tests="3" failures="0" errors="0" time="0.005">
+    <testcase name="Status is 200 (or 501 if SQLite)" time="0.005" classname="HourlyAllServicesLast4H"/>
+    <testcase name="Response is an array" time="0.005" classname="HourlyAllServicesLast4H"/>
+    <testcase name="At least 1 row" time="0.005" classname="HourlyAllServicesLast4H"/>
   </testsuite>
 </testsuites>
