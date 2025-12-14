@@ -174,6 +174,118 @@ class DailyQueryParamsSerializer(serializers.Serializer):
 
 
 # ----------------------------
+# Step 5: KPI / Top endpoints query params validation
+# ----------------------------
+class KpiQueryParamsSerializer(serializers.Serializer):
+    """
+    Validates query params for GET /api/requests/kpis/
+
+    Supported:
+      - start/end (ISO datetime or ISO date)
+      - service, endpoint, method
+      - granularity: auto|hourly|daily
+      - error_from: HTTP status threshold for "error" (default 500)
+
+    Ensures:
+      - start <= end
+      - clean error messages on invalid inputs
+    """
+
+    start = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=False)
+    end = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=True)
+
+    service = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    endpoint = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    method = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+
+    granularity = serializers.ChoiceField(
+        required=False,
+        default="auto",
+        choices=("auto", "hourly", "daily"),
+    )
+
+    error_from = serializers.IntegerField(required=False, default=500, min_value=100, max_value=599)
+
+    def validate_method(self, value: str) -> str:
+        v = value.strip().upper()
+        # allow any token, but prevent empty/whitespace
+        if not v:
+            raise serializers.ValidationError("method cannot be empty.")
+        return v
+
+    def validate(self, attrs):
+        start = attrs.get("start")
+        end = attrs.get("end")
+        if start is not None and end is not None and start > end:
+            raise serializers.ValidationError({"detail": "`start` must be <= `end`."})
+        return attrs
+
+
+class TopEndpointsQueryParamsSerializer(serializers.Serializer):
+    """
+    Validates query params for GET /api/requests/top-endpoints/
+
+    Supported:
+      - start/end (ISO datetime or ISO date)
+      - service, endpoint, method
+      - granularity: auto|hourly|daily
+      - error_from: HTTP status threshold for "error" (default 500)
+      - limit: number of rows to return (default 20, max 200)
+      - sort_by: hits|errors|error_rate|avg_latency_ms|p95_latency_ms|max_latency_ms
+      - direction: asc|desc
+
+    Ensures:
+      - start <= end
+      - limit/sort/direction constraints enforced
+    """
+
+    start = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=False)
+    end = IsoDateTimeOrDateField(required=False, allow_null=True, end_of_day=True)
+
+    service = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    endpoint = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    method = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+
+    granularity = serializers.ChoiceField(
+        required=False,
+        default="auto",
+        choices=("auto", "hourly", "daily"),
+    )
+
+    error_from = serializers.IntegerField(required=False, default=500, min_value=100, max_value=599)
+
+    limit = serializers.IntegerField(required=False, default=20, min_value=1, max_value=200)
+
+    sort_by = serializers.ChoiceField(
+        required=False,
+        default="hits",
+        choices=(
+            "hits",
+            "errors",
+            "error_rate",
+            "avg_latency_ms",
+            "p95_latency_ms",
+            "max_latency_ms",
+        ),
+    )
+
+    direction = serializers.ChoiceField(required=False, default="desc", choices=("asc", "desc"))
+
+    def validate_method(self, value: str) -> str:
+        v = value.strip().upper()
+        if not v:
+            raise serializers.ValidationError("method cannot be empty.")
+        return v
+
+    def validate(self, attrs):
+        start = attrs.get("start")
+        end = attrs.get("end")
+        if start is not None and end is not None and start > end:
+            raise serializers.ValidationError({"detail": "`start` must be <= `end`."})
+        return attrs
+
+
+# ----------------------------
 # Step 4: Daily analytics response serializer
 # ----------------------------
 class DailyAggRowSerializer(serializers.Serializer):

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 5 (KPIs + Top Endpoints)" tests="4" time="0.086">
+  <testsuite name="KPIs — default" id="b166f2ec-3bd8-4b87-9747-4b3cf0510842" timestamp="2025-12-14T13:18:56.793Z" tests="2" failures="0" errors="0" time="0.061">
+    <testcase name="Status is 200" time="0.061" classname="KpIsDefault"/>
+    <testcase name="Has KPI keys" time="0.061" classname="KpIsDefault"/>
+  </testsuite>
+  <testsuite name="KPIs — filtered by service" id="948f8f6a-c3d9-4c06-a158-4cef7dbd3a65" timestamp="2025-12-14T13:18:56.793Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="Status is 200" time="0.009" classname="KpIsFilteredByService"/>
+    <testcase name="Has source" time="0.009" classname="KpIsFilteredByService"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by hits (desc)" id="40167489-793d-450e-80b2-d1a4aa65f3f2" timestamp="2025-12-14T13:18:56.793Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="Status is 200" time="0.009" classname="TopEndpointsByHitsDesc"/>
+    <testcase name="Has source + results array" time="0.009" classname="TopEndpointsByHitsDesc"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by error_rate (desc)" id="5dd98bef-3781-4a59-a74a-d829ba65f57b" timestamp="2025-12-14T13:18:56.793Z" tests="2" failures="0" errors="0" time="0.007">
+    <testcase name="Status is 200" time="0.007" classname="TopEndpointsByErrorRateDesc"/>
+    <testcase name="Has source + results array" time="0.007" classname="TopEndpointsByErrorRateDesc"/>
+  </testsuite>
+</testsuites>

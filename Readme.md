@@ -1,6 +1,6 @@
 # APM Observability (Django + Timescale)
 
-Backend API to store API request logs (service, endpoint, latency, status codes) and expose analytics endpoints (hourly/daily aggregates with TimescaleDB).
+Backend API to store API request logs (service, endpoint, latency, status codes) and expose analytics endpoints (hourly/daily aggregates with TimescaleDB) + KPI endpoints for dashboards.
 
 ## Stack
 
@@ -240,6 +240,152 @@ curl -s "http://127.0.0.1:8000/api/requests/daily/?service=api&endpoint=/health&
 
 ---
 
+## Step 5 — KPIs + Top endpoints (dashboards)
+
+These endpoints are designed for dashboard widgets.
+
+* They use **Timescale CAGGs** (hourly/daily) when possible for fast totals.
+* They **fallback to raw** when needed (e.g. `method` filter or custom `error_from`).
+* `p95` is computed from **raw** using `percentile_cont` for correctness.
+
+> **Requires PostgreSQL.** TimescaleDB is recommended (for fast-path), but raw fallback still works on plain PostgreSQL.
+
+### 5.1) `GET /api/requests/kpis/`
+
+Returns overall KPIs over a time window.
+
+#### Response
+
+```json
+{
+  "hits": 123,
+  "errors": 7,
+  "error_rate": 0.0569,
+  "avg_latency_ms": 42.7,
+  "p95_latency_ms": 120.0,
+  "max_latency_ms": 411,
+  "source": "hourly"
+}
+```
+
+`source` is one of: `hourly`, `daily`, `raw`.
+
+#### Query params (table)
+
+| Param         | Type                  | Default     | Notes                                               |
+| ------------- | --------------------- | ----------- | --------------------------------------------------- |
+| `start`       | ISO datetime/date     | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`    |
+| `end`         | ISO datetime/date     | `now`       | Date-only end uses end-of-day                       |
+| `service`     | string                | —           | Exact match                                         |
+| `endpoint`    | string                | —           | Exact match                                         |
+| `method`      | string                | —           | **Forces raw path** (CAGGs do not include method)   |
+| `error_from`  | int                   | `500`       | If not 500, **forces raw path**                     |
+| `granularity` | `auto\|hourly\|daily` | `auto`      | When `auto`: small ranges → hourly, otherwise daily |
+
+#### cURL examples
+
+Default (last 24h):
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/kpis/" | python -m json.tool
+```
+
+Filtered by service + endpoint:
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/kpis/?service=api&endpoint=/orders" | python -m json.tool
+```
+
+Force hourly totals:
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/kpis/?granularity=hourly" | python -m json.tool
+```
+
+Raw path (method filter):
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/kpis/?service=api&method=GET" | python -m json.tool
+```
+
+Custom error threshold (raw path):
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/kpis/?error_from=400" | python -m json.tool
+```
+
+---
+
+### 5.2) `GET /api/requests/top-endpoints/`
+
+Returns ranked endpoints with metrics.
+
+#### Response (list)
+
+```json
+[
+  {
+    "service": "api",
+    "endpoint": "/orders",
+    "hits": 900,
+    "errors": 12,
+    "error_rate": 0.0133,
+    "avg_latency_ms": 35.2,
+    "p95_latency_ms": 120.0,
+    "max_latency_ms": 410
+  }
+]
+```
+
+#### Query params (table)
+
+| Param         | Type                  | Default     | Notes                                                                                |
+| ------------- | --------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `start`       | ISO datetime/date     | `end - 24h` | Time window                                                                          |
+| `end`         | ISO datetime/date     | `now`       | Time window                                                                          |
+| `service`     | string                | —           | Filter rows                                                                          |
+| `endpoint`    | string                | —           | Filter rows                                                                          |
+| `method`      | string                | —           | **Forces raw**                                                                       |
+| `error_from`  | int                   | `500`       | If not 500, **forces raw**                                                           |
+| `granularity` | `auto\|hourly\|daily` | `auto`      | Used when fast-path is allowed                                                       |
+| `limit`       | int                   | `20`        | Max `200`                                                                            |
+| `sort_by`     | string                | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |
+| `direction`   | `asc\|desc`           | `desc`      | Sort direction                                                                       |
+| `with_p95`    | bool                  | `false`     | If true: computes p95 per returned endpoint (raw query)                              |
+
+#### Notes
+
+* Sorting by `p95_latency_ms` requires raw mode (heavier).
+* When using CAGG fast-path, `with_p95=true` computes p95 only for the returned endpoints (not for the whole table).
+
+#### cURL examples
+
+Top endpoints by hits:
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&sort_by=hits&direction=desc" | python -m json.tool
+```
+
+Top endpoints by error rate:
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&sort_by=error_rate&direction=desc" | python -m json.tool
+```
+
+Include p95 per endpoint:
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&with_p95=true" | python -m json.tool
+```
+
+Force raw (method filter):
+
+```bash
+curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?method=GET&limit=10" | python -m json.tool
+```
+
+---
+
 ## Management commands
 
 ### Refresh daily CAGG manually (Step 4)
@@ -301,6 +447,17 @@ chmod +x scripts/step4_test.sh
 ./scripts/step4_test.sh
 ```
 
+Step 5 (KPIs + Top endpoints):
+
+```bash
+set -a
+source .env
+set +a
+
+chmod +x scripts/step5_test.sh
+./scripts/step5_test.sh
+```
+
 Reports are generated in `reports/`.
 
 ---
@@ -323,17 +480,17 @@ set +a
 python manage.py runserver
 ```
 
-### Daily endpoint returns 501
+### Daily/KPIs/Top endpoints return 501
 
 That means analytics are not available because you’re not using Postgres/Timescale (often SQLite).
 Load `.env` and restart the server (see above).
 
-### Daily endpoint returns 503 (relation/view missing)
+### Daily/Hourly endpoints return 503 (relation/view missing)
 
 That usually means the Timescale view does not exist yet. Ensure:
 
 * You are connected to Postgres
-* Step 4 migration is applied:
+* Step migrations are applied:
 
 ```bash
 python manage.py migrate
@@ -343,4 +500,5 @@ python manage.py migrate
 
 ## Roadmap
 
-* Step 5+: KPI endpoints (p95, error rate, top endpoints), filters, and dashboards support
+* Step 6+: more tests + CI
+* Step 7+: deploy docs + Docker improvements

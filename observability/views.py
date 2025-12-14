@@ -15,6 +15,17 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from .analytics.sql import (
+    AnalyticsFilters,
+    kpis_from_cagg_sql,
+    kpis_from_raw_sql,
+    p95_by_endpoints_from_raw_sql,
+    p95_global_from_raw_sql,
+    select_kpis_source,
+    select_top_endpoints_source,
+    top_endpoints_from_cagg_sql,
+    top_endpoints_from_raw_sql,
+)
 from .guards import postgres_required
 from .models import ApiRequest
 from .serializers import (
@@ -22,6 +33,8 @@ from .serializers import (
     ApiRequestSerializer,
     DailyAggRowSerializer,
     DailyQueryParamsSerializer,
+    KpiQueryParamsSerializer,
+    TopEndpointsQueryParamsSerializer,
 )
 
 
@@ -30,24 +43,19 @@ class NumberInFilter(df_filters.BaseInFilter, df_filters.NumberFilter):
 
 
 class ApiRequestFilter(df_filters.FilterSet):
-    # Time range
     time_after = df_filters.IsoDateTimeFilter(field_name="time", lookup_expr="gte")
     time_before = df_filters.IsoDateTimeFilter(field_name="time", lookup_expr="lte")
 
-    # Common dimensions
     service = df_filters.CharFilter(field_name="service", lookup_expr="iexact")
     endpoint = df_filters.CharFilter(field_name="endpoint", lookup_expr="iexact")
     method = df_filters.CharFilter(field_name="method", lookup_expr="iexact")
 
-    # Status codes
     status_code = df_filters.NumberFilter(field_name="status_code")
     status_code__in = NumberInFilter(field_name="status_code", lookup_expr="in")
 
-    # Latency range
     latency_min = df_filters.NumberFilter(field_name="latency_ms", lookup_expr="gte")
     latency_max = df_filters.NumberFilter(field_name="latency_ms", lookup_expr="lte")
 
-    # Optional identifiers
     trace_id = df_filters.CharFilter(field_name="trace_id", lookup_expr="iexact")
     user_ref = df_filters.CharFilter(field_name="user_ref", lookup_expr="iexact")
 
@@ -137,31 +145,18 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         raise ValidationError({name: "Must be a boolean (true/false)."})
 
     def _get_dt_or_date_qp(self, request, name: str, *, end_of_day: bool = False):
-        """
-        Reads ISO datetime OR ISO date from query params.
-        Returns an aware datetime (UTC) or None if not provided.
-
-        Examples:
-          - 2025-12-14T10:00:00Z
-          - 2025-12-14
-        If a date is provided:
-          - start uses 00:00:00Z
-          - end uses 23:59:59.999999Z (when end_of_day=True)
-        """
         raw = request.query_params.get(name)
         if raw is None or raw == "":
             return None
 
         s = str(raw).strip()
 
-        # Try datetime first
         dt = parse_datetime(s)
         if dt is not None:
             if timezone.is_naive(dt):
                 dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
             return dt.astimezone(dt_timezone.utc)
 
-        # Then try date (YYYY-MM-DD)
         d = parse_date(s)
         if d is not None:
             if end_of_day:
@@ -176,11 +171,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         )
 
     def _parse_ingest_payload(self, data: Any) -> List[Any]:
-        """
-        Accepts:
-          - raw list payload: [{...}, {...}]
-          - wrapper payload: {"events": [{...}, {...}]}
-        """
         if isinstance(data, list):
             return data
 
@@ -283,16 +273,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="hourly")
     @postgres_required("Hourly analytics requires PostgreSQL + TimescaleDB (hypertable + hourly CAGG).")
     def hourly(self, request, *args, **kwargs):
-        """
-        Reads from Timescale continuous aggregate view: apirequest_hourly.
-
-        Query params:
-          - start: ISO datetime OR date (optional; default now-24h)
-          - end: ISO datetime OR date (optional; default now)
-          - service: string (optional)
-          - endpoint: string (optional)
-          - limit: int (optional; default 500; max 5000)
-        """
         limit = self._get_int_qp(request, "limit", default=500, min_value=1, max_value=5000)
 
         start = self._get_dt_or_date_qp(request, "start", end_of_day=False)
@@ -375,21 +355,281 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         return Response(results, status=status.HTTP_200_OK)
 
     # ----------------------------
+    # Step 5 endpoint: /api/requests/kpis/
+    # ----------------------------
+    @action(detail=False, methods=["get"], url_path="kpis")
+    @postgres_required(
+        "KPIs requires PostgreSQL (percentile_cont) and optionally TimescaleDB (CAGG fast-path)."
+    )
+    def kpis(self, request, *args, **kwargs):
+        qp = KpiQueryParamsSerializer(data=request.query_params)
+        qp.is_valid(raise_exception=True)
+        v = qp.validated_data
+
+        now = timezone.now().astimezone(dt_timezone.utc)
+        end = v.get("end") or now
+        start = v.get("start") or (end - timedelta(hours=24))
+
+        if start > end:
+            raise ValidationError({"detail": "`start` must be <= `end`."})
+
+        service = v.get("service")
+        endpoint = v.get("endpoint")
+        method = v.get("method")
+        granularity = v.get("granularity", "auto")
+        error_from = int(v.get("error_from", 500))
+
+        filters_obj = AnalyticsFilters(
+            start=start,
+            end=end,
+            service=service,
+            endpoint=endpoint,
+            method=method,
+        )
+
+        source = select_kpis_source(filters=filters_obj, granularity=granularity, error_from=error_from)
+
+        # totals/errors/avg/max
+        try:
+            if source in ("hourly", "daily"):
+                totals_sql, totals_params = kpis_from_cagg_sql(
+                    granularity=source,  # type: ignore[arg-type]
+                    filters=filters_obj,
+                )
+            else:
+                totals_sql, totals_params = kpis_from_raw_sql(filters=filters_obj, error_from=error_from)
+
+            with connection.cursor() as cursor:
+                cursor.execute(totals_sql, totals_params)
+                totals_row = cursor.fetchone()
+        except ProgrammingError:
+            # Missing CAGG or other SQL issue => raw fallback
+            source = "raw"
+            totals_sql, totals_params = kpis_from_raw_sql(filters=filters_obj, error_from=error_from)
+            with connection.cursor() as cursor:
+                cursor.execute(totals_sql, totals_params)
+                totals_row = cursor.fetchone()
+
+        if not totals_row:
+            hits = 0
+            errors = 0
+            error_rate = 0.0
+            avg_latency_ms = None
+            max_latency_ms = None
+        else:
+            hits, errors, error_rate, avg_latency_ms, max_latency_ms = totals_row
+            hits = int(hits or 0)
+            errors = int(errors or 0)
+            error_rate = float(error_rate or 0.0)
+            avg_latency_ms = float(avg_latency_ms) if avg_latency_ms is not None else None
+            max_latency_ms = int(max_latency_ms) if max_latency_ms is not None else None
+
+        # p95 is always computed from RAW for correctness
+        p95_latency_ms = None
+        p95_sql, p95_params = p95_global_from_raw_sql(filters=filters_obj)
+        with connection.cursor() as cursor:
+            cursor.execute(p95_sql, p95_params)
+            row = cursor.fetchone()
+            if row:
+                p95_latency_ms = float(row[0]) if row[0] is not None else None
+
+        return Response(
+            {
+                "hits": hits,
+                "errors": errors,
+                "error_rate": error_rate,
+                "avg_latency_ms": avg_latency_ms,
+                "p95_latency_ms": p95_latency_ms,
+                "max_latency_ms": max_latency_ms,
+                "source": source,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    # ----------------------------
+    # Step 5 endpoint: /api/requests/top-endpoints/
+    # ----------------------------
+    @action(detail=False, methods=["get"], url_path="top-endpoints")
+    @postgres_required(
+        "Top endpoints requires PostgreSQL (percentile_cont for p95) and optionally TimescaleDB (CAGG fast-path)."
+    )
+    def top_endpoints(self, request, *args, **kwargs):
+        qp = TopEndpointsQueryParamsSerializer(data=request.query_params)
+        qp.is_valid(raise_exception=True)
+        v = qp.validated_data
+
+        now = timezone.now().astimezone(dt_timezone.utc)
+        end = v.get("end") or now
+        start = v.get("start") or (end - timedelta(hours=24))
+        if start > end:
+            raise ValidationError({"detail": "`start` must be <= `end`."})
+
+        service = v.get("service")
+        endpoint = v.get("endpoint")
+        method = v.get("method")
+        granularity = v.get("granularity", "auto")
+        error_from = int(v.get("error_from", 500))
+
+        limit = int(v.get("limit", 20))
+        sort_by = v.get("sort_by", "hits")
+        direction = v.get("direction", "desc")
+
+        with_p95 = self._get_bool_qp(request, "with_p95", default=False)
+
+        filters_obj = AnalyticsFilters(
+            start=start,
+            end=end,
+            service=service,
+            endpoint=endpoint,
+            method=method,
+        )
+
+        source = select_top_endpoints_source(
+            filters=filters_obj,
+            granularity=granularity,
+            error_from=error_from,
+            sort_by=sort_by,
+        )
+
+        try:
+            if source == "raw":
+                include_p95 = with_p95 or (sort_by == "p95_latency_ms")
+                sql, params = top_endpoints_from_raw_sql(
+                    filters=filters_obj,
+                    error_from=error_from,
+                    limit=limit,
+                    sort_by=sort_by,
+                    direction=direction,
+                    include_p95=include_p95,
+                )
+                with connection.cursor() as cursor:
+                    cursor.execute(sql, params)
+                    rows = cursor.fetchall()
+
+                items: List[Dict[str, Any]] = []
+                for r in rows:
+                    if include_p95:
+                        svc, ep, hits, errors, err_rate, avg_lat, max_lat, p95_lat = r
+                    else:
+                        svc, ep, hits, errors, err_rate, avg_lat, max_lat = r
+                        p95_lat = None
+
+                    items.append(
+                        {
+                            "service": svc,
+                            "endpoint": ep,
+                            "hits": int(hits or 0),
+                            "errors": int(errors or 0),
+                            "error_rate": float(err_rate or 0.0),
+                            "avg_latency_ms": float(avg_lat) if avg_lat is not None else None,
+                            "p95_latency_ms": float(p95_lat) if p95_lat is not None else None,
+                            "max_latency_ms": int(max_lat) if max_lat is not None else None,
+                        }
+                    )
+
+                return Response({"source": source, "results": items}, status=status.HTTP_200_OK)
+
+            # hourly/daily CAGG fast-path
+            sql, params = top_endpoints_from_cagg_sql(
+                granularity=source,  # type: ignore[arg-type]
+                filters=filters_obj,
+                limit=limit,
+                sort_by=sort_by,
+                direction=direction,
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
+
+        except ProgrammingError:
+            # Missing CAGG -> raw fallback
+            source = "raw"
+            include_p95 = with_p95
+            sql, params = top_endpoints_from_raw_sql(
+                filters=filters_obj,
+                error_from=500,  # caggs are defined for >=500; fallback uses 500 for consistency
+                limit=limit,
+                sort_by=sort_by if sort_by != "p95_latency_ms" else "hits",
+                direction=direction,
+                include_p95=include_p95,
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
+
+            items: List[Dict[str, Any]] = []
+            for r in rows:
+                if include_p95:
+                    svc, ep, hits, errors, err_rate, avg_lat, max_lat, p95_lat = r
+                else:
+                    svc, ep, hits, errors, err_rate, avg_lat, max_lat = r
+                    p95_lat = None
+
+                items.append(
+                    {
+                        "service": svc,
+                        "endpoint": ep,
+                        "hits": int(hits or 0),
+                        "errors": int(errors or 0),
+                        "error_rate": float(err_rate or 0.0),
+                        "avg_latency_ms": float(avg_lat) if avg_lat is not None else None,
+                        "p95_latency_ms": float(p95_lat) if p95_lat is not None else None,
+                        "max_latency_ms": int(max_lat) if max_lat is not None else None,
+                    }
+                )
+            return Response({"source": source, "results": items}, status=status.HTTP_200_OK)
+
+        # Parse CAGG rows
+        items: List[Dict[str, Any]] = []
+        endpoints_list: List[tuple[str, str]] = []
+        for svc, ep, hits, errors, err_rate, avg_lat, max_lat in rows:
+            endpoints_list.append((svc, ep))
+            items.append(
+                {
+                    "service": svc,
+                    "endpoint": ep,
+                    "hits": int(hits or 0),
+                    "errors": int(errors or 0),
+                    "error_rate": float(err_rate or 0.0),
+                    "avg_latency_ms": float(avg_lat) if avg_lat is not None else None,
+                    "p95_latency_ms": None,
+                    "max_latency_ms": int(max_lat) if max_lat is not None else None,
+                }
+            )
+
+        # Optional p95 for returned endpoints only
+        if with_p95 and endpoints_list:
+            p95_sql, p95_params = p95_by_endpoints_from_raw_sql(
+                filters=AnalyticsFilters(
+                    start=start,
+                    end=end,
+                    service=service,
+                    endpoint=endpoint,
+                    method=None,  # method would have forced raw
+                ),
+                endpoints=endpoints_list,
+            )
+            with connection.cursor() as cursor:
+                cursor.execute(p95_sql, p95_params)
+                p95_rows = cursor.fetchall()
+
+            p95_map: Dict[tuple[str, str], float] = {}
+            for svc, ep, p95_lat in p95_rows:
+                if p95_lat is not None:
+                    p95_map[(svc, ep)] = float(p95_lat)
+
+            for item in items:
+                key = (item["service"], item["endpoint"])
+                item["p95_latency_ms"] = p95_map.get(key)
+
+        return Response({"source": source, "results": items}, status=status.HTTP_200_OK)
+
+    # ----------------------------
     # Step 4 endpoint: /api/requests/daily/
     # ----------------------------
     @action(detail=False, methods=["get"], url_path="daily")
     @postgres_required("Daily analytics requires PostgreSQL + TimescaleDB (daily CAGG).")
     def daily(self, request, *args, **kwargs):
-        """
-        Reads from Timescale continuous aggregate view: apirequest_daily.
-
-        Query params:
-          - start: ISO datetime OR ISO date (optional; default end-7d)
-          - end: ISO datetime OR ISO date (optional; default now)
-          - service: string (optional)
-          - endpoint: string (optional)
-          - limit: int (optional; default 500; max 5000)
-        """
         qp = DailyQueryParamsSerializer(data=request.query_params)
         qp.is_valid(raise_exception=True)
         v = qp.validated_data
@@ -455,7 +695,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
 
         items: List[Dict[str, Any]] = []
         for bucket, svc, ep, hits, errors, avg_latency_ms, p95_latency_ms, max_latency_ms in rows:
-            # Ensure UTC-aware datetime for serializer
             if bucket is not None:
                 if hasattr(bucket, "astimezone"):
                     bucket = bucket.astimezone(dt_timezone.utc)
