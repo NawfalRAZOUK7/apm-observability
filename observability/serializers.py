@@ -271,6 +271,9 @@ class TopEndpointsQueryParamsSerializer(serializers.Serializer):
 
     direction = serializers.ChoiceField(required=False, default="desc", choices=("asc", "desc"))
 
+    # Optional: compute p95 per returned endpoint when using CAGG fast-path
+    with_p95 = serializers.BooleanField(required=False, default=False)
+
     def validate_method(self, value: str) -> str:
         v = value.strip().upper()
         if not v:
