@@ -4,14 +4,22 @@ services:
   db:
     image: timescale/timescaledb:latest-pg16
     container_name: apm_timescaledb
+
+    # Explicit: use the Docker env file (POSTGRES_HOST=db, etc.)
+    env_file:
+      - ../.env.docker
+
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-apm}
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+
     volumes:
       - db_data:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}"]
       interval: 5s
@@ -23,35 +31,47 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: apm_web
+
     depends_on:
       db:
         condition: service_healthy
-    # If you create .env, docker compose will read it automatically.
-    # Keeping env_file here is still nice/explicit.
+
+    # Explicit: use the Docker env file (so POSTGRES_HOST=db)
     env_file:
-      - ../.env
+      - ../.env.docker
+
+    # If you want, you can remove this whole environment: block (env_file is enough).
+    # Keeping it is ok for defaults/clarity.
     environment:
       # Django runtime
       DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
 
-      # DB connection (Django settings should read these)
+      # DB connection
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DB: ${POSTGRES_DB:-apm}
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
 
-      # Optional (useful for some hosted DBs)
+      # Optional
       DB_SSLMODE: ${DB_SSLMODE:-disable}
+
+      # Optional
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-UTC}
+      DRF_PAGE_SIZE: ${DRF_PAGE_SIZE:-50}
+      DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
+
+      # Gunicorn (entrypoint)
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+      GUNICORN_BIND: ${GUNICORN_BIND:-0.0.0.0:8000}
 
     ports:
       - "${WEB_PORT:-8000}:8000"
 
-    # entrypoint.sh (Step 7 TODO #4) will run migrate + collectstatic then start gunicorn
     entrypoint: ["bash", "docker/entrypoint.sh"]
-
     restart: unless-stopped
 
 volumes:

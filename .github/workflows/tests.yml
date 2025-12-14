@@ -8,11 +8,25 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DJANGO_DEBUG: "0"
+  DJANGO_SECRET_KEY: "ci-not-secret"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+  DJANGO_TIME_ZONE: "UTC"
+  DRF_PAGE_SIZE: "50"
+  DB_SSLMODE: "disable"
+  DB_CONN_MAX_AGE: "0"
+
 jobs:
-  test-sqlite:
-    name: Django tests (SQLite)
+  preflight:
+    name: Preflight (install + checks)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -22,31 +36,87 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
 
       - name: Install dependencies
         run: |
+          set -euxo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run migrations + tests (SQLite)
-        env:
-          FORCE_SQLITE: "1"
-          DJANGO_DEBUG: "0"
-          DJANGO_SECRET_KEY: "ci-not-secret"
-          DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+      - name: Basic diagnostics
         run: |
-          python manage.py makemigrations --check --dry-run
-          python manage.py migrate --noinput
-          python manage.py test -v 2
+          set -euxo pipefail
+          python -V
+          pip -V
+          pip freeze | sed -n '1,200p'
 
-  test-postgres:
-    name: Django tests (Postgres)
+      - name: Django system check
+        run: |
+          set -euxo pipefail
+          python manage.py check
+
+      - name: Migrations must be committed (no pending makemigrations)
+        run: |
+          set -euxo pipefail
+          python manage.py makemigrations --check --dry-run
+
+  test-sqlite:
+    name: Tests (SQLite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: preflight
+
+    env:
+      FORCE_SQLITE: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Apply migrations (SQLite)
+        run: |
+          set -euxo pipefail
+          python manage.py migrate --noinput --verbosity 2
+
+      - name: Run tests (SQLite)
+        run: |
+          set -euxo pipefail
+          python manage.py test -v 2 2>&1 | tee test-sqlite.log
+
+      - name: Upload logs (SQLite) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite-logs
+          path: |
+            test-sqlite.log
+
+  test-timescale:
+    name: Tests (TimescaleDB pg16)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    needs: preflight
 
     services:
-      postgres:
-        image: postgres:16
+      db:
+        image: timescale/timescaledb:latest-pg16
         env:
           POSTGRES_DB: apm
           POSTGRES_USER: apm
@@ -57,7 +127,15 @@ jobs:
           --health-cmd "pg_isready -U apm -d apm"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 15
+
+    env:
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_TEST_DB: apm_test
 
     steps:
       - name: Checkout
@@ -67,24 +145,126 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
 
       - name: Install dependencies
         run: |
+          set -euxo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run migrations + tests (Postgres)
-        env:
-          DJANGO_DEBUG: "0"
-          DJANGO_SECRET_KEY: "ci-not-secret"
-          DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
-          POSTGRES_DB: apm
-          POSTGRES_USER: apm
-          POSTGRES_PASSWORD: apm
-          POSTGRES_HOST: 127.0.0.1
-          POSTGRES_PORT: "5432"
-          POSTGRES_TEST_DB: apm_test
+      - name: Install postgres client tools (for diagnostics)
         run: |
-          python manage.py makemigrations --check --dry-run
-          python manage.py migrate --noinput
-          python manage.py test -v 2
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for DB + print DB diagnostics
+        run: |
+          set -euxo pipefail
+          pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "select version();"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "show shared_preload_libraries;"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+
+      - name: Apply migrations (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py migrate --noinput --verbosity 2 2>&1 | tee migrate-timescale.log
+
+      - name: Show migrations plan (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py showmigrations --plan 2>&1 | tee showmigrations-timescale.log
+
+      - name: Run tests (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py test -v 2 2>&1 | tee test-timescale.log
+
+      - name: Upload logs (Timescale) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: timescale-logs
+          path: |
+            migrate-timescale.log
+            showmigrations-timescale.log
+            test-timescale.log
+
+  docker-compose-smoke:
+    name: Docker Compose smoke (build + migrate + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare CI env
+        run: |
+          set -euxo pipefail
+          cp .env.docker .env.docker.ci
+          sed -i 's/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-not-secret/' .env.docker.ci
+          sed -i 's/^DJANGO_DEBUG=.*/DJANGO_DEBUG=0/' .env.docker.ci
+
+      - name: Build + start services
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d --build
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d --wait || true
+
+      - name: Show container status
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps
+
+      - name: Docker logs (db + web) quick view
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs db --tail=200 || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs web --tail=200 || true
+
+      - name: Django checks inside container
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py check
+
+      - name: Migrate inside container
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py migrate --noinput --verbosity 2
+
+      - name: Show migrations plan inside container
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py showmigrations --plan
+
+      - name: Run tests inside container
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py test -v 2
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs --no-color > compose.log || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps || true
+
+      - name: Upload compose logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-logs
+          path: compose.log
+
+      - name: Shutdown
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci down -v --remove-orphans
