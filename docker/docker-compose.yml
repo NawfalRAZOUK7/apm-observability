@@ -18,5 +18,41 @@ services:
       timeout: 5s
       retries: 20
 
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: apm_web
+    depends_on:
+      db:
+        condition: service_healthy
+    # If you create .env, docker compose will read it automatically.
+    # Keeping env_file here is still nice/explicit.
+    env_file:
+      - ../.env
+    environment:
+      # Django runtime
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+
+      # DB connection (Django settings should read these)
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
+      # Optional (useful for some hosted DBs)
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+
+    # entrypoint.sh (Step 7 TODO #4) will run migrate + collectstatic then start gunicorn
+    entrypoint: ["bash", "docker/entrypoint.sh"]
+
+    restart: unless-stopped
+
 volumes:
   db_data:

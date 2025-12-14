@@ -13,6 +13,7 @@ from django_filters import rest_framework as df_filters
 from rest_framework import filters as drf_filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .analytics.sql import (
@@ -716,3 +717,31 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
 
         out = DailyAggRowSerializer(items, many=True)
         return Response(out.data, status=status.HTTP_200_OK)
+
+
+class HealthView(APIView):
+    """
+    GET /api/health/
+    Optional DB check: /api/health/?db=1  (or db=true/yes/on)
+    """
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        db_flag = (request.query_params.get("db") or "").strip().lower()
+        check_db = db_flag in {"1", "true", "yes", "y", "on"}
+
+        if not check_db:
+            return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1;")
+                cursor.fetchone()
+        except Exception as exc:
+            return Response(
+                {"status": "error", "db": "unavailable", "detail": str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response({"status": "ok", "db": "ok"}, status=status.HTTP_200_OK)

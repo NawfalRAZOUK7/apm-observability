@@ -4,10 +4,15 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-sqlite:
     name: Django tests (SQLite)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -27,6 +32,8 @@ jobs:
         env:
           FORCE_SQLITE: "1"
           DJANGO_DEBUG: "0"
+          DJANGO_SECRET_KEY: "ci-not-secret"
+          DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
         run: |
           python manage.py makemigrations --check --dry-run
           python manage.py migrate --noinput
@@ -35,6 +42,7 @@ jobs:
   test-postgres:
     name: Django tests (Postgres)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -68,6 +76,8 @@ jobs:
       - name: Run migrations + tests (Postgres)
         env:
           DJANGO_DEBUG: "0"
+          DJANGO_SECRET_KEY: "ci-not-secret"
+          DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
           POSTGRES_DB: apm
           POSTGRES_USER: apm
           POSTGRES_PASSWORD: apm

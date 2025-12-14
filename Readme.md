@@ -8,21 +8,21 @@ Backend API to store API request logs (service, endpoint, latency, status codes)
 * Django REST Framework
 * django-filter
 * PostgreSQL + TimescaleDB (hypertable + continuous aggregates)
-* Docker Compose (optional for DB)
+* Docker Compose (web + DB)
 * Postman + Newman (smoke tests)
 
 ## Project structure (high level)
 
 * `apm_platform/` — Django project settings + root URLs
 * `observability/` — app: model, serializers, views, filters, tests, migrations
-* `docker/` — docker compose (db services)
+* `docker/` — Docker + docker compose
 * `postman/` — Postman collections + environments
 * `scripts/` — test runner scripts
 * `reports/` — generated test reports (Newman / Step 6 logs)
 
 ---
 
-## Quick start (local)
+## Quick start (local, without Docker)
 
 ### 1) Create virtualenv + install deps
 
@@ -34,10 +34,10 @@ pip install -r requirements.txt
 
 ### 2) Configure DB
 
-#### Option A — Docker DB (recommended)
+#### Option A — Docker DB only
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d db
 ```
 
 #### Option B — Local Postgres
@@ -65,6 +65,97 @@ API base: `http://127.0.0.1:8000`
 
 ---
 
+## Docker (recommended)
+
+This project ships with a production-style Docker setup:
+
+* **TimescaleDB** container (`db`)
+* **Django + Gunicorn + WhiteNoise** container (`web`)
+
+### 1) Create `.env`
+
+Copy the example and edit as needed:
+
+```bash
+cp .env.example .env
+```
+
+### 2) Build + run
+
+```bash
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Open:
+
+* API: `http://127.0.0.1:8000/api/`
+* Health: `http://127.0.0.1:8000/api/health/`
+
+### 3) Useful Docker commands
+
+```bash
+# Stop
+docker compose -f docker/docker-compose.yml down
+
+# Rebuild
+docker compose -f docker/docker-compose.yml up --build
+
+# Tail logs
+docker compose -f docker/docker-compose.yml logs -f web
+
+# Run a Django command inside the container
+docker compose -f docker/docker-compose.yml exec web python manage.py migrate
+```
+
+---
+
+## Environment variables
+
+The settings are **env-first**. If the following are set, Django will use PostgreSQL:
+
+| Variable               |               Example | Required | Notes                                             |
+| ---------------------- | --------------------: | :------: | ------------------------------------------------- |
+| `DJANGO_DEBUG`         |                   `0` |     ✅    | `1` enables debug mode                            |
+| `DJANGO_SECRET_KEY`    |           `change-me` |     ✅    | Must be secret in production                      |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` |     ✅    | Comma-separated                                   |
+| `POSTGRES_HOST`        |                  `db` |     ✅    | In Docker, use `db`                               |
+| `POSTGRES_PORT`        |                `5432` |     ✅    |                                                   |
+| `POSTGRES_DB`          |                 `apm` |     ✅    |                                                   |
+| `POSTGRES_USER`        |                 `apm` |     ✅    |                                                   |
+| `POSTGRES_PASSWORD`    |                 `apm` |     ✅    |                                                   |
+| `DB_SSLMODE`           |             `disable` |     ❌    | For hosted Postgres: `require`, `verify-ca`, etc. |
+| `FORCE_SQLITE`         |                   `0` |     ❌    | `1` forces SQLite even if Postgres vars exist     |
+| `DRF_PAGE_SIZE`        |                  `50` |     ❌    | Default list page size                            |
+| `WEB_PORT`             |                `8000` |     ❌    | Host port when using Docker compose               |
+
+---
+
+## Health endpoint
+
+### `GET /api/health/`
+
+Returns:
+
+```json
+{"status": "ok"}
+```
+
+### Optional DB check
+
+```bash
+curl -s "http://127.0.0.1:8000/api/health/?db=1"
+```
+
+Returns:
+
+```json
+{"status": "ok", "db": "ok"}
+```
+
+If DB is down, returns **503**.
+
+---
+
 ## Database notes (Postgres / Timescale)
 
 This project supports:
@@ -73,20 +164,9 @@ This project supports:
 * **Plain PostgreSQL** — KPI endpoints still work (raw queries + `percentile_cont`), but Timescale-specific features are unavailable.
 * **SQLite** — supported as a **fallback** for local dev and basic CRUD/ingest tests. Analytics endpoints that require Postgres/Timescale may return 501/503 or be skipped in tests.
 
-### Environment variables used by `settings.py`
-
-The settings are **env-first**. If the following are set, Django will use PostgreSQL:
-
-* `POSTGRES_DB`
-* `POSTGRES_USER`
-* `POSTGRES_PASSWORD`
-* `POSTGRES_HOST` (default `localhost`)
-* `POSTGRES_PORT` (default `5432`)
-
 Optional:
 
 * `POSTGRES_TEST_DB` (defaults to `${POSTGRES_DB}_test`)
-* `FORCE_SQLITE=1` (forces SQLite even if Postgres vars exist)
 
 ---
 
@@ -297,15 +377,15 @@ Returns overall KPIs over a time window.
 
 #### Query params
 
-| Param         | Type              | Default     | Notes                                             |        |                                                     |
-| ------------- | ----------------- | ----------- | ------------------------------------------------- | ------ | --------------------------------------------------- |
-| `start`       | ISO datetime/date | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`  |        |                                                     |
-| `end`         | ISO datetime/date | `now`       | Date-only end uses end-of-day                     |        |                                                     |
-| `service`     | string            | —           | Exact match                                       |        |                                                     |
-| `endpoint`    | string            | —           | Exact match                                       |        |                                                     |
-| `method`      | string            | —           | **Forces raw path** (CAGGs do not include method) |        |                                                     |
-| `error_from`  | int               | `500`       | If not 500, **forces raw path**                   |        |                                                     |
-| `granularity` | `auto             | hourly      | daily`                                            | `auto` | When `auto`: small ranges → hourly, otherwise daily |
+| Param         | Type                        | Default     | Notes                                               |
+| ------------- | --------------------------- | ----------- | --------------------------------------------------- |
+| `start`       | ISO datetime/date           | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`    |
+| `end`         | ISO datetime/date           | `now`       | Date-only end uses end-of-day                       |
+| `service`     | string                      | —           | Exact match                                         |
+| `endpoint`    | string                      | —           | Exact match                                         |
+| `method`      | string                      | —           | **Forces raw path** (CAGGs do not include method)   |
+| `error_from`  | int                         | `500`       | If not 500, **forces raw path**                     |
+| `granularity` | `auto` | `hourly` | `daily` | `auto`      | When `auto`: small ranges → hourly, otherwise daily |
 
 #### cURL examples
 
@@ -364,19 +444,19 @@ Returns ranked endpoints with metrics.
 
 #### Query params
 
-| Param         | Type              | Default     | Notes                                                                                |                |                                |
-| ------------- | ----------------- | ----------- | ------------------------------------------------------------------------------------ | -------------- | ------------------------------ |
-| `start`       | ISO datetime/date | `end - 24h` | Time window                                                                          |                |                                |
-| `end`         | ISO datetime/date | `now`       | Time window                                                                          |                |                                |
-| `service`     | string            | —           | Filter rows                                                                          |                |                                |
-| `endpoint`    | string            | —           | Filter rows                                                                          |                |                                |
-| `method`      | string            | —           | **Forces raw**                                                                       |                |                                |
-| `error_from`  | int               | `500`       | If not 500, **forces raw**                                                           |                |                                |
-| `granularity` | `auto             | hourly      | daily`                                                                               | `auto`         | Used when fast-path is allowed |
-| `limit`       | int               | `20`        | Max `200`                                                                            |                |                                |
-| `sort_by`     | string            | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |                |                                |
-| `direction`   | `asc              | desc`       | `desc`                                                                               | Sort direction |                                |
-| `with_p95`    | bool              | `false`     | If true: computes p95 per returned endpoint (raw query)                              |                |                                |
+| Param         | Type                        | Default     | Notes                                                                                |
+| ------------- | --------------------------- | ----------- | ------------------------------------------------------------------------------------ |
+| `start`       | ISO datetime/date           | `end - 24h` | Time window                                                                          |
+| `end`         | ISO datetime/date           | `now`       | Time window                                                                          |
+| `service`     | string                      | —           | Filter rows                                                                          |
+| `endpoint`    | string                      | —           | Filter rows                                                                          |
+| `method`      | string                      | —           | **Forces raw**                                                                       |
+| `error_from`  | int                         | `500`       | If not 500, **forces raw**                                                           |
+| `granularity` | `auto` | `hourly` | `daily` | `auto`      | Used when fast-path is allowed                                                       |
+| `limit`       | int                         | `20`        | Max `200`                                                                            |
+| `sort_by`     | string                      | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |
+| `direction`   | `asc` | `desc`              | `desc`      | Sort direction                                                                       |
+| `with_p95`    | bool                        | `false`     | If true: computes p95 per returned endpoint (raw query)                              |
 
 #### Notes
 
@@ -431,7 +511,7 @@ python manage.py refresh_apirequest_daily --start 2025-12-01 --end 2025-12-14
 
 ## Running tests (Step 6)
 
-### 1) Django unit/API tests
+### Without Docker
 
 Run the whole test suite:
 
@@ -439,24 +519,30 @@ Run the whole test suite:
 python manage.py test
 ```
 
-Or using Makefile:
+Or using Makefile (if you add it):
 
 ```bash
 make test
 ```
 
-### 2) Step 6 strict test runner
-
-Step 6 includes a stricter runner that:
-
-* checks that migrations are up-to-date (`makemigrations --check`)
-* runs migrations
-* runs the full Django test suite
-* writes output to `reports/step6_tests.log`
+Step 6 strict runner (writes logs to `reports/step6_tests.log`):
 
 ```bash
 chmod +x scripts/step6_test.sh
 ./scripts/step6_test.sh
+```
+
+### In Docker
+
+```bash
+# Run Django tests inside the container
+docker compose -f docker/docker-compose.yml exec web python manage.py test
+
+# Run the Step 6 runner inside the container
+docker compose -f docker/docker-compose.yml exec web bash -lc "chmod +x scripts/step6_test.sh && ./scripts/step6_test.sh"
+
+# Run any Step script (example: Step 4)
+docker compose -f docker/docker-compose.yml exec web bash -lc "chmod +x scripts/step4_test.sh && ./scripts/step4_test.sh"
 ```
 
 ### Notes about database support in tests

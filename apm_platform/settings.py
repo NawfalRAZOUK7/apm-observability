@@ -14,6 +14,12 @@ from pathlib import Path
 import os
 import sys
 
+def _env_bool_top(name: str, default: bool = False) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.strip().lower() in {"1", "true", "yes", "y", "on"}
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+DEBUG = _env_bool_top("DJANGO_DEBUG", default=True)
 
 # Comma-separated: "localhost,127.0.0.1"
 ALLOWED_HOSTS = [
@@ -104,6 +110,10 @@ POSTGRES_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
 POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
 POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
 
+# Optional SSL mode for hosted Postgres (examples: disable, require, verify-ca, verify-full)
+DB_SSLMODE = _env("DB_SSLMODE")
+DB_OPTIONS = {"sslmode": DB_SSLMODE} if DB_SSLMODE else {}
+
 HAS_POSTGRES_ENV = all([POSTGRES_NAME, POSTGRES_USER, POSTGRES_PASSWORD])
 
 if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
@@ -118,6 +128,7 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
             "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
             "OPTIONS": {
                 # Keep it empty by default; add sslmode here if needed.
+                DB_OPTIONS,
             },
             "TEST": {
                 "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
@@ -174,6 +185,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# WhiteNoise: collectstatic output directory (served by WhiteNoise)
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Django 4.2+ (incl. Django 6): configure staticfiles backend via STORAGES
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Backward-compatible setting (may be deprecated on newer Django)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
