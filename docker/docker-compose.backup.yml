@@ -1,0 +1,106 @@
+version: "3.9"
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: apm_timescaledb_backup
+    env_file:
+      - ../.env.docker
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data_backup:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: apm_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  minio-mc:
+    image: minio/mc:latest
+    container_name: apm_minio_mc
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -eux
+      mc alias set local http://minio:9000 "${MINIO_ROOT_USER:-minioadmin}" "${MINIO_ROOT_PASSWORD:-minioadmin}"
+      mc mb -p local/pgbackrest || true
+      mc anonymous set none local/pgbackrest || true
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+
+  pgbackrest:
+    image: pgbackrest/pgbackrest:2.51
+    container_name: apm_pgbackrest
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      PGBACKREST_STANZA: apm
+    volumes:
+      - db_data_backup:/var/lib/postgresql/data:ro
+      - pgbackrest_conf:/etc/pgbackrest
+      - pgbackrest_spool:/var/spool/pgbackrest
+      - pgbackrest_logs:/var/log/pgbackrest
+      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -eux
+      if [ ! -f /var/spool/pgbackrest/stanza.created ]; then
+        pgbackrest --stanza=apm --log-level-console=info stanza-create && touch /var/spool/pgbackrest/stanza.created
+      fi
+      tail -f /dev/null
+
+  pgbackrest-cron:
+    image: pgbackrest/pgbackrest:2.51
+    container_name: apm_pgbackrest_cron
+    depends_on:
+      db:
+        condition: service_healthy
+      pgbackrest:
+        condition: service_started
+    volumes:
+      - db_data_backup:/var/lib/postgresql/data:ro
+      - pgbackrest_conf:/etc/pgbackrest
+      - pgbackrest_spool:/var/spool/pgbackrest
+      - pgbackrest_logs:/var/log/pgbackrest
+      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -eux
+      echo "0 3 * * * pgbackrest --stanza=apm --type=full backup >> /var/log/pgbackrest/cron.log 2>&1" > /etc/crontabs/root
+      echo "*/30 * * * * pgbackrest --stanza=apm check >> /var/log/pgbackrest/cron.log 2>&1" >> /etc/crontabs/root
+      crond -f -L /var/log/pgbackrest/cron-crond.log
+
+volumes:
+  db_data_backup:
+  minio_data:
+  pgbackrest_conf:
+  pgbackrest_spool:
+  pgbackrest_logs:
