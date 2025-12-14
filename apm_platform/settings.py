@@ -21,13 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u7qs)ghzd^=jieqjz7wyh$1#gw3x4)h9&$3%ey$)do=&44dfa&'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-ALLOWED_HOSTS = []
-
+# Comma-separated: "localhost,127.0.0.1"
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()
+]
 
 # Application definition
 
@@ -79,19 +81,36 @@ TEMPLATES = [
 WSGI_APPLICATION = 'apm_platform.wsgi.application'
 
 
-# Database
+# --- Database (env-first, docker-friendly) ---
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# Supports either POSTGRES_* or DB_* env vars.
+DB_NAME = os.environ.get("POSTGRES_DB") or os.environ.get("DB_NAME")
+DB_USER = os.environ.get("POSTGRES_USER") or os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD") or os.environ.get("DB_PASSWORD")
+DB_HOST = os.environ.get("POSTGRES_HOST") or os.environ.get("DB_HOST", "localhost")
+DB_PORT = os.environ.get("POSTGRES_PORT") or os.environ.get("DB_PORT", "5432")
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "apm"),
-        "USER": os.getenv("POSTGRES_USER", "apm"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "apm"),
-        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+
+if DB_NAME and DB_USER:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": DB_NAME,
+            "USER": DB_USER,
+            "PASSWORD": DB_PASSWORD or "",
+            "HOST": DB_HOST,
+            "PORT": DB_PORT,
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+        }
     }
-}
+else:
+    # Fallback for quick local runs if env vars aren't set
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -118,7 +137,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = os.environ.get("DJANGO_TIME_ZONE", "UTC")
 
 USE_I18N = True
 
@@ -129,3 +148,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Django REST Framework defaults ---
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.OrderingFilter",
+        "rest_framework.filters.SearchFilter",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": int(os.environ.get("DRF_PAGE_SIZE", "50")),
+}

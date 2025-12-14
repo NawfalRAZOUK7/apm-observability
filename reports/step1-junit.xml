@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability - Step 1 (CRUD + Filters)" tests="14" time="0.125">
+  <testsuite name="00 - Create sample A (older time, 500)" id="b6cb8cbc-749b-48aa-84fe-94bab3108c68" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.037">
+    <testcase name="Status 201" time="0.037" classname="00CreateSampleAOlderTime500"/>
+  </testsuite>
+  <testsuite name="01 - Create sample B (newer time, latency 100)" id="c6924dac-1123-41f3-8875-c10ffca1a5ce" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.007">
+    <testcase name="Status 201" time="0.007" classname="01CreateSampleBNewerTimeLatency100"/>
+  </testsuite>
+  <testsuite name="02 - Create sample C (newer time, latency 200)" id="f6ae6746-501e-4a5c-8f41-bb9b870c42da" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.006">
+    <testcase name="Status 201" time="0.006" classname="02CreateSampleCNewerTimeLatency200"/>
+  </testsuite>
+  <testsuite name="10 - GET list (default ordering -time)" id="9e5f8b2c-5ae0-42d0-923d-cf1eebbe8463" timestamp="2025-12-14T01:44:35.946Z" tests="3" failures="0" errors="0" time="0.006">
+    <testcase name="Status 200" time="0.006" classname="10GetListDefaultOrderingTime"/>
+    <testcase name="Has array" time="0.006" classname="10GetListDefaultOrderingTime"/>
+    <testcase name="Ordered by -time (non-increasing)" time="0.006" classname="10GetListDefaultOrderingTime"/>
+  </testsuite>
+  <testsuite name="11 - Filter: service=auth" id="74802e7b-6a8a-4817-85bb-31426c4177a7" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.007">
+    <testcase name="Status 200" time="0.007" classname="11FilterServiceAuth"/>
+    <testcase name="All service=auth" time="0.007" classname="11FilterServiceAuth"/>
+  </testsuite>
+  <testsuite name="12 - Filter: status_code=500" id="da8d7d40-82fb-4101-8eff-e8189419bbc7" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.009">
+    <testcase name="Status 200" time="0.009" classname="12FilterStatusCode500"/>
+    <testcase name="All status_code=500" time="0.009" classname="12FilterStatusCode500"/>
+  </testsuite>
+  <testsuite name="13 - Filter: latency 120..220" id="083c38f9-5814-40a4-98aa-7506acdcbb67" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.006">
+    <testcase name="Status 200" time="0.006" classname="13FilterLatency120220"/>
+    <testcase name="All latency within range" time="0.006" classname="13FilterLatency120220"/>
+  </testsuite>
+  <testsuite name="14 - Filter: time range 01:11..01:13" id="186c6827-9a13-4c12-b5ef-4086941c4f93" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.007">
+    <testcase name="Status 200" time="0.007" classname="14FilterTimeRange01110113"/>
+    <testcase name="All time within range" time="0.007" classname="14FilterTimeRange01110113"/>
+  </testsuite>
+  <testsuite name="15 - Ordering: -time,latency_ms" id="217d7093-a098-4c88-9fc0-252a170b17a2" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.007">
+    <testcase name="Status 200" time="0.007" classname="15OrderingTimeLatencyMs"/>
+    <testcase name="Has array" time="0.007" classname="15OrderingTimeLatencyMs"/>
+  </testsuite>
+  <testsuite name="20 - GET detail (id_b)" id="bf148963-7379-4b44-b382-859695d45b99" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.007">
+    <testcase name="Status 200" time="0.007" classname="20GetDetailIdB"/>
+  </testsuite>
+  <testsuite name="21 - PATCH update (id_b -> latency_ms=111)" id="76630b0a-67fd-4473-8918-2d89d9a28eba" timestamp="2025-12-14T01:44:35.946Z" tests="2" failures="0" errors="0" time="0.008">
+    <testcase name="Status 200" time="0.008" classname="21PatchUpdateIdBLatencyMs111"/>
+    <testcase name="Latency updated" time="0.008" classname="21PatchUpdateIdBLatencyMs111"/>
+  </testsuite>
+  <testsuite name="90 - DELETE sample A" id="02b75198-fea3-4495-8227-59df1d5a7587" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.006">
+    <testcase name="Status 204" time="0.006" classname="90DeleteSampleA"/>
+  </testsuite>
+  <testsuite name="91 - DELETE sample B" id="a98df5c6-b95e-4eea-a45d-f24c7039825f" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.005">
+    <testcase name="Status 204" time="0.005" classname="91DeleteSampleB"/>
+  </testsuite>
+  <testsuite name="92 - DELETE sample C" id="435c319d-0b48-464c-a098-996f4705bd96" timestamp="2025-12-14T01:44:35.946Z" tests="1" failures="0" errors="0" time="0.007">
+    <testcase name="Status 204" time="0.007" classname="92DeleteSampleC"/>
+  </testsuite>
+</testsuites>

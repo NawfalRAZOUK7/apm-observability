@@ -1,0 +1,322 @@
+{
+  "info": {
+    "name": "APM Observability - Step 1 (CRUD + Filters)",
+    "_postman_id": "0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01",
+    "description": "Step 1 smoke tests for ApiRequest CRUD + filtering/ordering/search.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 - Create sample A (older time, 500)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.environment.set('id_a', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"time\": \"2025-12-14T01:10:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 500,\n  \"latency_ms\": 150,\n  \"trace_id\": \"tr_a\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
+        }
+      }
+    },
+    {
+      "name": "01 - Create sample B (newer time, latency 100)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.environment.set('id_b', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"time\": \"2025-12-14T01:12:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 200,\n  \"latency_ms\": 100,\n  \"trace_id\": \"tr_b\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
+        }
+      }
+    },
+    {
+      "name": "02 - Create sample C (newer time, latency 200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.environment.set('id_c', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"time\": \"2025-12-14T01:12:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 200,\n  \"latency_ms\": 200,\n  \"trace_id\": \"tr_c\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
+        }
+      }
+    },
+    {
+      "name": "10 - GET list (default ordering -time)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('Has array', () => pm.expect(items).to.be.an('array'));",
+              "if (items.length >= 2) {",
+              "  const t0 = Date.parse(items[0].time);",
+              "  const t1 = Date.parse(items[1].time);",
+              "  pm.test('Ordered by -time (non-increasing)', () => pm.expect(t0).to.be.at.least(t1));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] }
+      }
+    },
+    {
+      "name": "11 - Filter: service=auth",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('All service=auth', () => items.forEach(x => pm.expect(x.service).to.eql('auth')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/?service=auth",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""],
+          "query": [{ "key": "service", "value": "auth" }]
+        }
+      }
+    },
+    {
+      "name": "12 - Filter: status_code=500",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('All status_code=500', () => items.forEach(x => pm.expect(x.status_code).to.eql(500)));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/?status_code=500",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""],
+          "query": [{ "key": "status_code", "value": "500" }]
+        }
+      }
+    },
+    {
+      "name": "13 - Filter: latency 120..220",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('All latency within range', () => items.forEach(x => {",
+              "  pm.expect(x.latency_ms).to.be.at.least(120);",
+              "  pm.expect(x.latency_ms).to.be.at.most(220);",
+              "}));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/?latency_ms__gte=120&latency_ms__lte=220",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""],
+          "query": [
+            { "key": "latency_ms__gte", "value": "120" },
+            { "key": "latency_ms__lte", "value": "220" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "14 - Filter: time range 01:11..01:13",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "const after = Date.parse('2025-12-14T01:11:00Z');",
+              "const before = Date.parse('2025-12-14T01:13:00Z');",
+              "pm.test('All time within range', () => items.forEach(x => {",
+              "  const t = Date.parse(x.time);",
+              "  pm.expect(t).to.be.at.least(after);",
+              "  pm.expect(t).to.be.at.most(before);",
+              "}));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/?time_after=2025-12-14T01:11:00Z&time_before=2025-12-14T01:13:00Z",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""],
+          "query": [
+            { "key": "time_after", "value": "2025-12-14T01:11:00Z" },
+            { "key": "time_before", "value": "2025-12-14T01:13:00Z" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "15 - Ordering: -time,latency_ms",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "const items = Array.isArray(body) ? body : (body.results || []);",
+              "pm.test('Has array', () => pm.expect(items).to.be.an('array'));",
+              "for (let i = 0; i < items.length - 1; i++) {",
+              "  const a = items[i];",
+              "  const b = items[i + 1];",
+              "  const ta = Date.parse(a.time);",
+              "  const tb = Date.parse(b.time);",
+              "  if (ta === tb) {",
+              "    pm.expect(a.latency_ms).to.be.at.most(b.latency_ms);",
+              "  } else {",
+              "    pm.expect(ta).to.be.at.least(tb);",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/?ordering=-time,latency_ms",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""],
+          "query": [{ "key": "ordering", "value": "-time,latency_ms" }]
+        }
+      }
+    },
+    {
+      "name": "20 - GET detail (id_b)",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] }
+      }
+    },
+    {
+      "name": "21 - PATCH update (id_b -> latency_ms=111)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('Latency updated', () => pm.expect(body.latency_ms).to.eql(111));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] },
+        "body": { "mode": "raw", "raw": "{\n  \"latency_ms\": 111\n}" }
+      }
+    },
+    {
+      "name": "90 - DELETE sample A",
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{base_url}}/api/requests/{{id_a}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_a}}", ""] }
+      }
+    },
+    {
+      "name": "91 - DELETE sample B",
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] }
+      }
+    },
+    {
+      "name": "92 - DELETE sample C",
+      "event": [
+        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{base_url}}/api/requests/{{id_c}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_c}}", ""] }
+      }
+    }
+  ]
+}
