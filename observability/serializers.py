@@ -48,3 +48,32 @@ class ApiRequestSerializer(serializers.ModelSerializer):
         if not isinstance(value, dict):
             raise serializers.ValidationError("tags must be a JSON object (dictionary).")
         return value
+
+
+class ApiRequestIngestItemSerializer(ApiRequestSerializer):
+    """
+    Validates ONE ingested event.
+    Reuses the exact same validation rules as CRUD by inheriting ApiRequestSerializer.
+    """
+
+    class Meta(ApiRequestSerializer.Meta):
+        # Same as CRUD minus "id" (ingest payload shouldn't send it)
+        fields = [
+            "time",
+            "service",
+            "endpoint",
+            "method",
+            "status_code",
+            "latency_ms",
+            "trace_id",
+            "user_ref",
+            "tags",
+        ]
+        read_only_fields = []
+
+        # Make optional fields optional for ingestion payloads
+        extra_kwargs = {
+            "trace_id": {"required": False, "allow_null": True, "allow_blank": True},
+            "user_ref": {"required": False, "allow_null": True, "allow_blank": True},
+            "tags": {"required": False},
+        }

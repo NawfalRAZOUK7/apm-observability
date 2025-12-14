@@ -161,3 +161,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("DRF_PAGE_SIZE", "50")),
 }
+
+# --- APM ingestion defaults (Step 2) ---
+# Used by /api/requests/ingest/ (can be overridden via query params)
+APM_INGEST_BATCH_SIZE = 1000       # bulk_create batch size
+APM_INGEST_MAX_EVENTS = 50_000     # max number of events accepted per request
+APM_INGEST_MAX_ERRORS = 25         # max number of per-item error details returned

@@ -4,7 +4,11 @@ from rest_framework.routers import DefaultRouter
 
 from .views import ApiRequestViewSet
 
-router = DefaultRouter()
+class OptionalSlashRouter(DefaultRouter):
+    trailing_slash = "/?"
+
+
+router = OptionalSlashRouter()
 router.register(r"requests", ApiRequestViewSet, basename="apirequest")
 
 urlpatterns = [
