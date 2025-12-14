@@ -206,12 +206,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      - name: Verify env files
-        run: |
-          set -euxo pipefail
-          ls -la .env* || true
-          test -f .env.docker
 
       - name: Prepare CI env
         run: |
@@ -219,49 +213,39 @@ jobs:
           cp .env.docker .env.docker.ci
           sed -i 's/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-not-secret/' .env.docker.ci
           sed -i 's/^DJANGO_DEBUG=.*/DJANGO_DEBUG=0/' .env.docker.ci
+          # Reduce any accidental runtime overhead if web ever starts
+          echo "GUNICORN_WORKERS=1" >> .env.docker.ci
+          echo "GUNICORN_TIMEOUT=60" >> .env.docker.ci
 
-      - name: Build + start services
+      - name: Build image (web)
         run: |
           set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d --build
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d --wait || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci build web
 
-      - name: Show container status
+      - name: Start DB only
         run: |
           set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d db
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps
 
-      - name: Docker logs (db + web) quick view
+      - name: Run checks + migrate + tests (one-off web container)
         run: |
           set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs db --tail=200 || true
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs web --tail=200 || true
-
-      - name: Django checks inside container
-        run: |
-          set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py check
-
-      - name: Migrate inside container
-        run: |
-          set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py migrate --noinput --verbosity 2
-
-      - name: Show migrations plan inside container
-        run: |
-          set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py showmigrations --plan
-
-      - name: Run tests inside container
-        run: |
-          set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T web python manage.py test -v 2
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci run --rm --no-deps \
+            --entrypoint bash web -lc "
+              python manage.py check &&
+              python manage.py migrate --noinput --verbosity 2 &&
+              python manage.py showmigrations --plan &&
+              python manage.py test -v 2
+            "
 
       - name: Dump logs on failure
         if: failure()
         run: |
-          docker compose -f docker/docker-compose.yml logs --no-color > compose.log || true
-          docker compose -f docker/docker-compose.yml ps || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs --no-color > compose.log || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps || true
+          free -m || true
+          docker stats --no-stream || true
 
       - name: Upload compose logs on failure
         if: failure()
@@ -273,4 +257,4 @@ jobs:
       - name: Shutdown
         if: always()
         run: |
-          docker compose -f docker/docker-compose.yml down -v --remove-orphans || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci down -v --remove-orphans || true
