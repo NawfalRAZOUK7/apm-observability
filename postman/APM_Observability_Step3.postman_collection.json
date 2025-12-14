@@ -1,0 +1,204 @@
+{
+  "info": {
+    "_postman_id": "f2cfe8a6-9d5f-4c7b-9a8c-4f6c7a0d3c33",
+    "name": "APM Observability — Step 3 (Timescale Hourly)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Seed — ingest sample (strict=true)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Generate dynamic timestamps so the collection works any day/time",
+              "const now = new Date();",
+              "const iso = (d) => d.toISOString();",
+              "",
+              "// Events inside the last ~2 hours",
+              "pm.collectionVariables.set('t1', iso(new Date(now.getTime() - 2 * 60 * 60 * 1000)));",
+              "pm.collectionVariables.set('t2', iso(new Date(now.getTime() - 90 * 60 * 1000)));",
+              "pm.collectionVariables.set('t3', iso(new Date(now.getTime() - 60 * 60 * 1000)));",
+              "",
+              "// Query window: last 4 hours",
+              "pm.collectionVariables.set('start', iso(new Date(now.getTime() - 4 * 60 * 60 * 1000)));",
+              "pm.collectionVariables.set('end', iso(new Date(now.getTime() + 5 * 60 * 1000)));",
+              "",
+              "// Default base_url if user didn't set it elsewhere",
+              "if (!pm.collectionVariables.get('base_url')) {",
+              "  pm.collectionVariables.set('base_url', 'http://127.0.0.1:8000');",
+              "}"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "pm.test('Has inserted/rejected fields', function () {",
+              "  pm.expect(json).to.have.property('inserted');",
+              "  pm.expect(json).to.have.property('rejected');",
+              "});",
+              "",
+              "pm.test('Inserted >= 1', function () {",
+              "  pm.expect(json.inserted).to.be.a('number');",
+              "  pm.expect(json.inserted).to.be.at.least(1);",
+              "});",
+              "",
+              "pm.test('Errors is an array', function () {",
+              "  pm.expect(json.errors).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/requests/ingest/?strict=true",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "ingest", ""],
+          "query": [
+            { "key": "strict", "value": "true" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\"time\":\"{{t1}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":200,\"latency_ms\":120,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t2}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":503,\"latency_ms\":540,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t3}}\",\"service\":\"auth\",\"endpoint\":\"/login\",\"method\":\"POST\",\"status_code\":201,\"latency_ms\":230,\"tags\":{\"source\":\"postman-step3\"}}\n]\n"
+        }
+      }
+    },
+    {
+      "name": "Hourly — billing /x (last 4h)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+              "  pm.expect([200, 501]).to.include(pm.response.code);",
+              "});",
+              "",
+              "if (pm.response.code === 501) {",
+              "  const j = pm.response.json();",
+              "  pm.test('Has detail for SQLite guard', function () {",
+              "    pm.expect(j).to.have.property('detail');",
+              "    pm.expect(j).to.have.property('db_vendor');",
+              "  });",
+              "  return;",
+              "}",
+              "",
+              "const rows = pm.response.json();",
+              "pm.test('Response is an array', function () {",
+              "  pm.expect(rows).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('At least 1 row', function () {",
+              "  pm.expect(rows.length).to.be.at.least(1);",
+              "});",
+              "",
+              "const r = rows[0];",
+              "pm.test('Row has required fields', function () {",
+              "  pm.expect(r).to.have.property('bucket');",
+              "  pm.expect(r).to.have.property('service');",
+              "  pm.expect(r).to.have.property('endpoint');",
+              "  pm.expect(r).to.have.property('hits');",
+              "  pm.expect(r).to.have.property('errors');",
+              "  pm.expect(r).to.have.property('avg_latency_ms');",
+              "  pm.expect(r).to.have.property('max_latency_ms');",
+              "});",
+              "",
+              "pm.test('Types look correct', function () {",
+              "  pm.expect(r.bucket).to.be.a('string');",
+              "  pm.expect(r.service).to.be.a('string');",
+              "  pm.expect(r.endpoint).to.be.a('string');",
+              "  pm.expect(r.hits).to.be.a('number');",
+              "  pm.expect(r.errors).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('bucket is UTC-like (ends with Z)', function () {",
+              "  pm.expect(r.bucket.endsWith('Z')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/hourly/?start={{start}}&end={{end}}&service=billing&endpoint=/x&limit=1000",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "hourly", ""],
+          "query": [
+            { "key": "start", "value": "{{start}}" },
+            { "key": "end", "value": "{{end}}" },
+            { "key": "service", "value": "billing" },
+            { "key": "endpoint", "value": "/x" },
+            { "key": "limit", "value": "1000" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Hourly — all services (last 4h)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+              "  pm.expect([200, 501]).to.include(pm.response.code);",
+              "});",
+              "",
+              "if (pm.response.code === 501) return;",
+              "",
+              "const rows = pm.response.json();",
+              "pm.test('Response is an array', function () {",
+              "  pm.expect(rows).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('At least 1 row', function () {",
+              "  pm.expect(rows.length).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/requests/hourly/?start={{start}}&end={{end}}&limit=1000",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "hourly", ""],
+          "query": [
+            { "key": "start", "value": "{{start}}" },
+            { "key": "end", "value": "{{end}}" },
+            { "key": "limit", "value": "1000" }
+          ]
+        }
+      }
+    }
+  ],
+  "event": [],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "start", "value": "" },
+    { "key": "end", "value": "" },
+    { "key": "t1", "value": "" },
+    { "key": "t2", "value": "" },
+    { "key": "t3", "value": "" }
+  ]
+}

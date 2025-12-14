@@ -1,16 +1,21 @@
 # observability/views.py
 from __future__ import annotations
 
+from datetime import timedelta, timezone as dt_timezone
 from typing import Any, Dict, List, Optional
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
+from django.db.utils import ProgrammingError
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django_filters import rest_framework as df_filters
 from rest_framework import filters as drf_filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from .guards import postgres_required
 from .models import ApiRequest
 from .serializers import ApiRequestIngestItemSerializer, ApiRequestSerializer
 
@@ -87,7 +92,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     ]
 
     # ----------------------------
-    # Step 2 helpers
+    # Helpers (query params)
     # ----------------------------
     def _get_int_qp(
         self,
@@ -126,6 +131,24 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
 
         raise ValidationError({name: "Must be a boolean (true/false)."})
 
+    def _get_dt_qp(self, request, name: str):
+        """
+        Reads ISO datetime from query params.
+        Returns an aware datetime (UTC) or None if not provided.
+        """
+        raw = request.query_params.get(name)
+        if raw is None or raw == "":
+            return None
+
+        dt = parse_datetime(str(raw))
+        if dt is None:
+            raise ValidationError({name: "Must be an ISO datetime (e.g. 2025-12-14T10:00:00Z)."})
+
+        if timezone.is_naive(dt):
+            dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
+
+        return dt.astimezone(dt_timezone.utc)
+
     def _parse_ingest_payload(self, data: Any) -> List[Any]:
         """
         Accepts:
@@ -148,7 +171,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         raise ValidationError({"detail": "Expected JSON list or object payload."})
 
     # ----------------------------
-    # Step 2 endpoint
+    # Step 2 endpoint: /api/requests/ingest/
     # ----------------------------
     @action(detail=False, methods=["post"], url_path="ingest")
     def ingest(self, request, *args, **kwargs):
@@ -156,7 +179,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         settings_max_errors = int(getattr(settings, "APM_INGEST_MAX_ERRORS", 25))
         settings_batch_size = int(getattr(settings, "APM_INGEST_BATCH_SIZE", 1000))
 
-        # Overrides allowed, but cannot exceed settings maxima
         max_events = self._get_int_qp(
             request, "max_events", settings_max_events, min_value=1, max_value=settings_max_events
         )
@@ -184,7 +206,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         invalid_found = False
 
         for idx, item in enumerate(events):
-            # tolerate non-dict items: count as invalid, continue
             if not isinstance(item, dict):
                 invalid_found = True
                 if len(errors) < max_errors:
@@ -204,7 +225,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 if len(errors) < max_errors:
                     errors.append({"index": idx, "errors": ser.errors})
 
-        # Strict mode: reject entire request if any invalid item
         if strict and invalid_found:
             return Response(
                 {
@@ -216,7 +236,6 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Normal mode: insert only valid rows
         instances: List[ApiRequest] = [ApiRequest(**row) for row in validated_rows]
 
         inserted = 0
@@ -231,3 +250,100 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
             {"inserted": inserted, "rejected": rejected, "errors": errors},
             status=status.HTTP_200_OK,
         )
+
+    # ----------------------------
+    # Step 3 endpoint: /api/requests/hourly/
+    # ----------------------------
+    @action(detail=False, methods=["get"], url_path="hourly")
+    @postgres_required("Hourly analytics requires PostgreSQL + TimescaleDB (hypertable + hourly CAGG).")
+    def hourly(self, request, *args, **kwargs):
+        """
+        Reads from Timescale continuous aggregate view: apirequest_hourly.
+
+        Query params:
+          - start: ISO datetime (optional; default now-24h)
+          - end: ISO datetime (optional; default now)
+          - service: string (optional)
+          - endpoint: string (optional)
+          - limit: int (optional; default 500; max 5000)
+        """
+        limit = self._get_int_qp(request, "limit", default=500, min_value=1, max_value=5000)
+
+        start = self._get_dt_qp(request, "start")
+        end = self._get_dt_qp(request, "end")
+
+        now = timezone.now().astimezone(dt_timezone.utc)
+        if end is None:
+            end = now
+        if start is None:
+            start = end - timedelta(hours=24)
+
+        if start > end:
+            raise ValidationError({"detail": "`start` must be <= `end`."})
+
+        service = request.query_params.get("service")
+        endpoint = request.query_params.get("endpoint")
+
+        where_clauses: List[str] = ["bucket >= %s", "bucket <= %s"]
+        params: List[Any] = [start, end]
+
+        if service:
+            where_clauses.append("service = %s")
+            params.append(service)
+
+        if endpoint:
+            where_clauses.append("endpoint = %s")
+            params.append(endpoint)
+
+        where_sql = " AND ".join(where_clauses)
+
+        sql = f"""
+            SELECT
+                bucket,
+                service,
+                endpoint,
+                hits,
+                errors,
+                avg_latency_ms,
+                max_latency_ms
+            FROM apirequest_hourly
+            WHERE {where_sql}
+            ORDER BY bucket DESC, service ASC, endpoint ASC
+            LIMIT %s
+        """
+        params.append(limit)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql, params)
+                rows = cursor.fetchall()
+        except ProgrammingError as e:
+            return Response(
+                {
+                    "detail": "Hourly aggregate view is not available yet. Did you apply Step 3 migrations?",
+                    "hint": "Run: python manage.py migrate",
+                    "error": str(e),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        results: List[Dict[str, Any]] = []
+        for bucket, svc, ep, hits, errors, avg_latency_ms, max_latency_ms in rows:
+            if hasattr(bucket, "astimezone"):
+                bucket_iso = bucket.astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z")
+            else:
+                bucket_iso = str(bucket)
+
+            results.append(
+                {
+                    "bucket": bucket_iso,
+                    "service": svc,
+                    "endpoint": ep,
+                    "hits": int(hits) if hits is not None else 0,
+                    "errors": int(errors) if errors is not None else 0,
+                    "avg_latency_ms": float(avg_latency_ms) if avg_latency_ms is not None else None,
+                    "max_latency_ms": int(max_latency_ms) if max_latency_ms is not None else None,
+                }
+            )
+
+        return Response(results, status=status.HTTP_200_OK)

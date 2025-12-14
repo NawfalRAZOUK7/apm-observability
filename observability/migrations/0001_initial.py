@@ -1,11 +1,10 @@
-# observability/migrations/0001_initial.py
+from __future__ import annotations
+
 from django.db import migrations, models
-import django.db.models.deletion
 from django.db.models import Q
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -18,7 +17,22 @@ class Migration(migrations.Migration):
                 ("time", models.DateTimeField(db_index=True)),
                 ("service", models.CharField(db_index=True, max_length=100)),
                 ("endpoint", models.CharField(db_index=True, max_length=255)),
-                ("method", models.CharField(choices=[("GET", "GET"), ("POST", "POST"), ("PUT", "PUT"), ("PATCH", "PATCH"), ("DELETE", "DELETE"), ("HEAD", "HEAD"), ("OPTIONS", "OPTIONS")], db_index=True, max_length=10)),
+                (
+                    "method",
+                    models.CharField(
+                        choices=[
+                            ("GET", "GET"),
+                            ("POST", "POST"),
+                            ("PUT", "PUT"),
+                            ("PATCH", "PATCH"),
+                            ("DELETE", "DELETE"),
+                            ("HEAD", "HEAD"),
+                            ("OPTIONS", "OPTIONS"),
+                        ],
+                        db_index=True,
+                        max_length=10,
+                    ),
+                ),
                 ("status_code", models.PositiveSmallIntegerField(db_index=True)),
                 ("latency_ms", models.PositiveIntegerField(db_index=True)),
                 ("trace_id", models.CharField(blank=True, db_index=True, max_length=128, null=True)),
@@ -51,6 +65,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="apirequest",
-            constraint=models.CheckConstraint(condition=Q(("status_code__gte", 100), ("status_code__lte", 599)), name="api_req_status_code_valid_http"),
+            constraint=models.CheckConstraint(
+                condition=Q(("status_code__gte", 100), ("status_code__lte", 599)),
+                name="api_req_status_code_valid_http",
+            ),
         ),
     ]
