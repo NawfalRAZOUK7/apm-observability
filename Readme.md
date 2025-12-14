@@ -4,21 +4,21 @@ Backend API to store API request logs (service, endpoint, latency, status codes)
 
 ## Stack
 
-* Django
-* Django REST Framework
-* django-filter
-* PostgreSQL + TimescaleDB (hypertable + continuous aggregates)
-* Docker Compose (web + DB)
-* Postman + Newman (smoke tests)
+- Django
+- Django REST Framework
+- django-filter
+- PostgreSQL + TimescaleDB (hypertable + continuous aggregates)
+- Docker Compose (web + DB)
+- Postman + Newman (smoke tests)
 
 ## Project structure (high level)
 
-* `apm_platform/` — Django project settings + root URLs
-* `observability/` — app: model, serializers, views, filters, tests, migrations
-* `docker/` — Docker + docker compose
-* `postman/` — Postman collections + environments
-* `scripts/` — test runner scripts
-* `reports/` — generated test reports (Newman / Step 6 logs)
+- `apm_platform/` — Django project settings + root URLs
+- `observability/` — app: model, serializers, views, filters, tests, migrations
+- `docker/` — Docker + docker compose
+- `postman/` — Postman collections + environments
+- `scripts/` — test runner scripts
+- `reports/` — generated test reports (Newman / Step 6 logs)
 
 ---
 
@@ -69,8 +69,8 @@ API base: `http://127.0.0.1:8000`
 
 This project ships with a production-style Docker setup:
 
-* **TimescaleDB** container (`db`)
-* **Django + Gunicorn + WhiteNoise** container (`web`)
+- **TimescaleDB** container (`db`)
+- **Django + Gunicorn + WhiteNoise** container (`web`)
 
 ### 1) Create `.env`
 
@@ -88,8 +88,8 @@ docker compose -f docker/docker-compose.yml up --build
 
 Open:
 
-* API: `http://127.0.0.1:8000/api/`
-* Health: `http://127.0.0.1:8000/api/health/`
+- API: `http://127.0.0.1:8000/api/`
+- Health: `http://127.0.0.1:8000/api/health/`
 
 ### 3) Useful Docker commands
 
@@ -115,18 +115,18 @@ The settings are **env-first**. If the following are set, Django will use Postgr
 
 | Variable               |               Example | Required | Notes                                             |
 | ---------------------- | --------------------: | :------: | ------------------------------------------------- |
-| `DJANGO_DEBUG`         |                   `0` |     ✅    | `1` enables debug mode                            |
-| `DJANGO_SECRET_KEY`    |           `change-me` |     ✅    | Must be secret in production                      |
-| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` |     ✅    | Comma-separated                                   |
-| `POSTGRES_HOST`        |                  `db` |     ✅    | In Docker, use `db`                               |
-| `POSTGRES_PORT`        |                `5432` |     ✅    |                                                   |
-| `POSTGRES_DB`          |                 `apm` |     ✅    |                                                   |
-| `POSTGRES_USER`        |                 `apm` |     ✅    |                                                   |
-| `POSTGRES_PASSWORD`    |                 `apm` |     ✅    |                                                   |
-| `DB_SSLMODE`           |             `disable` |     ❌    | For hosted Postgres: `require`, `verify-ca`, etc. |
-| `FORCE_SQLITE`         |                   `0` |     ❌    | `1` forces SQLite even if Postgres vars exist     |
-| `DRF_PAGE_SIZE`        |                  `50` |     ❌    | Default list page size                            |
-| `WEB_PORT`             |                `8000` |     ❌    | Host port when using Docker compose               |
+| `DJANGO_DEBUG`         |                   `0` |    ✅    | `1` enables debug mode                            |
+| `DJANGO_SECRET_KEY`    |           `change-me` |    ✅    | Must be secret in production                      |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` |    ✅    | Comma-separated                                   |
+| `POSTGRES_HOST`        |                  `db` |    ✅    | In Docker, use `db`                               |
+| `POSTGRES_PORT`        |                `5432` |    ✅    |                                                   |
+| `POSTGRES_DB`          |                 `apm` |    ✅    |                                                   |
+| `POSTGRES_USER`        |                 `apm` |    ✅    |                                                   |
+| `POSTGRES_PASSWORD`    |                 `apm` |    ✅    |                                                   |
+| `DB_SSLMODE`           |             `disable` |    ❌    | For hosted Postgres: `require`, `verify-ca`, etc. |
+| `FORCE_SQLITE`         |                   `0` |    ❌    | `1` forces SQLite even if Postgres vars exist     |
+| `DRF_PAGE_SIZE`        |                  `50` |    ❌    | Default list page size                            |
+| `WEB_PORT`             |                `8000` |    ❌    | Host port when using Docker compose               |
 
 ---
 
@@ -137,7 +137,7 @@ The settings are **env-first**. If the following are set, Django will use Postgr
 Returns:
 
 ```json
-{"status": "ok"}
+{ "status": "ok" }
 ```
 
 ### Optional DB check
@@ -149,7 +149,7 @@ curl -s "http://127.0.0.1:8000/api/health/?db=1"
 Returns:
 
 ```json
-{"status": "ok", "db": "ok"}
+{ "status": "ok", "db": "ok" }
 ```
 
 If DB is down, returns **503**.
@@ -160,13 +160,13 @@ If DB is down, returns **503**.
 
 This project supports:
 
-* **PostgreSQL + TimescaleDB** (recommended) — enables hypertables, continuous aggregates (`hourly`, `daily`) and fast analytics.
-* **Plain PostgreSQL** — KPI endpoints still work (raw queries + `percentile_cont`), but Timescale-specific features are unavailable.
-* **SQLite** — supported as a **fallback** for local dev and basic CRUD/ingest tests. Analytics endpoints that require Postgres/Timescale may return 501/503 or be skipped in tests.
+- **PostgreSQL + TimescaleDB** (recommended) — enables hypertables, continuous aggregates (`hourly`, `daily`) and fast analytics.
+- **Plain PostgreSQL** — KPI endpoints still work (raw queries + `percentile_cont`), but Timescale-specific features are unavailable.
+- **SQLite** — supported as a **fallback** for local dev and basic CRUD/ingest tests. Analytics endpoints that require Postgres/Timescale may return 501/503 or be skipped in tests.
 
 Optional:
 
-* `POSTGRES_TEST_DB` (defaults to `${POSTGRES_DB}_test`)
+- `POSTGRES_TEST_DB` (defaults to `${POSTGRES_DB}_test`)
 
 ---
 
@@ -176,32 +176,32 @@ Optional:
 
 Base endpoint:
 
-* `GET /api/requests/` list (default ordered by `-time`)
-* `POST /api/requests/` create
-* `GET /api/requests/{id}/` retrieve
-* `PUT/PATCH /api/requests/{id}/` update
-* `DELETE /api/requests/{id}/` delete
+- `GET /api/requests/` list (default ordered by `-time`)
+- `POST /api/requests/` create
+- `GET /api/requests/{id}/` retrieve
+- `PUT/PATCH /api/requests/{id}/` update
+- `DELETE /api/requests/{id}/` delete
 
 Filtering (examples):
 
-* `?service=billing`
-* `?endpoint=/api/v1/invoices`
-* `?method=GET`
-* `?status_code=200`
-* `?status_code__in=200,201,204`
-* `?time_after=2025-12-01T00:00:00Z&time_before=2025-12-31T23:59:59Z`
-* `?latency_min=0&latency_max=250`
-* `?trace_id=abc123`
-* `?user_ref=user-001`
+- `?service=billing`
+- `?endpoint=/api/v1/invoices`
+- `?method=GET`
+- `?status_code=200`
+- `?status_code__in=200,201,204`
+- `?time_after=2025-12-01T00:00:00Z&time_before=2025-12-31T23:59:59Z`
+- `?latency_min=0&latency_max=250`
+- `?trace_id=abc123`
+- `?user_ref=user-001`
 
 Ordering:
 
-* `?ordering=-time`
-* `?ordering=latency_ms`
+- `?ordering=-time`
+- `?ordering=latency_ms`
 
 Search:
 
-* `?search=billing`
+- `?search=billing`
 
 ---
 
@@ -226,7 +226,7 @@ Accepts **either**:
     "latency_ms": 123,
     "trace_id": "trace-001",
     "user_ref": "user-001",
-    "tags": {"env": "prod"}
+    "tags": { "env": "prod" }
   }
 ]
 ```
@@ -245,7 +245,7 @@ Accepts **either**:
       "latency_ms": 123,
       "trace_id": "trace-001",
       "user_ref": "user-001",
-      "tags": {"env": "prod"}
+      "tags": { "env": "prod" }
     }
   ]
 }
@@ -258,17 +258,22 @@ Accepts **either**:
   "inserted": 10,
   "rejected": 2,
   "errors": [
-    { "index": 3, "errors": { "status_code": ["status_code must be a valid HTTP status (100..599)."] } }
+    {
+      "index": 3,
+      "errors": {
+        "status_code": ["status_code must be a valid HTTP status (100..599)."]
+      }
+    }
   ]
 }
 ```
 
 ### Limits & query params
 
-* `batch_size` (default: `settings.APM_INGEST_BATCH_SIZE`)
-* `max_events` (default: `settings.APM_INGEST_MAX_EVENTS`) → returns **413** if exceeded
-* `max_errors` (default: `settings.APM_INGEST_MAX_ERRORS`) → use `max_errors=0` for counts only
-* `strict=true` (optional) → if payload has invalid items, returns **400** and inserts **nothing**
+- `batch_size` (default: `settings.APM_INGEST_BATCH_SIZE`)
+- `max_events` (default: `settings.APM_INGEST_MAX_EVENTS`) → returns **413** if exceeded
+- `max_errors` (default: `settings.APM_INGEST_MAX_ERRORS`) → use `max_errors=0` for counts only
+- `strict=true` (optional) → if payload has invalid items, returns **400** and inserts **nothing**
 
 ---
 
@@ -280,11 +285,11 @@ Accepts **either**:
 
 ### Query params
 
-* `start` (ISO datetime/date) optional (default: `end - 24h`)
-* `end` (ISO datetime/date) optional (default: `now`)
-* `service` optional
-* `endpoint` optional
-* `limit` optional (default 500, max 5000)
+- `start` (ISO datetime/date) optional (default: `end - 24h`)
+- `end` (ISO datetime/date) optional (default: `now`)
+- `service` optional
+- `endpoint` optional
+- `limit` optional (default 500, max 5000)
 
 ### cURL examples
 
@@ -310,18 +315,18 @@ curl -s "http://127.0.0.1:8000/api/requests/hourly/?start=2025-12-10&end=2025-12
 
 ### Query params
 
-* `start` (ISO datetime OR ISO date) optional
+- `start` (ISO datetime OR ISO date) optional
   Examples: `2025-12-01T00:00:00Z` or `2025-12-01`
-* `end` (ISO datetime OR ISO date) optional
+- `end` (ISO datetime OR ISO date) optional
   Examples: `2025-12-14T23:59:59Z` or `2025-12-14`
-* `service` (string) optional
-* `endpoint` (string) optional
-* `limit` (int) optional (default 500, max 5000)
+- `service` (string) optional
+- `endpoint` (string) optional
+- `limit` (int) optional (default 500, max 5000)
 
 **Defaults**
 
-* If `end` missing → now (UTC)
-* If `start` missing → `end - 7 days`
+- If `end` missing → now (UTC)
+- If `start` missing → `end - 7 days`
 
 ### cURL examples
 
@@ -349,9 +354,9 @@ curl -s "http://127.0.0.1:8000/api/requests/daily/?service=api&endpoint=/health&
 
 These endpoints are designed for dashboard widgets.
 
-* They use **Timescale CAGGs** (hourly/daily) when possible for fast totals.
-* They **fallback to raw** when needed (e.g. `method` filter or custom `error_from`).
-* `p95` is computed from **raw** using `percentile_cont` for correctness.
+- They use **Timescale CAGGs** (hourly/daily) when possible for fast totals.
+- They **fallback to raw** when needed (e.g. `method` filter or custom `error_from`).
+- `p95` is computed from **raw** using `percentile_cont` for correctness.
 
 > **Requires PostgreSQL.** TimescaleDB is recommended (for fast-path), but raw fallback still works on plain PostgreSQL.
 
@@ -377,15 +382,15 @@ Returns overall KPIs over a time window.
 
 #### Query params
 
-| Param         | Type                        | Default     | Notes                                               |
-| ------------- | --------------------------- | ----------- | --------------------------------------------------- |
-| `start`       | ISO datetime/date           | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`    |
-| `end`         | ISO datetime/date           | `now`       | Date-only end uses end-of-day                       |
-| `service`     | string                      | —           | Exact match                                         |
-| `endpoint`    | string                      | —           | Exact match                                         |
-| `method`      | string                      | —           | **Forces raw path** (CAGGs do not include method)   |
-| `error_from`  | int                         | `500`       | If not 500, **forces raw path**                     |
-| `granularity` | `auto` | `hourly` | `daily` | `auto`      | When `auto`: small ranges → hourly, otherwise daily |
+| Param         | Type              | Default     | Notes                                             |
+| ------------- | ----------------- | ----------- | ------------------------------------------------- | ------ | --------------------------------------------------- |
+| `start`       | ISO datetime/date | `end - 24h` | Examples: `2025-12-14T10:00:00Z` or `2025-12-14`  |
+| `end`         | ISO datetime/date | `now`       | Date-only end uses end-of-day                     |
+| `service`     | string            | —           | Exact match                                       |
+| `endpoint`    | string            | —           | Exact match                                       |
+| `method`      | string            | —           | **Forces raw path** (CAGGs do not include method) |
+| `error_from`  | int               | `500`       | If not 500, **forces raw path**                   |
+| `granularity` | `auto`            | `hourly`    | `daily`                                           | `auto` | When `auto`: small ranges → hourly, otherwise daily |
 
 #### cURL examples
 
@@ -444,24 +449,24 @@ Returns ranked endpoints with metrics.
 
 #### Query params
 
-| Param         | Type                        | Default     | Notes                                                                                |
-| ------------- | --------------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| `start`       | ISO datetime/date           | `end - 24h` | Time window                                                                          |
-| `end`         | ISO datetime/date           | `now`       | Time window                                                                          |
-| `service`     | string                      | —           | Filter rows                                                                          |
-| `endpoint`    | string                      | —           | Filter rows                                                                          |
-| `method`      | string                      | —           | **Forces raw**                                                                       |
-| `error_from`  | int                         | `500`       | If not 500, **forces raw**                                                           |
-| `granularity` | `auto` | `hourly` | `daily` | `auto`      | Used when fast-path is allowed                                                       |
-| `limit`       | int                         | `20`        | Max `200`                                                                            |
-| `sort_by`     | string                      | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |
-| `direction`   | `asc` | `desc`              | `desc`      | Sort direction                                                                       |
-| `with_p95`    | bool                        | `false`     | If true: computes p95 per returned endpoint (raw query)                              |
+| Param         | Type              | Default     | Notes                                                                                |
+| ------------- | ----------------- | ----------- | ------------------------------------------------------------------------------------ | -------------- | ------------------------------ |
+| `start`       | ISO datetime/date | `end - 24h` | Time window                                                                          |
+| `end`         | ISO datetime/date | `now`       | Time window                                                                          |
+| `service`     | string            | —           | Filter rows                                                                          |
+| `endpoint`    | string            | —           | Filter rows                                                                          |
+| `method`      | string            | —           | **Forces raw**                                                                       |
+| `error_from`  | int               | `500`       | If not 500, **forces raw**                                                           |
+| `granularity` | `auto`            | `hourly`    | `daily`                                                                              | `auto`         | Used when fast-path is allowed |
+| `limit`       | int               | `20`        | Max `200`                                                                            |
+| `sort_by`     | string            | `hits`      | `hits`, `errors`, `error_rate`, `avg_latency_ms`, `max_latency_ms`, `p95_latency_ms` |
+| `direction`   | `asc`             | `desc`      | `desc`                                                                               | Sort direction |
+| `with_p95`    | bool              | `false`     | If true: computes p95 per returned endpoint (raw query)                              |
 
 #### Notes
 
-* Sorting by `p95_latency_ms` requires raw mode (heavier).
-* When using CAGG fast-path, `with_p95=true` computes p95 only for the returned endpoints (not for the whole table).
+- Sorting by `p95_latency_ms` requires raw mode (heavier).
+- When using CAGG fast-path, `with_p95=true` computes p95 only for the returned endpoints (not for the whole table).
 
 #### cURL examples
 
@@ -532,6 +537,19 @@ chmod +x scripts/step6_test.sh
 ./scripts/step6_test.sh
 ```
 
+### Lint / format (optional)
+
+```bash
+# Ruff (lint)
+ruff check .
+
+# Ruff autofix + import sort
+ruff check . --fix
+
+# Black (format)
+black .
+```
+
 ### In Docker
 
 ```bash
@@ -547,8 +565,8 @@ docker compose -f docker/docker-compose.yml exec web bash -lc "chmod +x scripts/
 
 ### Notes about database support in tests
 
-* Tests that require PostgreSQL / Timescale (e.g. p95 via `percentile_cont`, or caggs/views) will **auto-skip** when the DB is not PostgreSQL.
-* Hourly/Daily endpoint tests will also auto-skip if the underlying Timescale views are missing.
+- Tests that require PostgreSQL / Timescale (e.g. p95 via `percentile_cont`, or caggs/views) will **auto-skip** when the DB is not PostgreSQL.
+- Hourly/Daily endpoint tests will also auto-skip if the underlying Timescale views are missing.
 
 ---
 
@@ -607,7 +625,7 @@ Reports are generated in `reports/`.
 ### Why do I see vendor=sqlite but later vendor=postgresql?
 
 Usually because **the Django server process** was started **without** your Postgres env loaded, so it connected to SQLite.
-Even if your *current shell* has Postgres env, the already-running server may still be using SQLite.
+Even if your _current shell_ has Postgres env, the already-running server may still be using SQLite.
 
 Fix:
 
@@ -629,8 +647,8 @@ Load `.env` and restart the server (see above).
 
 That usually means the Timescale view does not exist yet. Ensure:
 
-* You are connected to Postgres
-* Step migrations are applied:
+- You are connected to Postgres
+- Step migrations are applied:
 
 ```bash
 python manage.py migrate
@@ -640,5 +658,5 @@ python manage.py migrate
 
 ## Roadmap
 
-* Step 6+: more tests + CI
-* Step 7+: deploy docs + Docker improvements
+- Step 6+: more tests + CI
+- Step 7+: deploy docs + Docker improvements
