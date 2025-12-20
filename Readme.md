@@ -133,6 +133,95 @@ docker compose -f docker/docker-compose.yml logs web --tail 200
 
 ---
 
+## Prise en main
+
+Suivez ces étapes pour démarrer rapidement une instance locale et manipuler les données.
+
+1. Démarrage d’une seule instance
+
+Lancement avec Docker
+
+```bash
+cp .env.example .env
+docker compose -f docker/docker-compose.yml up --build
+```
+
+Services démarrés :
+
+- 1 instance TimescaleDB
+- 1 instance Django (API backend)
+
+Vérification :
+
+```bash
+curl http://127.0.0.1:8000/api/health/
+curl http://127.0.0.1:8000/api/health/?db=1
+```
+
+2. Procédure de connexion à la base de données
+
+Depuis Docker :
+
+```bash
+docker compose -f docker/docker-compose.yml exec db psql \
+    -U apm -d apm
+```
+
+Depuis l’hôte (si port exposé) :
+
+```bash
+psql -h localhost -p 5432 -U apm -d apm
+```
+
+3. Prise en main de la base
+
+Création et manipulation des données
+
+Le modèle `APIRequest` est déjà présent et migré.
+
+Création automatique de la table Timescale :
+
+```bash
+python manage.py migrate
+```
+
+Insertion de données via l’API :
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/requests/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "time": "2025-12-14T12:00:00Z",
+    "service": "billing",
+    "endpoint": "/health",
+    "method": "GET",
+    "status_code": 200,
+    "latency_ms": 42
+  }'
+```
+
+Lecture :
+
+```bash
+curl http://127.0.0.1:8000/api/requests/
+```
+
+4. Particularités TimescaleDB utilisées
+
+Déjà implémentées dans le projet :
+
+- Hypertable (partitionnement automatique)
+- Continuous aggregates (hourly / daily)
+- Requêtes analytiques optimisées
+- Fallback PostgreSQL si Timescale absent
+
+Vérification côté SQL :
+
+```sql
+\d+ observability_apirequest;
+SELECT * FROM timescaledb_information.hypertables;
+```
+
 ## Environment variables
 
 The settings are **env-first**. If the following are set, Django will use PostgreSQL:
