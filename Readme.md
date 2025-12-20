@@ -107,6 +107,30 @@ docker compose -f docker/docker-compose.yml logs -f web
 docker compose -f docker/docker-compose.yml exec web python manage.py migrate
 ```
 
+## Dependencies & rebuild (Docker)
+
+- **If a runtime binary is missing in the `web` container (example: `gunicorn: not found`)**:
+  - Ensure the dependency is listed in `requirements.txt` (e.g. add `gunicorn`).
+  - Rebuild the `web` image and restart the service:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build web
+```
+
+This installs Python deps into the image layers so the entrypoint can `exec` the server process.
+
+## Troubleshooting (quick checks)
+
+- If `curl http://127.0.0.1:8000/api/health/` fails locally:
+  - Run `docker compose -f docker/docker-compose.yml ps` to see container statuses.
+  - Inspect `web` logs for startup errors:
+
+```bash
+docker compose -f docker/docker-compose.yml logs web --tail 200
+```
+
+- Common startup error: `exec: gunicorn: not found` — fix by adding `gunicorn` to `requirements.txt` and rebuilding the image (see above).
+
 ---
 
 ## Environment variables

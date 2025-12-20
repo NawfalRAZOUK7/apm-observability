@@ -5,3 +5,5 @@ psycopg[binary]
 unittest-xml-reporting
 ruff
 black
+whitenoise
+gunicorn
