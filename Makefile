@@ -1,3 +1,7 @@
+# --- Backup/Restore SSH key setup ---
+setup-backup-ssh:
+	docker compose -f docker/docker-compose.backup.yml exec db bash /backup/setup_postgres_ssh.sh /backup/id_rsa.pub
+	echo "✅ SSH key for postgres user set up in db container."
 .PHONY: up down logs build restart ps \
         install makemigrations migrate run shell createsuperuser \
         test step6 \

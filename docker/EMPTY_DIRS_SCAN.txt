@@ -1,0 +1,2 @@
+./pgbackrest
+./backup/pgbackrest.conf

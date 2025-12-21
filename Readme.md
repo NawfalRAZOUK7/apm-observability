@@ -61,11 +61,35 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-API base: `http://127.0.0.1:8000`
+API base: `https://127.0.0.1:8443`
 
 ---
 
 ## Docker (recommended)
+
+---
+
+## Automated SSH Key Setup for Backups/Restore
+
+**No manual SSH key setup is required for any backup, restore, or pgBackRest operation.**
+
+All backup, restore, and test scripts in `docker/backup/` will automatically ensure the `postgres` user's `authorized_keys` is correctly set up before running. This is fully automated and idempotent:
+
+- You do not need to manually copy or format SSH keys for the `db` container.
+- This applies to all workflows: local, CI, and production-like Compose runs.
+- The automation is handled by `/backup/setup_postgres_ssh.sh` and is invoked at the start of every backup/restore/test script and by the `pgbackrest_mode.sh` helper.
+
+**Usage:**
+
+Just run any of the backup/restore/test scripts as documented. SSH key setup will always be correct.
+
+For manual SSH key setup (rarely needed), you can run:
+
+```bash
+make setup-backup-ssh
+```
+
+---
 
 This project ships with a production-style Docker setup:
 
@@ -88,8 +112,10 @@ docker compose -f docker/docker-compose.yml up --build
 
 Open:
 
-- API: `http://127.0.0.1:8000/api/`
-- Health: `http://127.0.0.1:8000/api/health/`
+- API: `https://127.0.0.1:8443/api/`
+- Health: `https://127.0.0.1:8443/api/health/`
+
+**SSL Certificate Note:** The Docker setup uses self-signed certificates for development. Your browser will show a security warning - click "Advanced" → "Proceed to localhost (unsafe)" to accept the certificate.
 
 ### 3) Useful Docker commands
 
@@ -256,7 +282,7 @@ Returns:
 ### Optional DB check
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/health/?db=1"
+curl -k -s "https://127.0.0.1:8443/api/health/?db=1"
 ```
 
 Returns:
@@ -409,13 +435,13 @@ Accepts **either**:
 Last 24 hours:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/hourly/?limit=50"
+curl -k -s "https://127.0.0.1:8443/api/requests/hourly/?limit=50"
 ```
 
 With time window:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/hourly/?start=2025-12-10&end=2025-12-14&limit=200"
+curl -k -s "https://127.0.0.1:8443/api/requests/hourly/?start=2025-12-10&end=2025-12-14&limit=200"
 ```
 
 ---
@@ -446,19 +472,19 @@ curl -s "http://127.0.0.1:8000/api/requests/hourly/?start=2025-12-10&end=2025-12
 Daily — last 7 days:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/daily/?limit=50"
+curl -k -s "https://127.0.0.1:8443/api/requests/daily/?limit=50"
 ```
 
 Daily — date-only range:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/daily/?start=2025-12-01&end=2025-12-14&limit=200"
+curl -k -s "https://127.0.0.1:8443/api/requests/daily/?start=2025-12-01&end=2025-12-14&limit=200"
 ```
 
 Daily — filtered:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/daily/?service=api&endpoint=/health&limit=100"
+curl -k -s "https://127.0.0.1:8443/api/requests/daily/?service=api&endpoint=/health&limit=100"
 ```
 
 ---
@@ -510,31 +536,31 @@ Returns overall KPIs over a time window.
 Default (last 24h):
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/kpis/" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/kpis/" | python -m json.tool
 ```
 
 Filtered by service + endpoint:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/kpis/?service=api&endpoint=/orders" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/kpis/?service=api&endpoint=/orders" | python -m json.tool
 ```
 
 Force hourly totals:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/kpis/?granularity=hourly" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/kpis/?granularity=hourly" | python -m json.tool
 ```
 
 Raw path (method filter):
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/kpis/?service=api&method=GET" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/kpis/?service=api&method=GET" | python -m json.tool
 ```
 
 Custom error threshold (raw path):
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/kpis/?error_from=400" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/kpis/?error_from=400" | python -m json.tool
 ```
 
 ---
@@ -586,25 +612,25 @@ Returns ranked endpoints with metrics.
 Top endpoints by hits:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&sort_by=hits&direction=desc" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/top-endpoints/?limit=10&sort_by=hits&direction=desc" | python -m json.tool
 ```
 
 Top endpoints by error rate:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&sort_by=error_rate&direction=desc" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/top-endpoints/?limit=10&sort_by=error_rate&direction=desc" | python -m json.tool
 ```
 
 Include p95 per endpoint:
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?limit=10&with_p95=true" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/top-endpoints/?limit=10&with_p95=true" | python -m json.tool
 ```
 
 Force raw (method filter):
 
 ```bash
-curl -s "http://127.0.0.1:8000/api/requests/top-endpoints/?method=GET&limit=10" | python -m json.tool
+curl -k -s "https://127.0.0.1:8443/api/requests/top-endpoints/?method=GET&limit=10" | python -m json.tool
 ```
 
 ---

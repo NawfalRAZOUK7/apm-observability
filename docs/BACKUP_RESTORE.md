@@ -1,87 +1,85 @@
-# Backups & Restore (pgBackRest + MinIO)
+# Backup & Restore Proof Steps
 
-Goal: scheduled S3-compatible backups with pgBackRest and a proven restore path. Stack: TimescaleDB, MinIO, pgBackRest (stanza `apm`).
+## 1. Backup Stack Setup
 
-## Components
+- Ensure all containers (`db`, `minio`, `minio-init`, `pgbackrest`) are up and healthy using:
+  ```sh
+  docker compose -f docker/docker-compose.backup.yml up -d
+  ```
+- Confirm MinIO bucket exists (via minio-init or MinIO console).
 
-- `docker/docker-compose.backup.yml`: backup stack (db, minio, pgbackrest, cron).
-- `docker/backup/pgbackrest.conf`: pgBackRest config targeting MinIO bucket `pgbackrest`.
-- `docker/backup/restore-example.sh`: sample script to wipe DB volume, restore, and restart.
+## 2. WAL Archiving
+
+- Confirm `archive_mode=on` and `archive_command` in Postgres.
+- Check `pgbackrest --stanza=apm check` passes (from pgbackrest container).
+
+## 3. Manual Backup
+
+- Run full backup to both repos:
+  ```sh
+  pgbackrest --stanza=apm --repo=1 --type=full backup
+  pgbackrest --stanza=apm --repo=2 --type=full backup
+  pgbackrest info
+  ```
+- Confirm backup sets are visible.
+
+## 4. Retention/Expiration
+
+- Run:
+  ```sh
+  pgbackrest --stanza=apm --repo=1 expire
+  pgbackrest --stanza=apm --repo=2 expire
+  ```
+- Confirm retention policy is applied.
+
+## 5. Restore Proof
+
+- Ingest or seed data, record evidence (counts, API responses).
+- Take a fresh backup.
+- Stop stack, remove only the Postgres data volume.
+- Restore from hot repo:
+  ```sh
+  pgbackrest --stanza=apm --repo=2 restore
+  ```
+- Start db, verify data and endpoints.
+
+## Acceptance
+
+- You can destroy DB volume, restore, and queries work again.
+
+# Backups & Restore (WAL-G + MinIO)
 
 ## Quick start
 
-1. Bring up services (db + MinIO + pgBackRest + cron):
+1. Bring up services (db + MinIO + WAL-G):
    ```sh
-   docker compose -f docker/docker-compose.backup.yml up -d minio minio-mc db pgbackrest pgbackrest-cron
+   docker compose -f docker/docker-compose.backup.yml up -d minio minio-mc db walg
    ```
-2. Run a manual full backup (first time):
+2. Run a manual full backup:
    ```sh
-   docker compose -f docker/docker-compose.backup.yml run --rm pgbackrest \
-     pgbackrest --stanza=apm --type=full backup
+   ./docker/backup/backup.sh
    ```
-3. Check backup inventory:
+3. Restore the latest backup:
    ```sh
-   docker compose -f docker/docker-compose.backup.yml run --rm pgbackrest pgbackrest info
+   ./docker/backup/restore.sh
    ```
-
-## Scheduling
-
-- Cron service runs a full backup daily at 03:00 UTC: `pgbackrest --stanza=apm --type=full backup`.
-- Health check job runs every 30 minutes: `pgbackrest --stanza=apm check`.
-- Adjust the cron expressions in `pgbackrest-cron` command inside `docker-compose.backup.yml` if needed.
-
-## Retention
-
-- `repo1-retention-full=7` keeps the last 7 full backups in the MinIO bucket. Adjust in `docker/backup/pgbackrest.conf`.
-
-## Restore (example)
-
-You can destroy the DB volume and restore the latest backup:
-
-```sh
-./docker/backup/restore-example.sh
-```
-
-Manual flow (if you prefer step-by-step):
-
-```sh
-docker compose -f docker/docker-compose.backup.yml stop db
-# remove the DB volume if you want a clean restore
-DB_VOL=apm-observability_db_data_backup
-docker volume rm "$DB_VOL"
-# recreate services
-docker compose -f docker/docker-compose.backup.yml up -d minio minio-mc db pgbackrest
-# restore into the fresh volume
-docker compose -f docker/docker-compose.backup.yml run --rm pgbackrest \
-  pgbackrest --stanza=apm --delta --type=default restore
-# start database
-docker compose -f docker/docker-compose.backup.yml up -d db
-# verify
-docker compose -f docker/docker-compose.backup.yml exec db psql -U apm -d apm -c 'select now();'
-```
 
 ## Configuration notes
 
 - MinIO auth defaults to `minioadmin` / `minioadmin`. Set `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` env vars to change.
-- Database auth defaults to `apm` / `apm`. Update `docker/backup/pgbackrest.conf` if you change DB credentials.
-- TLS to MinIO is disabled (`repo1-s3-verify-tls=n`) for local use. Enable TLS in MinIO and flip this to `y` for real deployments.
+- Database auth defaults to `apm` / `apm`. Update your .env files if you change DB credentials.
+- WAL-G settings are applied via docker/initdb/002_walg_settings.sql.
 
-## WAL archiving (optional)
+## PITR (Point-in-Time Recovery)
 
-The current setup captures full backups. To add point-in-time recovery via WAL:
+To restore to a specific point in time, use:
 
-1. Enable WAL archiving on the database (requires restart):
-   ```sql
-   ALTER SYSTEM SET wal_level = 'replica';
-   ALTER SYSTEM SET archive_mode = 'on';
-   ALTER SYSTEM SET archive_command = 'pgbackrest --stanza=apm archive-push %p';
-   ALTER SYSTEM SET archive_timeout = '60s';
-   ```
-2. Restart the db service in the backup compose stack so the settings take effect.
-3. Verify WALs flow with `pgbackrest info` and MinIO object listings.
+```sh
+docker compose -f docker/docker-compose.backup.yml run --rm walg wal-g backup-fetch /var/lib/postgresql/data LATEST --target-time="YYYY-MM-DDTHH:MM:SSZ"
+```
 
 ## Verification checklist
 
-- `pgbackrest info` shows completed full backups in repo1 (MinIO).
+- WAL-G backup-push uploads to MinIO bucket `dbbackup/walg`.
 - Destroying the DB volume and running the restore script brings the database back up.
-- Optional: after enabling WAL archiving, create data, force WAL switch (`select pg_switch_wal();`), confirm new WAL uploads, and run a restore.
+- PITR works as expected when using the --target-time option.

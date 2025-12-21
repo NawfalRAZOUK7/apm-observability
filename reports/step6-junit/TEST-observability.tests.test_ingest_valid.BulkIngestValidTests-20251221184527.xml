@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_ingest_valid.BulkIngestValidTests-20251221184527" tests="2" file="observability/tests/test_ingest_valid.py" time="0.007" timestamp="2025-12-21T18:45:27" failures="0" errors="2" skipped="0">
+	<testcase classname="observability.tests.test_ingest_valid.BulkIngestValidTests" name="test_bulk_ingest_valid_list_inserts_all" time="0.003" timestamp="2025-12-21T18:45:27" file="observability/tests/test_ingest_valid.py" line="14">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_valid.py", line 20, in test_bulk_ingest_valid_list_inserts_all
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_ingest_valid.BulkIngestValidTests" name="test_bulk_ingest_valid_wrapper_shape_inserts_all" time="0.004" timestamp="2025-12-21T18:45:27" file="observability/tests/test_ingest_valid.py" line="28">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_valid.py", line 34, in test_bulk_ingest_valid_wrapper_shape_inserts_all
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+</testsuite>

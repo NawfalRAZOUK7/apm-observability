@@ -10,8 +10,8 @@ This document explains how to run the project with Docker locally and how to dep
 
 ### 1.1 Prerequisites
 
-* Docker + Docker Compose
-* A `.env` file at the project root
+- Docker + Docker Compose
+- A `.env` file at the project root
 
 ### 1.2 Create `.env`
 
@@ -44,7 +44,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 What happens on startup:
 
-* `docker/entrypoint.sh` waits for DB, runs `migrate`, runs `collectstatic`, then starts Gunicorn.
+- `docker/entrypoint.sh` waits for DB, runs `migrate`, runs `collectstatic`, then starts Gunicorn.
 
 ### 1.4 Useful commands
 
@@ -64,8 +64,71 @@ docker compose -f docker/docker-compose.yml exec web python manage.py migrate
 
 Health check:
 
-* `GET /api/health/` returns `{ "status": "ok" }`
-* `GET /api/health/?db=1` checks DB connectivity
+- `GET /api/health/` returns `{ "status": "ok" }`
+- `GET /api/health/?db=1` checks DB connectivity
+
+---
+
+## 1.5 SSL/TLS Setup
+
+The Docker setup includes SSL/TLS encryption for all services using Nginx as a reverse proxy.
+
+### Development (Self-Signed Certificates)
+
+The default setup uses self-signed certificates for local development:
+
+1. **Certificates are automatically generated** in `docker/certs/` if they don't exist
+2. **Accept the security warning** in your browser when accessing `https://localhost:8443`
+3. **API endpoints** are available at `https://localhost:8443/api/`
+4. **MinIO** is available at `https://localhost:9000`
+
+### Production (CA-Signed Certificates)
+
+For production deployment with automated SSL certificate management:
+
+1. **Set environment variables**:
+
+   ```bash
+   export DOMAIN=yourdomain.com
+   export SSL_EMAIL=admin@yourdomain.com
+   export ENVIRONMENT=production
+   ```
+
+2. **Run the production deployment script**:
+
+   ```bash
+   ./deploy-production.sh deploy
+   ```
+
+   This script will:
+
+   - Generate Let's Encrypt SSL certificates
+   - Configure automatic renewal (every 60 days)
+   - Enable HSTS security headers
+   - Set up HTTP to HTTPS redirects
+   - Start all services with production configuration
+
+3. **DNS Configuration**:
+
+   - Point your domain (`yourdomain.com`) to the server IP
+   - Ensure ports 80 and 443 are open in firewall
+
+4. **Access your application**:
+   - API: `https://yourdomain.com/api/`
+   - MinIO: `https://yourdomain.com:9000`
+
+### Certificate Renewal
+
+Certificates are automatically renewed every 60 days. Monitor renewal with:
+
+```bash
+# Check certbot logs
+docker compose logs certbot
+
+# Manual renewal (if needed)
+docker compose exec certbot certbot renew
+docker compose exec nginx nginx -s reload
+```
 
 ---
 
@@ -77,32 +140,32 @@ These are the variables expected by `apm_platform/settings.py` (env-first).
 
 | Variable               |           Example | Required | Notes                 |
 | ---------------------- | ----------------: | :------: | --------------------- |
-| `DJANGO_DEBUG`         |               `0` |     ✅    | Use `0` in production |
-| `DJANGO_SECRET_KEY`    |     `long-random` |     ✅    | Must be secret        |
-| `DJANGO_ALLOWED_HOSTS` | `your-domain.com` |     ✅    | Comma-separated       |
-| `DJANGO_TIME_ZONE`     |             `UTC` |     ❌    | Defaults to `UTC`     |
+| `DJANGO_DEBUG`         |               `0` |    ✅    | Use `0` in production |
+| `DJANGO_SECRET_KEY`    |     `long-random` |    ✅    | Must be secret        |
+| `DJANGO_ALLOWED_HOSTS` | `your-domain.com` |    ✅    | Comma-separated       |
+| `DJANGO_TIME_ZONE`     |             `UTC` |    ❌    | Defaults to `UTC`     |
 
 ### 2.2 Database (Postgres/Timescale)
 
 | Variable            |                 Example | Required | Notes                                          |
 | ------------------- | ----------------------: | :------: | ---------------------------------------------- |
-| `POSTGRES_HOST`     | `db` or hosted hostname |     ✅    | In Docker compose: `db`                        |
-| `POSTGRES_PORT`     |                  `5432` |     ✅    |                                                |
-| `POSTGRES_DB`       |                   `apm` |     ✅    |                                                |
-| `POSTGRES_USER`     |                   `apm` |     ✅    |                                                |
-| `POSTGRES_PASSWORD` |                   `...` |     ✅    |                                                |
-| `DB_SSLMODE`        |   `disable` / `require` |     ❌    | Useful for hosted Postgres                     |
-| `DB_CONN_MAX_AGE`   |                    `60` |     ❌    | Connection reuse (seconds)                     |
-| `FORCE_SQLITE`      |                     `0` |     ❌    | `1` forces SQLite (not recommended for deploy) |
+| `POSTGRES_HOST`     | `db` or hosted hostname |    ✅    | In Docker compose: `db`                        |
+| `POSTGRES_PORT`     |                  `5432` |    ✅    |                                                |
+| `POSTGRES_DB`       |                   `apm` |    ✅    |                                                |
+| `POSTGRES_USER`     |                   `apm` |    ✅    |                                                |
+| `POSTGRES_PASSWORD` |                   `...` |    ✅    |                                                |
+| `DB_SSLMODE`        |   `disable` / `require` |    ❌    | Useful for hosted Postgres                     |
+| `DB_CONN_MAX_AGE`   |                    `60` |    ❌    | Connection reuse (seconds)                     |
+| `FORCE_SQLITE`      |                     `0` |    ❌    | `1` forces SQLite (not recommended for deploy) |
 
 ### 2.3 Optional runtime
 
 | Variable           |        Example | Required | Notes                          |
 | ------------------ | -------------: | :------: | ------------------------------ |
-| `WEB_PORT`         |         `8000` |     ❌    | Used by Docker compose         |
-| `GUNICORN_WORKERS` |            `3` |     ❌    | Used by `docker/entrypoint.sh` |
-| `GUNICORN_TIMEOUT` |           `60` |     ❌    | Used by `docker/entrypoint.sh` |
-| `GUNICORN_BIND`    | `0.0.0.0:8000` |     ❌    | Used by `docker/entrypoint.sh` |
+| `WEB_PORT`         |         `8000` |    ❌    | Used by Docker compose         |
+| `GUNICORN_WORKERS` |            `3` |    ❌    | Used by `docker/entrypoint.sh` |
+| `GUNICORN_TIMEOUT` |           `60` |    ❌    | Used by `docker/entrypoint.sh` |
+| `GUNICORN_BIND`    | `0.0.0.0:8000` |    ❌    | Used by `docker/entrypoint.sh` |
 
 ---
 
@@ -110,11 +173,11 @@ These are the variables expected by `apm_platform/settings.py` (env-first).
 
 ### 3.1 What Timescale is used for
 
-* Convert the raw table into a **hypertable** for time-based partitioning.
-* Create **continuous aggregates (CAGGs)**:
+- Convert the raw table into a **hypertable** for time-based partitioning.
+- Create **continuous aggregates (CAGGs)**:
 
-  * `apirequest_hourly` — hourly buckets
-  * `apirequest_daily` — daily buckets
+  - `apirequest_hourly` — hourly buckets
+  - `apirequest_daily` — daily buckets
 
 ### 3.2 Migrations
 
@@ -122,13 +185,13 @@ Your project creates Timescale objects using Django migrations (SQL via `RunSQL`
 
 Important notes:
 
-* You must deploy against **PostgreSQL + TimescaleDB** if you want hourly/daily endpoints to work.
-* If you deploy on plain Postgres (no Timescale extension), the CAGG migrations may fail.
+- You must deploy against **PostgreSQL + TimescaleDB** if you want hourly/daily endpoints to work.
+- If you deploy on plain Postgres (no Timescale extension), the CAGG migrations may fail.
 
 Recommended approach:
 
-* For production: use a DB that supports TimescaleDB.
-* For non-Timescale Postgres: keep CRUD/ingest/KPIs (raw) working, but expect `/hourly/` and `/daily/` to be unavailable.
+- For production: use a DB that supports TimescaleDB.
+- For non-Timescale Postgres: keep CRUD/ingest/KPIs (raw) working, but expect `/hourly/` and `/daily/` to be unavailable.
 
 ### 3.3 Refresh policies
 
@@ -158,16 +221,16 @@ High-level steps:
 3. Add environment variables (see section 2).
 4. Attach a PostgreSQL database:
 
-   * If Render Postgres is used, it may not include TimescaleDB by default.
-   * If Timescale is required, use a Timescale-capable hosted DB.
+   - If Render Postgres is used, it may not include TimescaleDB by default.
+   - If Timescale is required, use a Timescale-capable hosted DB.
 
 Start command:
 
-* Not needed if you use Dockerfile + entrypoint (already starts Gunicorn).
+- Not needed if you use Dockerfile + entrypoint (already starts Gunicorn).
 
 Check:
 
-* `/api/health/?db=1`
+- `/api/health/?db=1`
 
 ### Option B — Railway
 
@@ -182,7 +245,7 @@ High-level steps:
 
 Notes:
 
-* Verify Timescale extension support. If Timescale is not available, you may need to disable Timescale migrations or use an external Timescale DB.
+- Verify Timescale extension support. If Timescale is not available, you may need to disable Timescale migrations or use an external Timescale DB.
 
 ### Option C — Fly.io
 
@@ -196,7 +259,7 @@ High-level steps:
 
 Notes:
 
-* Ensure your Postgres is Timescale-capable if you need caggs.
+- Ensure your Postgres is Timescale-capable if you need caggs.
 
 ### Option D — VPS/VM (DigitalOcean / OVH / Hetzner / bare VM)
 
@@ -215,9 +278,9 @@ docker compose -f docker/docker-compose.yml up --build -d
 
 Production hardening suggestions:
 
-* Put Nginx/Caddy in front for HTTPS (reverse proxy to `web:8000`).
-* Store DB data in a persistent volume.
-* Use a managed Timescale DB if you don’t want to manage Postgres on the VM.
+- Put Nginx/Caddy in front for HTTPS (reverse proxy to `web:8000`).
+- Store DB data in a persistent volume.
+- Use a managed Timescale DB if you don’t want to manage Postgres on the VM.
 
 ---
 
@@ -239,8 +302,8 @@ Production hardening suggestions:
 
 Usually means the Timescale views don’t exist:
 
-* Confirm Timescale migrations ran successfully.
-* Confirm DB is TimescaleDB and `CREATE EXTENSION timescaledb` worked.
+- Confirm Timescale migrations ran successfully.
+- Confirm DB is TimescaleDB and `CREATE EXTENSION timescaledb` worked.
 
 ### 6.2 Running on Postgres without Timescale
 
@@ -248,15 +311,15 @@ If your DB is plain Postgres, Timescale-specific migrations may fail.
 
 Options:
 
-* Use a Timescale-capable DB.
-* Or (advanced) split Timescale migrations into optional migrations and only apply them in Timescale environments.
+- Use a Timescale-capable DB.
+- Or (advanced) split Timescale migrations into optional migrations and only apply them in Timescale environments.
 
 ### 6.3 Static files not served
 
 With Docker + WhiteNoise:
 
-* `collectstatic` runs in `entrypoint.sh`
-* WhiteNoise serves from `STATIC_ROOT` (`staticfiles/`)
+- `collectstatic` runs in `entrypoint.sh`
+- WhiteNoise serves from `STATIC_ROOT` (`staticfiles/`)
 
 If you disable the entrypoint, ensure you run:
 

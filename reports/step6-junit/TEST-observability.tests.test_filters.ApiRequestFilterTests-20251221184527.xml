@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_filters.ApiRequestFilterTests-20251221184527" tests="8" file="observability/tests/test_filters.py" time="0.042" timestamp="2025-12-21T18:45:27" failures="0" errors="8" skipped="0">
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_endpoint" time="0.008" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="171">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 173, in test_filter_endpoint
+    self._get_with_first_working_param(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        candidates=["endpoint", "endpoint__exact"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        value="/login",
+        ^^^^^^^^^^^^^^^
+        expected_ids=expected,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 115, in _get_with_first_working_param
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_method" time="0.006" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="179">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 181, in test_filter_method
+    self._get_with_first_working_param(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        candidates=["method", "method__exact"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        value="POST",
+        ^^^^^^^^^^^^^
+        expected_ids=expected,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 115, in _get_with_first_working_param
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_service" time="0.006" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="163">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 165, in test_filter_service
+    self._get_with_first_working_param(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        candidates=["service", "service__exact"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        value="billing",
+        ^^^^^^^^^^^^^^^^
+        expected_ids=expected,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 115, in _get_with_first_working_param
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_status_code" time="0.004" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="187">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 189, in test_filter_status_code
+    self._get_with_first_working_param(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        candidates=["status_code", "status", "status_code__exact"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        value=200,
+        ^^^^^^^^^^
+        expected_ids=expected,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 115, in _get_with_first_working_param
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_filter_time_range" time="0.007" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="198">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 212, in test_filter_time_range
+    self._get_with_first_working_time_range(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        start_iso=start,
+        ^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        candidates=candidates,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 142, in _get_with_first_working_time_range
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_ordering_time_asc" time="0.005" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="222">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 225, in test_ordering_time_asc
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_ordering_time_desc" time="0.003" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="233">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 236, in test_ordering_time_desc
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_filters.ApiRequestFilterTests" name="test_search_login_if_present" time="0.004" timestamp="2025-12-21T18:45:27" file="observability/tests/test_filters.py" line="244">
+		<!--
+If SearchFilter is enabled AND search_fields are configured on the ViewSet,
+search=login should return only /login endpoints (r4, r5).
+
+If search is not configured (returns unfiltered full dataset), we skip.
+-->
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_filters.py", line 252, in test_search_login_if_present
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+</testsuite>

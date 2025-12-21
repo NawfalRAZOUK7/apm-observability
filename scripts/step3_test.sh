@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
+BASE_URL="${BASE_URL:-https://127.0.0.1:8443}"
 REPORT_DIR="${REPORT_DIR:-reports}"
+SSL_VERIFY="${SSL_VERIFY:-false}"
+
+# Set curl SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    CURL_SSL_FLAGS="-k"
+else
+    CURL_SSL_FLAGS=""
+fi
+
+# Set newman SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    NEWMAN_SSL_FLAGS="--insecure"
+else
+    NEWMAN_SSL_FLAGS=""
+fi
 
 # Optional: if you use docker for TimescaleDB
 # docker compose -f docker/docker-compose.yml up -d
 
 python manage.py migrate --noinput
-
-# Start server only if it's not already running
-if ! curl -sf "$BASE_URL/api/requests/" >/dev/null 2>&1; then
-  python manage.py runserver 127.0.0.1:8000 >/tmp/apm_step3_server.log 2>&1 &
-  PID=$!
-  trap 'kill $PID >/dev/null 2>&1 || true' EXIT
-
-  for i in {1..40}; do
-    curl -sf "$BASE_URL/api/requests/" >/dev/null 2>&1 && break
-    sleep 0.25
-  done
-fi
 
 mkdir -p "$REPORT_DIR"
 
@@ -28,6 +31,7 @@ mkdir -p "$REPORT_DIR"
 #   npm install -g newman newman-reporter-htmlextra
 newman run postman/APM_Observability_Step3.postman_collection.json \
   -e postman/APM_Observability.local.postman_environment.json \
+  $NEWMAN_SSL_FLAGS \
   --reporters cli,json,junit,htmlextra \
   --reporter-json-export "$REPORT_DIR/step3-report.json" \
   --reporter-junit-export "$REPORT_DIR/step3-junit.xml" \
@@ -43,7 +47,7 @@ START="$(date -u -v-4H +"%Y-%m-%dT%H:%M:%SZ")"
 END="$(date -u -v+5M +"%Y-%m-%dT%H:%M:%SZ")"
 
 HTTP_CODE="$(
-  curl -s -o /tmp/apm_step3_hourly.json -w "%{http_code}" \
+  curl $CURL_SSL_FLAGS -s -o /tmp/apm_step3_hourly.json -w "%{http_code}" \
     "$BASE_URL/api/requests/hourly/?start=$START&end=$END&limit=50"
 )"
 

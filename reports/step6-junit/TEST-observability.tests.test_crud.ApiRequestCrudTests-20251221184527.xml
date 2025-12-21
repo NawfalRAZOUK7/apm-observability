@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_crud.ApiRequestCrudTests-20251221184527" tests="5" file="observability/tests/test_crud.py" time="0.021" timestamp="2025-12-21T18:45:27" failures="0" errors="5" skipped="0">
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_delete_removes_resource" time="0.006" timestamp="2025-12-21T18:45:27" file="observability/tests/test_crud.py" line="164">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_crud.py", line 177, in test_delete_removes_resource
+    self.assertIn(res.status_code, (status.HTTP_204_NO_CONTENT, status.HTTP_200_OK), res.data)
+                                                                                     ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_get_list_default_ordering_is_time_desc" time="0.005" timestamp="2025-12-21T18:45:27" file="observability/tests/test_crud.py" line="50">
+		<!--
+Acceptance: GET /api/requests/ lists ordered by -time (newest first).
+-->
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_crud.py", line 86, in test_get_list_default_ordering_is_time_desc
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_patch_updates_fields" time="0.006" timestamp="2025-12-21T18:45:27" file="observability/tests/test_crud.py" line="102">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_crud.py", line 120, in test_patch_updates_fields
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_post_create_then_get_detail" time="0.002" timestamp="2025-12-21T18:45:27" file="observability/tests/test_crud.py" line="17">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_crud.py", line 31, in test_post_create_then_get_detail
+    self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+                                                               ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_crud.ApiRequestCrudTests" name="test_put_replaces_resource" time="0.002" timestamp="2025-12-21T18:45:27" file="observability/tests/test_crud.py" line="127">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_crud.py", line 153, in test_put_replaces_resource
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+</testsuite>

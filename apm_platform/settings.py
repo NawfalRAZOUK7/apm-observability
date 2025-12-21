@@ -231,3 +231,7 @@ REST_FRAMEWORK = {
 APM_INGEST_BATCH_SIZE = 1000       # bulk_create batch size
 APM_INGEST_MAX_EVENTS = 50_000     # max number of events accepted per request
 APM_INGEST_MAX_ERRORS = 25         # max number of per-item error details returned
+
+# SSL/HTTPS Security Settings for Production
+SECURE_SSL_REDIRECT = False if RUNNING_TESTS else True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

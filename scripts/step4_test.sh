@@ -12,37 +12,29 @@ if [[ -f ".env" ]]; then
   set +a
 fi
 
-PORT="${PORT:-8001}"
-BASE_URL="http://127.0.0.1:${PORT}"
+PORT="${PORT:-8443}"
+BASE_URL="https://127.0.0.1:${PORT}"
 REPORT_DIR="${REPORT_DIR:-reports}"
+SSL_VERIFY="${SSL_VERIFY:-false}"
+
+# Set curl SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    CURL_SSL_FLAGS="-k"
+else
+    CURL_SSL_FLAGS=""
+fi
+
+# Set newman SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    NEWMAN_SSL_FLAGS="--insecure"
+else
+    NEWMAN_SSL_FLAGS=""
+fi
 
 # Optional: if you use docker for TimescaleDB
 # docker compose -f docker/docker-compose.yml up -d
 
 python manage.py migrate --noinput
-
-# Always start OUR own server
-LOG_FILE="/tmp/apm_step4_server.log"
-python manage.py runserver "127.0.0.1:${PORT}" >"$LOG_FILE" 2>&1 &
-PID=$!
-trap 'kill $PID >/dev/null 2>&1 || true' EXIT
-
-# Wait for server readiness (fail if not ready)
-READY=0
-for i in {1..60}; do
-  if curl -sf --connect-timeout 2 --max-time 2 "$BASE_URL/api/requests/" >/dev/null 2>&1; then
-    READY=1
-    break
-  fi
-  sleep 0.25
-done
-
-if [[ "$READY" != "1" ]]; then
-  echo "❌ Server did not become ready on ${BASE_URL}."
-  echo "---- Last 80 lines of server log ($LOG_FILE) ----"
-  tail -n 80 "$LOG_FILE" || true
-  exit 1
-fi
 
 mkdir -p "$REPORT_DIR"
 
@@ -77,7 +69,7 @@ JSON
 )"
 
 HTTP_CODE_INGEST="$(
-  curl -sS --connect-timeout 2 --max-time 20 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 20 \
     -o /tmp/apm_step4_ingest.json -w "%{http_code}" \
     -H "Content-Type: application/json" \
     -X POST "$BASE_URL/api/requests/ingest/?strict=false" \
@@ -103,6 +95,7 @@ echo "---- Running Postman Step 4 collection (daily) ----"
 newman run postman/APM_Observability_Step4.postman_collection.json \
   -e postman/APM_Observability.local.postman_environment.json \
   --env-var "base_url=$BASE_URL" \
+  $NEWMAN_SSL_FLAGS \
   --reporters cli,json,junit,htmlextra \
   --reporter-json-export "$REPORT_DIR/step4-report.json" \
   --reporter-junit-export "$REPORT_DIR/step4-junit.xml" \
@@ -120,7 +113,7 @@ START="$(date -u -v-7d +"%Y-%m-%dT%H:%M:%SZ")"
 END="$(date -u -v+5M +"%Y-%m-%dT%H:%M:%SZ")"
 
 HTTP_CODE_DAILY="$(
-  curl -sS --connect-timeout 2 --max-time 20 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 20 \
     -o /tmp/apm_step4_daily.json -w "%{http_code}" \
     "$BASE_URL/api/requests/daily/?start=$START&end=$END&limit=50"
 )"

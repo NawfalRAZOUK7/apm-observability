@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests-20251221184527" tests="2" file="observability/tests/test_ingest_mixed_non_strict.py" time="0.023" timestamp="2025-12-21T18:45:27" failures="0" errors="2" skipped="0">
+	<testcase classname="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests" name="test_mixed_payload_inserts_valid_rejects_invalid_returns_200" time="0.021" timestamp="2025-12-21T18:45:27" file="observability/tests/test_ingest_mixed_non_strict.py" line="14">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_mixed_non_strict.py", line 27, in test_mixed_payload_inserts_valid_rejects_invalid_returns_200
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+	<testcase classname="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests" name="test_mixed_payload_respects_max_errors_cap" time="0.002" timestamp="2025-12-21T18:45:27" file="observability/tests/test_ingest_mixed_non_strict.py" line="43">
+		<error type="AttributeError" message="'HttpResponsePermanentRedirect' object has no attribute 'data'"><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_mixed_non_strict.py", line 57, in test_mixed_payload_respects_max_errors_cap
+    self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+                                                          ^^^^^^^^
+AttributeError: 'HttpResponsePermanentRedirect' object has no attribute 'data'
+]]></error>
+	</testcase>
+</testsuite>

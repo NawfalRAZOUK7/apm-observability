@@ -12,9 +12,24 @@ if [[ -f ".env" ]]; then
   set +a
 fi
 
-PORT="${PORT:-8002}"
-BASE_URL="http://127.0.0.1:${PORT}"
+PORT="${PORT:-8443}"
+BASE_URL="https://127.0.0.1:${PORT}"
 REPORT_DIR="${REPORT_DIR:-reports}"
+SSL_VERIFY="${SSL_VERIFY:-false}"
+
+# Set curl SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    CURL_SSL_FLAGS="-k"
+else
+    CURL_SSL_FLAGS=""
+fi
+
+# Set newman SSL flags based on SSL_VERIFY
+if [[ "$SSL_VERIFY" == "false" ]]; then
+    NEWMAN_SSL_FLAGS="--insecure"
+else
+    NEWMAN_SSL_FLAGS=""
+fi
 
 # Optional: if you use docker for TimescaleDB
 # docker compose -f docker/docker-compose.yml up -d
@@ -48,23 +63,6 @@ echo "REPORT_DIR=$REPORT_DIR"
 echo ""
 
 python manage.py migrate --noinput
-
-# Always start OUR own server
-LOG_FILE="/tmp/apm_step5_server.log"
-python manage.py runserver "127.0.0.1:${PORT}" >"$LOG_FILE" 2>&1 &
-PID=$!
-trap 'kill $PID >/dev/null 2>&1 || true' EXIT
-
-# Wait for server readiness
-READY=0
-for i in {1..80}; do
-  if curl -sf --connect-timeout 2 --max-time 2 "$BASE_URL/api/requests/" >/dev/null 2>&1; then
-    READY=1
-    break
-  fi
-  sleep 0.25
-done
-[[ "$READY" == "1" ]] || fail "Server did not become ready on ${BASE_URL}."
 
 # ----------------------------
 # Seed data spanning multiple days/services/endpoints via ingest
@@ -106,7 +104,7 @@ JSON
 )"
 
 HTTP_CODE_INGEST="$(
-  curl -sS --connect-timeout 2 --max-time 30 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 30 \
     -o "$REPORT_DIR/step5_ingest.json" -w "%{http_code}" \
     -H "Content-Type: application/json" \
     -X POST "$BASE_URL/api/requests/ingest/?strict=false" \
@@ -123,7 +121,7 @@ echo ""
 # ----------------------------
 echo "---- Smoke check: /api/requests/kpis/ ----"
 HTTP_CODE_KPIS="$(
-  curl -sS --connect-timeout 2 --max-time 20 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 20 \
     -o "$REPORT_DIR/step5_kpis.json" -w "%{http_code}" \
     "$BASE_URL/api/requests/kpis/"
 )"
@@ -140,7 +138,7 @@ grep -q '"source"' "$REPORT_DIR/step5_kpis.json" || fail "KPIs response missing 
 # Optional filtered KPIs
 echo "---- KPIs filtered: service=api ----"
 HTTP_CODE_KPIS2="$(
-  curl -sS --connect-timeout 2 --max-time 20 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 20 \
     -o "$REPORT_DIR/step5_kpis_service_api.json" -w "%{http_code}" \
     "$BASE_URL/api/requests/kpis/?service=api"
 )"
@@ -154,7 +152,7 @@ echo ""
 # ----------------------------
 echo "---- Smoke check: /api/requests/top-endpoints/ ----"
 HTTP_CODE_TOP="$(
-  curl -sS --connect-timeout 2 --max-time 30 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 30 \
     -o "$REPORT_DIR/step5_top_endpoints_hits.json" -w "%{http_code}" \
     "$BASE_URL/api/requests/top-endpoints/?limit=10&sort_by=hits&direction=desc"
 )"
@@ -170,7 +168,7 @@ grep -q '"hits"' "$REPORT_DIR/step5_top_endpoints_hits.json" || fail "Top endpoi
 
 echo "---- Top endpoints: sort_by=error_rate ----"
 HTTP_CODE_TOP2="$(
-  curl -sS --connect-timeout 2 --max-time 30 \
+  curl $CURL_SSL_FLAGS -sS --connect-timeout 2 --max-time 30 \
     -o "$REPORT_DIR/step5_top_endpoints_error_rate.json" -w "%{http_code}" \
     "$BASE_URL/api/requests/top-endpoints/?limit=10&sort_by=error_rate&direction=desc"
 )"
@@ -191,6 +189,7 @@ if have_cmd newman && [[ -f "$STEP5_COLLECTION" ]]; then
   NEWMAN_ARGS=(
     run "$STEP5_COLLECTION"
     --env-var "base_url=$BASE_URL"
+    $NEWMAN_SSL_FLAGS
     --reporters cli,json,junit,htmlextra
     --reporter-json-export "$REPORT_DIR/step5-report.json"
     --reporter-junit-export "$REPORT_DIR/step5-junit.xml"

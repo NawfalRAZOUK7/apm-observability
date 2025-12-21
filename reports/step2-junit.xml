@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="APM Observability — Step 2 (Ingest)" tests="4" time="0.092">
-  <testsuite name="Ingest — valid (raw list)" id="a69f774f-118d-49ab-9c1c-3d4ee0c57ec7" timestamp="2025-12-14T18:54:49.754Z" tests="3" failures="0" errors="0" time="0.065">
-    <testcase name="status is 200" time="0.065" classname="IngestValidRawList"/>
-    <testcase name="inserted is 2" time="0.065" classname="IngestValidRawList"/>
-    <testcase name="rejected is 0" time="0.065" classname="IngestValidRawList"/>
+<testsuites name="APM Observability — Step 2 (Ingest)" tests="4" time="0.674">
+  <testsuite name="Ingest — valid (raw list)" id="5e9e80fa-209f-4768-8b22-796c89e66a86" timestamp="2025-12-21T18:43:38.600Z" tests="3" failures="0" errors="0" time="0.191">
+    <testcase name="status is 200" time="0.191" classname="IngestValidRawList"/>
+    <testcase name="inserted is 2" time="0.191" classname="IngestValidRawList"/>
+    <testcase name="rejected is 0" time="0.191" classname="IngestValidRawList"/>
   </testsuite>
-  <testsuite name="Ingest — mixed invalid (raw list)" id="165ed20b-380a-4233-819d-7b7f111c0e00" timestamp="2025-12-14T18:54:49.754Z" tests="4" failures="0" errors="0" time="0.010">
-    <testcase name="status is 200" time="0.010" classname="IngestMixedInvalidRawList"/>
-    <testcase name="inserted is 1" time="0.010" classname="IngestMixedInvalidRawList"/>
-    <testcase name="rejected is 1" time="0.010" classname="IngestMixedInvalidRawList"/>
-    <testcase name="errors contains index 1" time="0.010" classname="IngestMixedInvalidRawList"/>
+  <testsuite name="Ingest — mixed invalid (raw list)" id="7c165ded-89c2-4079-89d4-356f8ebdf6f6" timestamp="2025-12-21T18:43:38.600Z" tests="4" failures="0" errors="0" time="0.361">
+    <testcase name="status is 200" time="0.361" classname="IngestMixedInvalidRawList"/>
+    <testcase name="inserted is 1" time="0.361" classname="IngestMixedInvalidRawList"/>
+    <testcase name="rejected is 1" time="0.361" classname="IngestMixedInvalidRawList"/>
+    <testcase name="errors contains index 1" time="0.361" classname="IngestMixedInvalidRawList"/>
   </testsuite>
-  <testsuite name="Ingest — wrapper {events: [...]}" id="16baf32d-8fa9-4fc4-96d3-5b2fd71b3e98" timestamp="2025-12-14T18:54:49.754Z" tests="3" failures="0" errors="0" time="0.009">
-    <testcase name="status is 200" time="0.009" classname="IngestWrapperEvents"/>
-    <testcase name="inserted is 2" time="0.009" classname="IngestWrapperEvents"/>
-    <testcase name="rejected is 0" time="0.009" classname="IngestWrapperEvents"/>
+  <testsuite name="Ingest — wrapper {events: [...]}" id="d1926f4e-06e9-4624-a83f-f84f07caa4fb" timestamp="2025-12-21T18:43:38.600Z" tests="3" failures="0" errors="0" time="0.034">
+    <testcase name="status is 200" time="0.034" classname="IngestWrapperEvents"/>
+    <testcase name="inserted is 2" time="0.034" classname="IngestWrapperEvents"/>
+    <testcase name="rejected is 0" time="0.034" classname="IngestWrapperEvents"/>
   </testsuite>
-  <testsuite name="Ingest — strict=true (mixed invalid)" id="1ef3adbf-6811-4af1-85d7-b2ca9fadff5f" timestamp="2025-12-14T18:54:49.754Z" tests="3" failures="0" errors="0" time="0.008">
-    <testcase name="status is 400" time="0.008" classname="IngestStrictTrueMixedInvalid"/>
-    <testcase name="inserted is 0" time="0.008" classname="IngestStrictTrueMixedInvalid"/>
-    <testcase name="rejected > 0" time="0.008" classname="IngestStrictTrueMixedInvalid"/>
+  <testsuite name="Ingest — strict=true (mixed invalid)" id="7dd62e5e-1b48-4d88-98b9-c2d88ab0d818" timestamp="2025-12-21T18:43:38.600Z" tests="3" failures="0" errors="0" time="0.088">
+    <testcase name="status is 400" time="0.088" classname="IngestStrictTrueMixedInvalid"/>
+    <testcase name="inserted is 0" time="0.088" classname="IngestStrictTrueMixedInvalid"/>
+    <testcase name="rejected > 0" time="0.088" classname="IngestStrictTrueMixedInvalid"/>
   </testsuite>
 </testsuites>

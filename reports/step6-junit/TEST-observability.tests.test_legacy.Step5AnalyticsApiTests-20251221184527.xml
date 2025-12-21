@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_legacy.Step5AnalyticsApiTests-20251221184527" tests="5" file="observability/tests/test_legacy.py" time="0.002" timestamp="2025-12-21T18:45:27" failures="0" errors="0" skipped="5">
+	<testcase classname="observability.tests.test_legacy.Step5AnalyticsApiTests" name="test_kpis_error_rate_correct_and_p95_numeric" time="0.001" timestamp="2025-12-21T18:45:27" file="observability/tests/test_legacy.py" line="352">
+		<skipped type="skip" message="Step 5 analytics tests require PostgreSQL (percentile_cont + postgres_required)."/>
+	</testcase>
+	<testcase classname="observability.tests.test_legacy.Step5AnalyticsApiTests" name="test_kpis_params_validation_bad_date_returns_400" time="0.000" timestamp="2025-12-21T18:45:27" file="observability/tests/test_legacy.py" line="341">
+		<skipped type="skip" message="Step 5 analytics tests require PostgreSQL (percentile_cont + postgres_required)."/>
+	</testcase>
+	<testcase classname="observability.tests.test_legacy.Step5AnalyticsApiTests" name="test_top_endpoints_params_validation_bad_sort_returns_400" time="0.000" timestamp="2025-12-21T18:45:27" file="observability/tests/test_legacy.py" line="345">
+		<skipped type="skip" message="Step 5 analytics tests require PostgreSQL (percentile_cont + postgres_required)."/>
+	</testcase>
+	<testcase classname="observability.tests.test_legacy.Step5AnalyticsApiTests" name="test_top_endpoints_sorting_respects_direction_and_limit" time="0.000" timestamp="2025-12-21T18:45:27" file="observability/tests/test_legacy.py" line="387">
+		<skipped type="skip" message="Step 5 analytics tests require PostgreSQL (percentile_cont + postgres_required)."/>
+	</testcase>
+	<testcase classname="observability.tests.test_legacy.Step5AnalyticsApiTests" name="test_top_endpoints_with_p95_returns_numeric_for_at_least_one_row" time="0.000" timestamp="2025-12-21T18:45:27" file="observability/tests/test_legacy.py" line="411">
+		<skipped type="skip" message="Step 5 analytics tests require PostgreSQL (percentile_cont + postgres_required)."/>
+	</testcase>
+</testsuite>

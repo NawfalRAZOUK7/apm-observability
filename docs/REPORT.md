@@ -67,3 +67,7 @@
 ## Résumé
 
 TimescaleDB marie PostgreSQL et fonctionnalités time-series (hypertables, CAGG, policies de rétention/compression) adaptées à l’APM. Les coûts et l’opérationnel sont plus légers qu’un stack Oracle pour le même besoin; le déploiement peut être on-prem ou managé (RDS/Aurora/Timescale Cloud) selon l’équilibre recherché entre contrôle et coût.
+
+# pgBackRest S3/MinIO Compatibility Note
+
+For reliable S3/MinIO backups with Docker, pgBackRest **v2.41 or newer** is required. Older versions may have endpoint/bucket parsing bugs that prevent correct operation. Always use the config file for S3 settings and avoid environment variable overrides. See official documentation for details.

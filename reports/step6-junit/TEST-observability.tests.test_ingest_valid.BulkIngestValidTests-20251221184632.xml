@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_ingest_valid.BulkIngestValidTests-20251221184632" tests="2" file="observability/tests/test_ingest_valid.py" time="0.027" timestamp="2025-12-21T18:46:32" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_ingest_valid.BulkIngestValidTests" name="test_bulk_ingest_valid_list_inserts_all" time="0.018" timestamp="2025-12-21T18:46:32" file="observability/tests/test_ingest_valid.py" line="14"/>
+	<testcase classname="observability.tests.test_ingest_valid.BulkIngestValidTests" name="test_bulk_ingest_valid_wrapper_shape_inserts_all" time="0.009" timestamp="2025-12-21T18:46:32" file="observability/tests/test_ingest_valid.py" line="28"/>
+</testsuite>

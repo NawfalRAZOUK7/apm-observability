@@ -20,6 +20,7 @@ class ApiRequestFilter(df_filters.FilterSet):
     status_code = df_filters.NumberFilter(field_name="status_code")
     status_code__in = NumberInFilter(field_name="status_code", lookup_expr="in")
 
+    latency_ms = df_filters.NumberFilter(field_name="latency_ms")
     latency_min = df_filters.NumberFilter(field_name="latency_ms", lookup_expr="gte")
     latency_max = df_filters.NumberFilter(field_name="latency_ms", lookup_expr="lte")
 
@@ -36,6 +37,7 @@ class ApiRequestFilter(df_filters.FilterSet):
             "method",
             "status_code",
             "status_code__in",
+            "latency_ms",
             "latency_min",
             "latency_max",
             "trace_id",

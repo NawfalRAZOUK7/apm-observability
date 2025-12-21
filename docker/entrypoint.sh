@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# entrypoint.sh - Main entrypoint for the APM Observability Django application container.
+# Handles DB connection checks, migrations, static file collection, and Gunicorn startup.
 set -euo pipefail
 
 echo "==> APM Observability entrypoint starting..."

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_kpis.KpisEndpointTests-20251221184632" tests="2" file="observability/tests/test_kpis.py" time="0.003" timestamp="2025-12-21T18:46:32" failures="0" errors="0" skipped="2">
+	<testcase classname="observability.tests.test_kpis.KpisEndpointTests" name="test_kpis_bad_date_param_returns_400" time="0.001" timestamp="2025-12-21T18:46:32" file="observability/tests/test_kpis.py" line="109">
+		<skipped type="skip" message="KPIs endpoint tests require PostgreSQL (percentile_cont)."/>
+	</testcase>
+	<testcase classname="observability.tests.test_kpis.KpisEndpointTests" name="test_kpis_shape_and_plausible_values" time="0.002" timestamp="2025-12-21T18:46:32" file="observability/tests/test_kpis.py" line="69">
+		<skipped type="skip" message="KPIs endpoint tests require PostgreSQL (percentile_cont)."/>
+	</testcase>
+</testsuite>

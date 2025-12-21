@@ -5,7 +5,7 @@
     },
     "item": [
       {
-        "id": "b6cb8cbc-749b-48aa-84fe-94bab3108c68",
+        "id": "60cb9a45-1556-4e1f-bac9-bc16145f58ed",
         "name": "00 - Create sample A (older time, 500)",
         "request": {
           "url": {
@@ -37,20 +37,20 @@
           {
             "listen": "test",
             "script": {
-              "id": "7a6c794c-7363-402e-963c-09284e08d1cc",
+              "id": "ef303dec-ac79-4e41-9855-af928d64635e",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 201', () => pm.response.to.have.status(201));",
                 "const body = pm.response.json();",
                 "pm.environment.set('id_a', body.id);"
               ],
-              "_lastExecutionId": "d05428bb-d4a4-4e18-9fba-a06dfd917013"
+              "_lastExecutionId": "6154dd38-9d43-4e43-af9c-6553552494ec"
             }
           }
         ]
       },
       {
-        "id": "c6924dac-1123-41f3-8875-c10ffca1a5ce",
+        "id": "62174ce4-2659-4e0e-afad-4b730f31de36",
         "name": "01 - Create sample B (newer time, latency 100)",
         "request": {
           "url": {
@@ -82,20 +82,20 @@
           {
             "listen": "test",
             "script": {
-              "id": "1938f00a-3660-4587-bf69-19e951cf0ff5",
+              "id": "4c8676fb-5755-4130-98b4-6834d0b61ca3",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 201', () => pm.response.to.have.status(201));",
                 "const body = pm.response.json();",
                 "pm.environment.set('id_b', body.id);"
               ],
-              "_lastExecutionId": "cebedaf6-cac6-4984-a243-0c20d1d4f879"
+              "_lastExecutionId": "cc2553c4-0bbf-421b-b0ba-130df87a93b4"
             }
           }
         ]
       },
       {
-        "id": "f6ae6746-501e-4a5c-8f41-bb9b870c42da",
+        "id": "e2e1bce5-507a-41f0-a654-90a87984a7ac",
         "name": "02 - Create sample C (newer time, latency 200)",
         "request": {
           "url": {
@@ -127,20 +127,20 @@
           {
             "listen": "test",
             "script": {
-              "id": "3f514c54-6ff5-4ac7-b480-9abdfc386b7a",
+              "id": "37530840-ba22-4a59-a661-6a2b75745ef3",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 201', () => pm.response.to.have.status(201));",
                 "const body = pm.response.json();",
                 "pm.environment.set('id_c', body.id);"
               ],
-              "_lastExecutionId": "2bdfcefe-e309-4b77-9c3a-0348a5cbf9a8"
+              "_lastExecutionId": "1dbd94e9-5671-4c5d-be4b-b9e8edbc5596"
             }
           }
         ]
       },
       {
-        "id": "9e5f8b2c-5ae0-42d0-923d-cf1eebbe8463",
+        "id": "741a6d6e-294e-4aa2-9efd-5fd6865a623a",
         "name": "10 - GET list (default ordering -time)",
         "request": {
           "url": {
@@ -162,7 +162,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "63e42eef-d9c2-451b-86a0-1f6f5b317f49",
+              "id": "752eb0a0-826c-4c29-9c9e-e90d6a27c746",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -175,13 +175,13 @@
                 "  pm.test('Ordered by -time (non-increasing)', () => pm.expect(t0).to.be.at.least(t1));",
                 "}"
               ],
-              "_lastExecutionId": "e03719d3-65d2-48b3-a8aa-b946f3e0852f"
+              "_lastExecutionId": "0555e90a-bf3c-477f-ba2d-79223d54e772"
             }
           }
         ]
       },
       {
-        "id": "74802e7b-6a8a-4817-85bb-31426c4177a7",
+        "id": "09bfa21a-6dfc-4c0f-8044-9e054bf7ba2d",
         "name": "11 - Filter: service=auth",
         "request": {
           "url": {
@@ -208,7 +208,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "5f9dc2e7-67fb-4b29-b6fa-edf16f3ab5b6",
+              "id": "a92bbb53-3c49-4ba7-8bcf-6e35248bed63",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -216,13 +216,13 @@
                 "const items = Array.isArray(body) ? body : (body.results || []);",
                 "pm.test('All service=auth', () => items.forEach(x => pm.expect(x.service).to.eql('auth')));"
               ],
-              "_lastExecutionId": "c2ad0cf6-c8c0-44c6-80d6-c123e19afa1b"
+              "_lastExecutionId": "0320200f-8f64-4892-a2cb-37b479ff78b7"
             }
           }
         ]
       },
       {
-        "id": "da8d7d40-82fb-4101-8eff-e8189419bbc7",
+        "id": "696473af-7c96-4115-8fb3-4377b509f93e",
         "name": "12 - Filter: status_code=500",
         "request": {
           "url": {
@@ -249,7 +249,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "9fcd951d-a3d6-4945-8b0a-f09e10e535f0",
+              "id": "c382c66f-17f8-4ec2-ab1a-67d193e0f19a",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -257,13 +257,13 @@
                 "const items = Array.isArray(body) ? body : (body.results || []);",
                 "pm.test('All status_code=500', () => items.forEach(x => pm.expect(x.status_code).to.eql(500)));"
               ],
-              "_lastExecutionId": "96988ef4-f7d8-4adc-8427-5c9368fc456c"
+              "_lastExecutionId": "66672935-9e7d-4744-8019-53e54ddf89ef"
             }
           }
         ]
       },
       {
-        "id": "083c38f9-5814-40a4-98aa-7506acdcbb67",
+        "id": "b5e46e86-84eb-4787-8233-a21be374a642",
         "name": "13 - Filter: latency 120..220",
         "request": {
           "url": {
@@ -277,11 +277,11 @@
             ],
             "query": [
               {
-                "key": "latency_ms__gte",
+                "key": "latency_min",
                 "value": "120"
               },
               {
-                "key": "latency_ms__lte",
+                "key": "latency_max",
                 "value": "220"
               }
             ],
@@ -294,7 +294,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "0c681594-5e6f-4bc8-a85f-f575f13c8a27",
+              "id": "6c2e91f6-de35-4281-814a-981d8485c66a",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -305,13 +305,13 @@
                 "  pm.expect(x.latency_ms).to.be.at.most(220);",
                 "}));"
               ],
-              "_lastExecutionId": "57da5cc7-6a7d-4b6c-a67f-c79bd88c9c13"
+              "_lastExecutionId": "e2720f80-840c-4514-928e-d997067f7dfa"
             }
           }
         ]
       },
       {
-        "id": "186c6827-9a13-4c12-b5ef-4086941c4f93",
+        "id": "b66b5ca7-51cc-488d-b6bf-e19ab1e733a5",
         "name": "14 - Filter: time range 01:11..01:13",
         "request": {
           "url": {
@@ -342,7 +342,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "7d6587d3-0a9f-4ae5-9354-e60430bb2701",
+              "id": "f282cc12-686b-49cf-87d1-083bf5dbb947",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -356,13 +356,13 @@
                 "  pm.expect(t).to.be.at.most(before);",
                 "}));"
               ],
-              "_lastExecutionId": "0a544d4e-123b-4fdb-acf2-d2ff4695792c"
+              "_lastExecutionId": "488bb394-d5c7-4e34-843a-9c0ccd3a5c6d"
             }
           }
         ]
       },
       {
-        "id": "217d7093-a098-4c88-9fc0-252a170b17a2",
+        "id": "6794859d-b848-4b00-8eed-eebb96508129",
         "name": "15 - Ordering: -time,latency_ms",
         "request": {
           "url": {
@@ -389,7 +389,7 @@
           {
             "listen": "test",
             "script": {
-              "id": "4b66ba9c-8dbe-4959-86d2-d84338982474",
+              "id": "505d16db-6e67-4aa9-8139-79d797101308",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -408,13 +408,13 @@
                 "  }",
                 "}"
               ],
-              "_lastExecutionId": "cdf2b766-46b7-4c22-94ff-fda020ce1607"
+              "_lastExecutionId": "30065684-9117-4499-b9f4-c66a5212690d"
             }
           }
         ]
       },
       {
-        "id": "bf148963-7379-4b44-b382-859695d45b99",
+        "id": "cfe1f702-858d-4dee-9323-ffdd284e56a5",
         "name": "20 - GET detail (id_b)",
         "request": {
           "url": {
@@ -437,18 +437,18 @@
           {
             "listen": "test",
             "script": {
-              "id": "22aac2ed-369b-4b7f-b5d4-3f42c581ae04",
+              "id": "49b4aca8-2e5d-4711-abee-c1508d1cd2cb",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));"
               ],
-              "_lastExecutionId": "7d8678c5-2243-49ff-b71a-7f00819f6412"
+              "_lastExecutionId": "de06a449-35cf-4603-a3d7-dd64986a0bf1"
             }
           }
         ]
       },
       {
-        "id": "76630b0a-67fd-4473-8918-2d89d9a28eba",
+        "id": "60809541-127a-4f65-bd65-8f007ceca23e",
         "name": "21 - PATCH update (id_b -> latency_ms=111)",
         "request": {
           "url": {
@@ -481,20 +481,20 @@
           {
             "listen": "test",
             "script": {
-              "id": "f53318dc-72a4-4486-ac7d-16238786093b",
+              "id": "a0514774-db05-4c2a-919d-7dfb76cd3fa9",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 200', () => pm.response.to.have.status(200));",
                 "const body = pm.response.json();",
                 "pm.test('Latency updated', () => pm.expect(body.latency_ms).to.eql(111));"
               ],
-              "_lastExecutionId": "7638f0a1-8ff1-442f-b25a-dbba0ca5127d"
+              "_lastExecutionId": "1b921b90-0a6e-4996-8839-ae8637919186"
             }
           }
         ]
       },
       {
-        "id": "02b75198-fea3-4495-8227-59df1d5a7587",
+        "id": "b6352c1d-067b-4495-bdbe-69f92d3095de",
         "name": "90 - DELETE sample A",
         "request": {
           "url": {
@@ -517,18 +517,18 @@
           {
             "listen": "test",
             "script": {
-              "id": "59ed8e49-07a6-4472-9899-f1d50eb70874",
+              "id": "f9abe559-a9a4-403b-928e-42b5cffaf0c8",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 204', () => pm.response.to.have.status(204));"
               ],
-              "_lastExecutionId": "11481a78-9e7a-4932-9b0d-6fc093dfb943"
+              "_lastExecutionId": "abc760f5-1405-4cdb-8397-439fafcec11d"
             }
           }
         ]
       },
       {
-        "id": "a98df5c6-b95e-4eea-a45d-f24c7039825f",
+        "id": "8cc8463f-d21a-4c62-8ad8-3cdb84b97226",
         "name": "91 - DELETE sample B",
         "request": {
           "url": {
@@ -551,18 +551,18 @@
           {
             "listen": "test",
             "script": {
-              "id": "2469f9e9-c18b-41d8-ae56-5c23f905fb4f",
+              "id": "17269146-6c84-4e09-a3f6-9f8035109e91",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 204', () => pm.response.to.have.status(204));"
               ],
-              "_lastExecutionId": "3c3ef933-7798-41d9-86f1-7ba180821e8c"
+              "_lastExecutionId": "2634cd26-d48d-437a-a8ca-4727498dea2d"
             }
           }
         ]
       },
       {
-        "id": "435c319d-0b48-464c-a098-996f4705bd96",
+        "id": "02d7228a-4d6a-41b2-ba3f-9f2c244ab65d",
         "name": "92 - DELETE sample C",
         "request": {
           "url": {
@@ -585,12 +585,12 @@
           {
             "listen": "test",
             "script": {
-              "id": "52f7a8ae-88f5-45b4-ae42-0a010c14ee57",
+              "id": "805012a0-acd7-4cb9-8f8c-f9b892c89474",
               "type": "text/javascript",
               "exec": [
                 "pm.test('Status 204', () => pm.response.to.have.status(204));"
               ],
-              "_lastExecutionId": "63d7c235-fd43-4552-a0b6-ed3f2043f354"
+              "_lastExecutionId": "83fd993e-ca39-47c9-afec-ddd9aa2fd0bb"
             }
           }
         ]
@@ -613,33 +613,33 @@
       "postman_variable_scope": "environment",
       "postman_exported_using": "Newman"
     },
-    "id": "83aa6be8-515e-4b08-aebb-a285abc2f37c",
+    "id": "92eb78ec-a45d-4da0-be00-dfeb504e9dc9",
     "name": "APM Observability - Local",
     "values": [
       {
         "type": "any",
-        "value": "http://127.0.0.1:8000",
+        "value": "https://127.0.0.1:8443",
         "key": "base_url"
       },
       {
         "type": "any",
-        "value": 1,
+        "value": 63,
         "key": "id_a"
       },
       {
         "type": "any",
-        "value": 2,
+        "value": 64,
         "key": "id_b"
       },
       {
         "type": "any",
-        "value": 3,
+        "value": 65,
         "key": "id_c"
       }
     ]
   },
   "globals": {
-    "id": "179ad869-5a20-4918-83a5-2cb6ffde645a",
+    "id": "2c5b1903-e99e-4403-ba14-26727c9b2dda",
     "values": []
   },
   "run": {
@@ -691,10 +691,10 @@
       }
     },
     "timings": {
-      "responseAverage": 8.928571428571429,
-      "responseMin": 5,
-      "responseMax": 37,
-      "responseSd": 7.841868269690818,
+      "responseAverage": 36.785714285714285,
+      "responseMin": 10,
+      "responseMax": 124,
+      "responseSd": 32.967903376787916,
       "dnsAverage": 0,
       "dnsMin": 0,
       "dnsMax": 0,
@@ -703,8 +703,8 @@
       "firstByteMin": 0,
       "firstByteMax": 0,
       "firstByteSd": 0,
-      "started": 1765676675946,
-      "completed": 1765676676270
+      "started": 1766342491021,
+      "completed": 1766342491911
     },
     "executions": [
       {
@@ -717,11 +717,11 @@
           "eof": false,
           "bof": true,
           "cr": false,
-          "ref": "af5d0800-dfe8-44d8-9c4e-7fe4f5319cf7",
-          "httpRequestId": "a974d854-9b3c-47aa-aa0f-b2a7f419e123"
+          "ref": "b204710a-59cb-444b-b72b-54736826cec3",
+          "httpRequestId": "53568d3f-cb5c-433a-9109-be8da54a9381"
         },
         "item": {
-          "id": "b6cb8cbc-749b-48aa-84fe-94bab3108c68",
+          "id": "60cb9a45-1556-4e1f-bac9-bc16145f58ed",
           "name": "00 - Create sample A (older time, 500)",
           "request": {
             "url": {
@@ -753,22 +753,22 @@
             {
               "listen": "test",
               "script": {
-                "id": "7a6c794c-7363-402e-963c-09284e08d1cc",
+                "id": "ef303dec-ac79-4e41-9855-af928d64635e",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.environment.set('id_a', body.id);"
                 ],
-                "_lastExecutionId": "d05428bb-d4a4-4e18-9fba-a06dfd917013"
+                "_lastExecutionId": "6154dd38-9d43-4e43-af9c-6553552494ec"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -805,12 +805,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "b06d675f-ff1c-467d-8e68-ceb38276197b",
+              "value": "b313476e-ef6f-4f56-baa5-b27d8ed1d0e6",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -836,25 +836,29 @@
           }
         },
         "response": {
-          "id": "cb2c702d-0af9-4140-adee-1ce94ee0aa32",
+          "id": "3a7dea0d-f703-488c-9e57-add1187b35e6",
           "status": "Created",
           "code": 201,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:35 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "184"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -865,8 +869,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "183"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -890,7 +894,8 @@
               100,
               34,
               58,
-              49,
+              54,
+              51,
               44,
               34,
               116,
@@ -1070,10 +1075,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 37,
-          "responseSize": 183
+          "responseTime": 124,
+          "responseSize": 184
         },
-        "id": "b6cb8cbc-749b-48aa-84fe-94bab3108c68",
+        "id": "60cb9a45-1556-4e1f-bac9-bc16145f58ed",
         "assertions": [
           {
             "assertion": "Status 201",
@@ -1083,15 +1088,15 @@
       },
       {
         "cursor": {
-          "ref": "142c9473-8baa-49a0-a0ae-c66c0b343333",
+          "ref": "4cc0e989-2326-4a89-b4d0-7ede63865a66",
           "length": 14,
           "cycles": 1,
           "position": 1,
           "iteration": 0,
-          "httpRequestId": "e344b781-78b4-466f-a099-59f65f2bab97"
+          "httpRequestId": "ccb15326-6271-4663-b3b5-6a1eac1b2e6c"
         },
         "item": {
-          "id": "c6924dac-1123-41f3-8875-c10ffca1a5ce",
+          "id": "62174ce4-2659-4e0e-afad-4b730f31de36",
           "name": "01 - Create sample B (newer time, latency 100)",
           "request": {
             "url": {
@@ -1123,22 +1128,22 @@
             {
               "listen": "test",
               "script": {
-                "id": "1938f00a-3660-4587-bf69-19e951cf0ff5",
+                "id": "4c8676fb-5755-4130-98b4-6834d0b61ca3",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.environment.set('id_b', body.id);"
                 ],
-                "_lastExecutionId": "cebedaf6-cac6-4984-a243-0c20d1d4f879"
+                "_lastExecutionId": "cc2553c4-0bbf-421b-b0ba-130df87a93b4"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -1175,12 +1180,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "55a99344-6ad3-40f3-8104-1427cbc331b3",
+              "value": "39690df9-a62c-4e38-a406-4c1dda8e0f73",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -1206,25 +1211,29 @@
           }
         },
         "response": {
-          "id": "6df30eb0-c960-4975-935c-e0170bda6016",
+          "id": "1be48e60-0475-4bc8-9a09-d837e9f850d0",
           "status": "Created",
           "code": 201,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "184"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -1235,8 +1244,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "183"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -1260,7 +1269,8 @@
               100,
               34,
               58,
-              50,
+              54,
+              52,
               44,
               34,
               116,
@@ -1440,10 +1450,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
-          "responseSize": 183
+          "responseTime": 11,
+          "responseSize": 184
         },
-        "id": "c6924dac-1123-41f3-8875-c10ffca1a5ce",
+        "id": "62174ce4-2659-4e0e-afad-4b730f31de36",
         "assertions": [
           {
             "assertion": "Status 201",
@@ -1453,15 +1463,15 @@
       },
       {
         "cursor": {
-          "ref": "c22010fb-f700-4c90-a34e-1e607f8ad7f1",
+          "ref": "c9390115-0eec-4df5-8060-bf1d3123acd7",
           "length": 14,
           "cycles": 1,
           "position": 2,
           "iteration": 0,
-          "httpRequestId": "b1d1f498-8c30-417d-ae09-021a3fcfbc3d"
+          "httpRequestId": "3692edef-8db6-457c-9f96-855e0dda554c"
         },
         "item": {
-          "id": "f6ae6746-501e-4a5c-8f41-bb9b870c42da",
+          "id": "e2e1bce5-507a-41f0-a654-90a87984a7ac",
           "name": "02 - Create sample C (newer time, latency 200)",
           "request": {
             "url": {
@@ -1493,22 +1503,22 @@
             {
               "listen": "test",
               "script": {
-                "id": "3f514c54-6ff5-4ac7-b480-9abdfc386b7a",
+                "id": "37530840-ba22-4a59-a661-6a2b75745ef3",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 201', () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.environment.set('id_c', body.id);"
                 ],
-                "_lastExecutionId": "2bdfcefe-e309-4b77-9c3a-0348a5cbf9a8"
+                "_lastExecutionId": "1dbd94e9-5671-4c5d-be4b-b9e8edbc5596"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -1545,12 +1555,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "781e04c8-b05c-4c71-a2be-5acd7e2c8ead",
+              "value": "0cf65e0f-e1e7-4754-84fc-c57a0b85ad6a",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -1576,25 +1586,29 @@
           }
         },
         "response": {
-          "id": "68615686-1ba3-4680-a34a-07bee38e4c6f",
+          "id": "5f295dc5-026c-4068-a66a-d253126854f8",
           "status": "Created",
           "code": 201,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "184"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -1605,8 +1619,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "183"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -1630,7 +1644,8 @@
               100,
               34,
               58,
-              51,
+              54,
+              53,
               44,
               34,
               116,
@@ -1810,10 +1825,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 6,
-          "responseSize": 183
+          "responseTime": 10,
+          "responseSize": 184
         },
-        "id": "f6ae6746-501e-4a5c-8f41-bb9b870c42da",
+        "id": "e2e1bce5-507a-41f0-a654-90a87984a7ac",
         "assertions": [
           {
             "assertion": "Status 201",
@@ -1823,15 +1838,15 @@
       },
       {
         "cursor": {
-          "ref": "10ee6a95-2276-420e-9b4c-c4186cd82977",
+          "ref": "78e867fe-44a4-4394-bb99-f23495749da1",
           "length": 14,
           "cycles": 1,
           "position": 3,
           "iteration": 0,
-          "httpRequestId": "f6c1ef7f-1072-4c39-8cc5-7661ec55060c"
+          "httpRequestId": "166e552d-7119-4898-88db-8b6914462c2c"
         },
         "item": {
-          "id": "9e5f8b2c-5ae0-42d0-923d-cf1eebbe8463",
+          "id": "741a6d6e-294e-4aa2-9efd-5fd6865a623a",
           "name": "10 - GET list (default ordering -time)",
           "request": {
             "url": {
@@ -1853,7 +1868,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "63e42eef-d9c2-451b-86a0-1f6f5b317f49",
+                "id": "752eb0a0-826c-4c29-9c9e-e90d6a27c746",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -1866,15 +1881,15 @@
                   "  pm.test('Ordered by -time (non-increasing)', () => pm.expect(t0).to.be.at.least(t1));",
                   "}"
                 ],
-                "_lastExecutionId": "e03719d3-65d2-48b3-a8aa-b946f3e0852f"
+                "_lastExecutionId": "0555e90a-bf3c-477f-ba2d-79223d54e772"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -1907,12 +1922,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "e7466c6b-7834-40c4-a080-95271315f849",
+              "value": "fcdd3192-4568-46ee-90cd-4f16a6b33fc9",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -1929,25 +1944,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "40934a28-d985-4cdc-aa6a-7830b4c89ad0",
+          "id": "80473dfe-b143-42d1-afe3-56c24517b2f3",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "606"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -1958,8 +1977,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "603"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -2033,191 +2052,8 @@
               100,
               34,
               58,
-              51,
-              44,
-              34,
-              116,
-              105,
-              109,
-              101,
-              34,
-              58,
-              34,
-              50,
-              48,
-              50,
-              53,
-              45,
-              49,
-              50,
-              45,
-              49,
+              54,
               52,
-              84,
-              48,
-              49,
-              58,
-              49,
-              50,
-              58,
-              48,
-              48,
-              90,
-              34,
-              44,
-              34,
-              115,
-              101,
-              114,
-              118,
-              105,
-              99,
-              101,
-              34,
-              58,
-              34,
-              97,
-              117,
-              116,
-              104,
-              34,
-              44,
-              34,
-              101,
-              110,
-              100,
-              112,
-              111,
-              105,
-              110,
-              116,
-              34,
-              58,
-              34,
-              47,
-              108,
-              111,
-              103,
-              105,
-              110,
-              34,
-              44,
-              34,
-              109,
-              101,
-              116,
-              104,
-              111,
-              100,
-              34,
-              58,
-              34,
-              80,
-              79,
-              83,
-              84,
-              34,
-              44,
-              34,
-              115,
-              116,
-              97,
-              116,
-              117,
-              115,
-              95,
-              99,
-              111,
-              100,
-              101,
-              34,
-              58,
-              50,
-              48,
-              48,
-              44,
-              34,
-              108,
-              97,
-              116,
-              101,
-              110,
-              99,
-              121,
-              95,
-              109,
-              115,
-              34,
-              58,
-              50,
-              48,
-              48,
-              44,
-              34,
-              116,
-              114,
-              97,
-              99,
-              101,
-              95,
-              105,
-              100,
-              34,
-              58,
-              34,
-              116,
-              114,
-              95,
-              99,
-              34,
-              44,
-              34,
-              117,
-              115,
-              101,
-              114,
-              95,
-              114,
-              101,
-              102,
-              34,
-              58,
-              34,
-              117,
-              95,
-              52,
-              50,
-              34,
-              44,
-              34,
-              116,
-              97,
-              103,
-              115,
-              34,
-              58,
-              123,
-              34,
-              101,
-              110,
-              118,
-              34,
-              58,
-              34,
-              100,
-              101,
-              118,
-              34,
-              125,
-              125,
-              44,
-              123,
-              34,
-              105,
-              100,
-              34,
-              58,
-              50,
               44,
               34,
               116,
@@ -2401,7 +2237,193 @@
               100,
               34,
               58,
+              54,
+              53,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
               49,
+              50,
+              45,
+              49,
+              52,
+              84,
+              48,
+              49,
+              58,
+              49,
+              50,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              97,
+              117,
+              116,
+              104,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              108,
+              111,
+              103,
+              105,
+              110,
+              34,
+              44,
+              34,
+              109,
+              101,
+              116,
+              104,
+              111,
+              100,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              50,
+              48,
+              48,
+              44,
+              34,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              50,
+              48,
+              48,
+              44,
+              34,
+              116,
+              114,
+              97,
+              99,
+              101,
+              95,
+              105,
+              100,
+              34,
+              58,
+              34,
+              116,
+              114,
+              95,
+              99,
+              34,
+              44,
+              34,
+              117,
+              115,
+              101,
+              114,
+              95,
+              114,
+              101,
+              102,
+              34,
+              58,
+              34,
+              117,
+              95,
+              52,
+              50,
+              34,
+              44,
+              34,
+              116,
+              97,
+              103,
+              115,
+              34,
+              58,
+              123,
+              34,
+              101,
+              110,
+              118,
+              34,
+              58,
+              34,
+              100,
+              101,
+              118,
+              34,
+              125,
+              125,
+              44,
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              54,
+              51,
               44,
               34,
               116,
@@ -2583,10 +2605,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 6,
-          "responseSize": 603
+          "responseTime": 13,
+          "responseSize": 606
         },
-        "id": "9e5f8b2c-5ae0-42d0-923d-cf1eebbe8463",
+        "id": "741a6d6e-294e-4aa2-9efd-5fd6865a623a",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -2604,15 +2626,15 @@
       },
       {
         "cursor": {
-          "ref": "a85532d6-75ab-4b6b-ad6e-db5c55b4e9a2",
+          "ref": "0b5f4a7b-cc17-464d-b1ae-77810e94fb9d",
           "length": 14,
           "cycles": 1,
           "position": 4,
           "iteration": 0,
-          "httpRequestId": "8328fe73-b4e2-4f17-95ab-ee1d317f8bfd"
+          "httpRequestId": "fbdbcc3b-5839-4ebc-b9dd-3a0a95fb94ef"
         },
         "item": {
-          "id": "74802e7b-6a8a-4817-85bb-31426c4177a7",
+          "id": "09bfa21a-6dfc-4c0f-8044-9e054bf7ba2d",
           "name": "11 - Filter: service=auth",
           "request": {
             "url": {
@@ -2639,7 +2661,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "5f9dc2e7-67fb-4b29-b6fa-edf16f3ab5b6",
+                "id": "a92bbb53-3c49-4ba7-8bcf-6e35248bed63",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -2647,15 +2669,15 @@
                   "const items = Array.isArray(body) ? body : (body.results || []);",
                   "pm.test('All service=auth', () => items.forEach(x => pm.expect(x.service).to.eql('auth')));"
                 ],
-                "_lastExecutionId": "c2ad0cf6-c8c0-44c6-80d6-c123e19afa1b"
+                "_lastExecutionId": "0320200f-8f64-4892-a2cb-37b479ff78b7"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -2693,12 +2715,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "058f8211-f07d-4978-b35c-e8e0f62811e2",
+              "value": "f34675f3-4bcc-4112-b243-0bde4997eeb9",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -2715,25 +2737,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "b5ed4c7b-4d2e-45f4-8398-f60aa40e294c",
+          "id": "8920ee42-400a-45e4-a9bf-ff603468fbcf",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "606"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -2744,8 +2770,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "603"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -2819,7 +2845,8 @@
               100,
               34,
               58,
-              50,
+              54,
+              52,
               44,
               34,
               116,
@@ -3003,7 +3030,8 @@
               100,
               34,
               58,
-              51,
+              54,
+              53,
               44,
               34,
               116,
@@ -3187,7 +3215,8 @@
               100,
               34,
               58,
-              49,
+              54,
+              51,
               44,
               34,
               116,
@@ -3369,10 +3398,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
-          "responseSize": 603
+          "responseTime": 62,
+          "responseSize": 606
         },
-        "id": "74802e7b-6a8a-4817-85bb-31426c4177a7",
+        "id": "09bfa21a-6dfc-4c0f-8044-9e054bf7ba2d",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -3386,15 +3415,15 @@
       },
       {
         "cursor": {
-          "ref": "1a0b892c-fb67-4f3b-868e-18cfcb542652",
+          "ref": "3199326c-077c-4a90-8d83-686ba8b83958",
           "length": 14,
           "cycles": 1,
           "position": 5,
           "iteration": 0,
-          "httpRequestId": "6cb0f2c3-fbde-43cc-8707-e42df490f654"
+          "httpRequestId": "78d330aa-2554-4464-a2a3-fe810995c96c"
         },
         "item": {
-          "id": "da8d7d40-82fb-4101-8eff-e8189419bbc7",
+          "id": "696473af-7c96-4115-8fb3-4377b509f93e",
           "name": "12 - Filter: status_code=500",
           "request": {
             "url": {
@@ -3421,7 +3450,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "9fcd951d-a3d6-4945-8b0a-f09e10e535f0",
+                "id": "c382c66f-17f8-4ec2-ab1a-67d193e0f19a",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -3429,15 +3458,15 @@
                   "const items = Array.isArray(body) ? body : (body.results || []);",
                   "pm.test('All status_code=500', () => items.forEach(x => pm.expect(x.status_code).to.eql(500)));"
                 ],
-                "_lastExecutionId": "96988ef4-f7d8-4adc-8427-5c9368fc456c"
+                "_lastExecutionId": "66672935-9e7d-4744-8019-53e54ddf89ef"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -3475,12 +3504,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "2d41257a-541c-424b-8249-0101b7db4e9b",
+              "value": "f1600f9d-c1c5-4788-aaf7-55a9e164ddfe",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -3497,25 +3526,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "966aef19-77ca-494b-bd5e-59b27f30a0ba",
+          "id": "85433370-7476-46b0-8e46-4d5c1f08eac3",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "236"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -3526,8 +3559,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "235"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -3601,431 +3634,7 @@
               100,
               34,
               58,
-              49,
-              44,
-              34,
-              116,
-              105,
-              109,
-              101,
-              34,
-              58,
-              34,
-              50,
-              48,
-              50,
-              53,
-              45,
-              49,
-              50,
-              45,
-              49,
-              52,
-              84,
-              48,
-              49,
-              58,
-              49,
-              48,
-              58,
-              48,
-              48,
-              90,
-              34,
-              44,
-              34,
-              115,
-              101,
-              114,
-              118,
-              105,
-              99,
-              101,
-              34,
-              58,
-              34,
-              97,
-              117,
-              116,
-              104,
-              34,
-              44,
-              34,
-              101,
-              110,
-              100,
-              112,
-              111,
-              105,
-              110,
-              116,
-              34,
-              58,
-              34,
-              47,
-              108,
-              111,
-              103,
-              105,
-              110,
-              34,
-              44,
-              34,
-              109,
-              101,
-              116,
-              104,
-              111,
-              100,
-              34,
-              58,
-              34,
-              80,
-              79,
-              83,
-              84,
-              34,
-              44,
-              34,
-              115,
-              116,
-              97,
-              116,
-              117,
-              115,
-              95,
-              99,
-              111,
-              100,
-              101,
-              34,
-              58,
-              53,
-              48,
-              48,
-              44,
-              34,
-              108,
-              97,
-              116,
-              101,
-              110,
-              99,
-              121,
-              95,
-              109,
-              115,
-              34,
-              58,
-              49,
-              53,
-              48,
-              44,
-              34,
-              116,
-              114,
-              97,
-              99,
-              101,
-              95,
-              105,
-              100,
-              34,
-              58,
-              34,
-              116,
-              114,
-              95,
-              97,
-              34,
-              44,
-              34,
-              117,
-              115,
-              101,
-              114,
-              95,
-              114,
-              101,
-              102,
-              34,
-              58,
-              34,
-              117,
-              95,
-              52,
-              50,
-              34,
-              44,
-              34,
-              116,
-              97,
-              103,
-              115,
-              34,
-              58,
-              123,
-              34,
-              101,
-              110,
-              118,
-              34,
-              58,
-              34,
-              100,
-              101,
-              118,
-              34,
-              125,
-              125,
-              93,
-              125
-            ]
-          },
-          "cookie": [],
-          "responseTime": 9,
-          "responseSize": 235
-        },
-        "id": "da8d7d40-82fb-4101-8eff-e8189419bbc7",
-        "assertions": [
-          {
-            "assertion": "Status 200",
-            "skipped": false
-          },
-          {
-            "assertion": "All status_code=500",
-            "skipped": false
-          }
-        ]
-      },
-      {
-        "cursor": {
-          "ref": "a0cd2ada-74dc-4db9-846b-ada3c9d9916a",
-          "length": 14,
-          "cycles": 1,
-          "position": 6,
-          "iteration": 0,
-          "httpRequestId": "cd2e4a0d-ba36-465b-b081-0b718afa7a09"
-        },
-        "item": {
-          "id": "083c38f9-5814-40a4-98aa-7506acdcbb67",
-          "name": "13 - Filter: latency 120..220",
-          "request": {
-            "url": {
-              "path": [
-                "api",
-                "requests",
-                ""
-              ],
-              "host": [
-                "{{base_url}}"
-              ],
-              "query": [
-                {
-                  "key": "latency_ms__gte",
-                  "value": "120"
-                },
-                {
-                  "key": "latency_ms__lte",
-                  "value": "220"
-                }
-              ],
-              "variable": []
-            },
-            "method": "GET"
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "id": "0c681594-5e6f-4bc8-a85f-f575f13c8a27",
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "const body = pm.response.json();",
-                  "const items = Array.isArray(body) ? body : (body.results || []);",
-                  "pm.test('All latency within range', () => items.forEach(x => {",
-                  "  pm.expect(x.latency_ms).to.be.at.least(120);",
-                  "  pm.expect(x.latency_ms).to.be.at.most(220);",
-                  "}));"
-                ],
-                "_lastExecutionId": "57da5cc7-6a7d-4b6c-a67f-c79bd88c9c13"
-              }
-            }
-          ]
-        },
-        "request": {
-          "url": {
-            "protocol": "http",
-            "port": "8000",
-            "path": [
-              "api",
-              "requests",
-              ""
-            ],
-            "host": [
-              "127",
-              "0",
-              "0",
-              "1"
-            ],
-            "query": [
-              {
-                "key": "latency_ms__gte",
-                "value": "120"
-              },
-              {
-                "key": "latency_ms__lte",
-                "value": "220"
-              }
-            ],
-            "variable": []
-          },
-          "header": [
-            {
-              "key": "User-Agent",
-              "value": "PostmanRuntime/7.39.1",
-              "system": true
-            },
-            {
-              "key": "Accept",
-              "value": "*/*",
-              "system": true
-            },
-            {
-              "key": "Cache-Control",
-              "value": "no-cache",
-              "system": true
-            },
-            {
-              "key": "Postman-Token",
-              "value": "fdf8c832-c90a-4b1b-bdb9-4140bb31d0a9",
-              "system": true
-            },
-            {
-              "key": "Host",
-              "value": "127.0.0.1:8000",
-              "system": true
-            },
-            {
-              "key": "Accept-Encoding",
-              "value": "gzip, deflate, br",
-              "system": true
-            },
-            {
-              "key": "Connection",
-              "value": "keep-alive",
-              "system": true
-            }
-          ],
-          "method": "GET"
-        },
-        "response": {
-          "id": "b49c2132-163d-4f6d-9cf8-d01c4c29509e",
-          "status": "OK",
-          "code": 200,
-          "header": [
-            {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
-            },
-            {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
-            },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "key": "Vary",
-              "value": "Accept, Cookie"
-            },
-            {
-              "key": "Allow",
-              "value": "GET, POST, HEAD, OPTIONS"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            },
-            {
-              "key": "Content-Length",
-              "value": "419"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            },
-            {
-              "key": "Referrer-Policy",
-              "value": "same-origin"
-            },
-            {
-              "key": "Cross-Origin-Opener-Policy",
-              "value": "same-origin"
-            }
-          ],
-          "stream": {
-            "type": "Buffer",
-            "data": [
-              123,
-              34,
-              99,
-              111,
-              117,
-              110,
-              116,
-              34,
-              58,
-              50,
-              44,
-              34,
-              110,
-              101,
-              120,
-              116,
-              34,
-              58,
-              110,
-              117,
-              108,
-              108,
-              44,
-              34,
-              112,
-              114,
-              101,
-              118,
-              105,
-              111,
-              117,
-              115,
-              34,
-              58,
-              110,
-              117,
-              108,
-              108,
-              44,
-              34,
-              114,
-              101,
-              115,
-              117,
-              108,
-              116,
-              115,
-              34,
-              58,
-              91,
-              123,
-              34,
-              105,
-              100,
-              34,
-              58,
+              54,
               51,
               44,
               34,
@@ -4051,6 +3660,436 @@
               49,
               58,
               49,
+              48,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              97,
+              117,
+              116,
+              104,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              108,
+              111,
+              103,
+              105,
+              110,
+              34,
+              44,
+              34,
+              109,
+              101,
+              116,
+              104,
+              111,
+              100,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              53,
+              48,
+              48,
+              44,
+              34,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              49,
+              53,
+              48,
+              44,
+              34,
+              116,
+              114,
+              97,
+              99,
+              101,
+              95,
+              105,
+              100,
+              34,
+              58,
+              34,
+              116,
+              114,
+              95,
+              97,
+              34,
+              44,
+              34,
+              117,
+              115,
+              101,
+              114,
+              95,
+              114,
+              101,
+              102,
+              34,
+              58,
+              34,
+              117,
+              95,
+              52,
+              50,
+              34,
+              44,
+              34,
+              116,
+              97,
+              103,
+              115,
+              34,
+              58,
+              123,
+              34,
+              101,
+              110,
+              118,
+              34,
+              58,
+              34,
+              100,
+              101,
+              118,
+              34,
+              125,
+              125,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 14,
+          "responseSize": 236
+        },
+        "id": "696473af-7c96-4115-8fb3-4377b509f93e",
+        "assertions": [
+          {
+            "assertion": "Status 200",
+            "skipped": false
+          },
+          {
+            "assertion": "All status_code=500",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "36e0ce39-ab66-4668-a831-5cade387b82b",
+          "length": 14,
+          "cycles": 1,
+          "position": 6,
+          "iteration": 0,
+          "httpRequestId": "4655cec6-8748-4ade-9d37-977b71aa996a"
+        },
+        "item": {
+          "id": "b5e46e86-84eb-4787-8233-a21be374a642",
+          "name": "13 - Filter: latency 120..220",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [
+                {
+                  "key": "latency_min",
+                  "value": "120"
+                },
+                {
+                  "key": "latency_max",
+                  "value": "220"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "6c2e91f6-de35-4281-814a-981d8485c66a",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "const items = Array.isArray(body) ? body : (body.results || []);",
+                  "pm.test('All latency within range', () => items.forEach(x => {",
+                  "  pm.expect(x.latency_ms).to.be.at.least(120);",
+                  "  pm.expect(x.latency_ms).to.be.at.most(220);",
+                  "}));"
+                ],
+                "_lastExecutionId": "e2720f80-840c-4514-928e-d997067f7dfa"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "8443",
+            "path": [
+              "api",
+              "requests",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [
+              {
+                "key": "latency_min",
+                "value": "120"
+              },
+              {
+                "key": "latency_max",
+                "value": "220"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "ecab359c-b229-4868-8847-cdf67c98b815",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8443",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "dcb55e73-fcf5-4430-a696-b78fa0cfc1ea",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx/1.29.4"
+            },
+            {
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "421"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "GET, POST, HEAD, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              99,
+              111,
+              117,
+              110,
+              116,
+              34,
+              58,
+              50,
+              44,
+              34,
+              110,
+              101,
+              120,
+              116,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              112,
+              114,
+              101,
+              118,
+              105,
+              111,
+              117,
+              115,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              44,
+              34,
+              114,
+              101,
+              115,
+              117,
+              108,
+              116,
+              115,
+              34,
+              58,
+              91,
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              54,
+              53,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
+              49,
+              50,
+              45,
+              49,
+              52,
+              84,
+              48,
+              49,
+              58,
+              49,
               50,
               58,
               48,
@@ -4210,7 +4249,8 @@
               100,
               34,
               58,
-              49,
+              54,
+              51,
               44,
               34,
               116,
@@ -4392,10 +4432,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 6,
-          "responseSize": 419
+          "responseTime": 14,
+          "responseSize": 421
         },
-        "id": "083c38f9-5814-40a4-98aa-7506acdcbb67",
+        "id": "b5e46e86-84eb-4787-8233-a21be374a642",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -4409,15 +4449,15 @@
       },
       {
         "cursor": {
-          "ref": "fc4b5fee-582f-4bcd-975c-fe09cad03c6b",
+          "ref": "6510150c-9697-464a-a003-2301852cf7fe",
           "length": 14,
           "cycles": 1,
           "position": 7,
           "iteration": 0,
-          "httpRequestId": "d5a049ac-1425-44fa-ab16-4238eda435ea"
+          "httpRequestId": "218a5d94-4759-4a42-ae5f-a8776bf2cb9e"
         },
         "item": {
-          "id": "186c6827-9a13-4c12-b5ef-4086941c4f93",
+          "id": "b66b5ca7-51cc-488d-b6bf-e19ab1e733a5",
           "name": "14 - Filter: time range 01:11..01:13",
           "request": {
             "url": {
@@ -4448,7 +4488,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "7d6587d3-0a9f-4ae5-9354-e60430bb2701",
+                "id": "f282cc12-686b-49cf-87d1-083bf5dbb947",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -4462,15 +4502,15 @@
                   "  pm.expect(t).to.be.at.most(before);",
                   "}));"
                 ],
-                "_lastExecutionId": "0a544d4e-123b-4fdb-acf2-d2ff4695792c"
+                "_lastExecutionId": "488bb394-d5c7-4e34-843a-9c0ccd3a5c6d"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -4512,12 +4552,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "5a198822-4437-4ed2-8d14-9872d05efc70",
+              "value": "545280a2-0329-4c9f-b1f4-f3577fc11942",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -4534,25 +4574,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "e841a1c5-1948-4d6f-9a49-2a1fe2a7df5a",
+          "id": "d94c7558-fe40-42b9-b9b7-6baf920621e6",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "421"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -4563,8 +4607,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "419"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -4638,191 +4682,8 @@
               100,
               34,
               58,
-              51,
-              44,
-              34,
-              116,
-              105,
-              109,
-              101,
-              34,
-              58,
-              34,
-              50,
-              48,
-              50,
-              53,
-              45,
-              49,
-              50,
-              45,
-              49,
+              54,
               52,
-              84,
-              48,
-              49,
-              58,
-              49,
-              50,
-              58,
-              48,
-              48,
-              90,
-              34,
-              44,
-              34,
-              115,
-              101,
-              114,
-              118,
-              105,
-              99,
-              101,
-              34,
-              58,
-              34,
-              97,
-              117,
-              116,
-              104,
-              34,
-              44,
-              34,
-              101,
-              110,
-              100,
-              112,
-              111,
-              105,
-              110,
-              116,
-              34,
-              58,
-              34,
-              47,
-              108,
-              111,
-              103,
-              105,
-              110,
-              34,
-              44,
-              34,
-              109,
-              101,
-              116,
-              104,
-              111,
-              100,
-              34,
-              58,
-              34,
-              80,
-              79,
-              83,
-              84,
-              34,
-              44,
-              34,
-              115,
-              116,
-              97,
-              116,
-              117,
-              115,
-              95,
-              99,
-              111,
-              100,
-              101,
-              34,
-              58,
-              50,
-              48,
-              48,
-              44,
-              34,
-              108,
-              97,
-              116,
-              101,
-              110,
-              99,
-              121,
-              95,
-              109,
-              115,
-              34,
-              58,
-              50,
-              48,
-              48,
-              44,
-              34,
-              116,
-              114,
-              97,
-              99,
-              101,
-              95,
-              105,
-              100,
-              34,
-              58,
-              34,
-              116,
-              114,
-              95,
-              99,
-              34,
-              44,
-              34,
-              117,
-              115,
-              101,
-              114,
-              95,
-              114,
-              101,
-              102,
-              34,
-              58,
-              34,
-              117,
-              95,
-              52,
-              50,
-              34,
-              44,
-              34,
-              116,
-              97,
-              103,
-              115,
-              34,
-              58,
-              123,
-              34,
-              101,
-              110,
-              118,
-              34,
-              58,
-              34,
-              100,
-              101,
-              118,
-              34,
-              125,
-              125,
-              44,
-              123,
-              34,
-              105,
-              100,
-              34,
-              58,
-              50,
               44,
               34,
               116,
@@ -4999,15 +4860,200 @@
               34,
               125,
               125,
+              44,
+              123,
+              34,
+              105,
+              100,
+              34,
+              58,
+              54,
+              53,
+              44,
+              34,
+              116,
+              105,
+              109,
+              101,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
+              49,
+              50,
+              45,
+              49,
+              52,
+              84,
+              48,
+              49,
+              58,
+              49,
+              50,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              97,
+              117,
+              116,
+              104,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              108,
+              111,
+              103,
+              105,
+              110,
+              34,
+              44,
+              34,
+              109,
+              101,
+              116,
+              104,
+              111,
+              100,
+              34,
+              58,
+              34,
+              80,
+              79,
+              83,
+              84,
+              34,
+              44,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              50,
+              48,
+              48,
+              44,
+              34,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              50,
+              48,
+              48,
+              44,
+              34,
+              116,
+              114,
+              97,
+              99,
+              101,
+              95,
+              105,
+              100,
+              34,
+              58,
+              34,
+              116,
+              114,
+              95,
+              99,
+              34,
+              44,
+              34,
+              117,
+              115,
+              101,
+              114,
+              95,
+              114,
+              101,
+              102,
+              34,
+              58,
+              34,
+              117,
+              95,
+              52,
+              50,
+              34,
+              44,
+              34,
+              116,
+              97,
+              103,
+              115,
+              34,
+              58,
+              123,
+              34,
+              101,
+              110,
+              118,
+              34,
+              58,
+              34,
+              100,
+              101,
+              118,
+              34,
+              125,
+              125,
               93,
               125
             ]
           },
           "cookie": [],
-          "responseTime": 7,
-          "responseSize": 419
+          "responseTime": 16,
+          "responseSize": 421
         },
-        "id": "186c6827-9a13-4c12-b5ef-4086941c4f93",
+        "id": "b66b5ca7-51cc-488d-b6bf-e19ab1e733a5",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -5021,15 +5067,15 @@
       },
       {
         "cursor": {
-          "ref": "bd2bb3fd-780e-427e-8d34-87338eb0354e",
+          "ref": "aab3e66b-e1ee-4783-b49a-02ebb88d859a",
           "length": 14,
           "cycles": 1,
           "position": 8,
           "iteration": 0,
-          "httpRequestId": "2bb48008-8fcd-4c9f-8887-123f1d49fa39"
+          "httpRequestId": "1be4e90d-d1c7-4946-a843-bb46b1deed7f"
         },
         "item": {
-          "id": "217d7093-a098-4c88-9fc0-252a170b17a2",
+          "id": "6794859d-b848-4b00-8eed-eebb96508129",
           "name": "15 - Ordering: -time,latency_ms",
           "request": {
             "url": {
@@ -5056,7 +5102,7 @@
             {
               "listen": "test",
               "script": {
-                "id": "4b66ba9c-8dbe-4959-86d2-d84338982474",
+                "id": "505d16db-6e67-4aa9-8139-79d797101308",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
@@ -5075,15 +5121,15 @@
                   "  }",
                   "}"
                 ],
-                "_lastExecutionId": "cdf2b766-46b7-4c22-94ff-fda020ce1607"
+                "_lastExecutionId": "30065684-9117-4499-b9f4-c66a5212690d"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
@@ -5121,12 +5167,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "2a4cfc24-f251-4044-9115-e31e59bdedf7",
+              "value": "6181efd9-a2f2-4f60-b327-c4335216bbda",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -5143,25 +5189,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "aa8e1816-1899-462e-af46-c2258e73a048",
+          "id": "e9248c60-ce59-4599-99dd-1a04f4142f11",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "606"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -5172,8 +5222,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "603"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -5247,7 +5297,8 @@
               100,
               34,
               58,
-              50,
+              54,
+              52,
               44,
               34,
               116,
@@ -5431,7 +5482,8 @@
               100,
               34,
               58,
-              51,
+              54,
+              53,
               44,
               34,
               116,
@@ -5615,7 +5667,8 @@
               100,
               34,
               58,
-              49,
+              54,
+              51,
               44,
               34,
               116,
@@ -5797,10 +5850,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
-          "responseSize": 603
+          "responseTime": 22,
+          "responseSize": 606
         },
-        "id": "217d7093-a098-4c88-9fc0-252a170b17a2",
+        "id": "6794859d-b848-4b00-8eed-eebb96508129",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -5814,15 +5867,15 @@
       },
       {
         "cursor": {
-          "ref": "60ffaa02-0189-42bb-ba93-487bc6d30534",
+          "ref": "ddf738f8-bcf7-4d7b-a8b5-ee8a315126af",
           "length": 14,
           "cycles": 1,
           "position": 9,
           "iteration": 0,
-          "httpRequestId": "c84753e4-0ba1-4332-9190-1017929ad681"
+          "httpRequestId": "bb293fc9-d616-4fd0-8e84-39e3f7505209"
         },
         "item": {
-          "id": "bf148963-7379-4b44-b382-859695d45b99",
+          "id": "cfe1f702-858d-4dee-9323-ffdd284e56a5",
           "name": "20 - GET detail (id_b)",
           "request": {
             "url": {
@@ -5845,24 +5898,24 @@
             {
               "listen": "test",
               "script": {
-                "id": "22aac2ed-369b-4b7f-b5d4-3f42c581ae04",
+                "id": "49b4aca8-2e5d-4711-abee-c1508d1cd2cb",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));"
                 ],
-                "_lastExecutionId": "7d8678c5-2243-49ff-b71a-7f00819f6412"
+                "_lastExecutionId": "de06a449-35cf-4603-a3d7-dd64986a0bf1"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
-              "2",
+              "64",
               ""
             ],
             "host": [
@@ -5892,12 +5945,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "871b73a1-ae62-42ce-a605-7f62e82634dc",
+              "value": "468d1604-6309-416e-8638-ca528aabb846",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -5914,25 +5967,29 @@
           "method": "GET"
         },
         "response": {
-          "id": "829538ca-d6a3-4e65-a193-736374deaff2",
+          "id": "4d237880-d610-4df5-b4ee-77db18662599",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "184"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -5943,8 +6000,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "183"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -5968,7 +6025,8 @@
               100,
               34,
               58,
-              50,
+              54,
+              52,
               44,
               34,
               116,
@@ -6148,10 +6206,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 7,
-          "responseSize": 183
+          "responseTime": 25,
+          "responseSize": 184
         },
-        "id": "bf148963-7379-4b44-b382-859695d45b99",
+        "id": "cfe1f702-858d-4dee-9323-ffdd284e56a5",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -6161,15 +6219,15 @@
       },
       {
         "cursor": {
-          "ref": "ee932754-e17d-4092-8cb0-01aaf4176eb1",
+          "ref": "6e14a8f0-8877-44b8-b1e8-a0e7b62d822c",
           "length": 14,
           "cycles": 1,
           "position": 10,
           "iteration": 0,
-          "httpRequestId": "f857cb50-939d-4110-b4f9-c73a4ca186da"
+          "httpRequestId": "0382b88f-9c7e-4b2a-8066-8e3508822edd"
         },
         "item": {
-          "id": "76630b0a-67fd-4473-8918-2d89d9a28eba",
+          "id": "60809541-127a-4f65-bd65-8f007ceca23e",
           "name": "21 - PATCH update (id_b -> latency_ms=111)",
           "request": {
             "url": {
@@ -6202,26 +6260,26 @@
             {
               "listen": "test",
               "script": {
-                "id": "f53318dc-72a4-4486-ac7d-16238786093b",
+                "id": "a0514774-db05-4c2a-919d-7dfb76cd3fa9",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.test('Latency updated', () => pm.expect(body.latency_ms).to.eql(111));"
                 ],
-                "_lastExecutionId": "7638f0a1-8ff1-442f-b25a-dbba0ca5127d"
+                "_lastExecutionId": "1b921b90-0a6e-4996-8839-ae8637919186"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
-              "2",
+              "64",
               ""
             ],
             "host": [
@@ -6255,12 +6313,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "792f3d42-a71b-4855-a10f-dd22104c0811",
+              "value": "59f62f1a-0e98-4489-9d03-b8d6ff9449ff",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -6286,25 +6344,29 @@
           }
         },
         "response": {
-          "id": "e3d3ee8f-5d98-4c9f-abc4-d564cd2fe7ce",
+          "id": "4f0cc705-d96a-42c4-a9f0-9fe8493586e9",
           "status": "OK",
           "code": 200,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
+              "key": "Server",
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
             },
             {
               "key": "Content-Type",
               "value": "application/json"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Content-Length",
+              "value": "184"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -6315,8 +6377,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "183"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -6340,7 +6402,8 @@
               100,
               34,
               58,
-              50,
+              54,
+              52,
               44,
               34,
               116,
@@ -6520,10 +6583,10 @@
             ]
           },
           "cookie": [],
-          "responseTime": 8,
-          "responseSize": 183
+          "responseTime": 88,
+          "responseSize": 184
         },
-        "id": "76630b0a-67fd-4473-8918-2d89d9a28eba",
+        "id": "60809541-127a-4f65-bd65-8f007ceca23e",
         "assertions": [
           {
             "assertion": "Status 200",
@@ -6537,15 +6600,15 @@
       },
       {
         "cursor": {
-          "ref": "bc09fe32-98b5-4b3b-bbfc-d96516450e5a",
+          "ref": "44fa9887-6714-43b7-bb41-cf904ad833c7",
           "length": 14,
           "cycles": 1,
           "position": 11,
           "iteration": 0,
-          "httpRequestId": "75a3b614-44c6-4bc2-9647-0149de2180d5"
+          "httpRequestId": "b62a3ef5-a5a9-4d9a-b8dc-483006480fe3"
         },
         "item": {
-          "id": "02b75198-fea3-4495-8227-59df1d5a7587",
+          "id": "b6352c1d-067b-4495-bdbe-69f92d3095de",
           "name": "90 - DELETE sample A",
           "request": {
             "url": {
@@ -6568,24 +6631,24 @@
             {
               "listen": "test",
               "script": {
-                "id": "59ed8e49-07a6-4472-9899-f1d50eb70874",
+                "id": "f9abe559-a9a4-403b-928e-42b5cffaf0c8",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 204', () => pm.response.to.have.status(204));"
                 ],
-                "_lastExecutionId": "11481a78-9e7a-4932-9b0d-6fc093dfb943"
+                "_lastExecutionId": "abc760f5-1405-4cdb-8397-439fafcec11d"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
-              "1",
+              "63",
               ""
             ],
             "host": [
@@ -6615,12 +6678,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "d695475b-4943-4392-b42b-0141a572faf6",
+              "value": "3c7bed28-a944-4eb8-b018-0eebae1bfc8b",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -6637,21 +6700,25 @@
           "method": "DELETE"
         },
         "response": {
-          "id": "d354fab7-2f99-4063-98f0-d8c438652478",
+          "id": "e0a6fc18-0719-4f98-a4f3-c74cf30820a0",
           "status": "No Content",
           "code": 204,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
-            },
-            {
               "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
+            },
+            {
+              "key": "Content-Length",
+              "value": "0"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -6662,8 +6729,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "0"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -6683,10 +6750,10 @@
             "data": []
           },
           "cookie": [],
-          "responseTime": 6,
+          "responseTime": 35,
           "responseSize": 0
         },
-        "id": "02b75198-fea3-4495-8227-59df1d5a7587",
+        "id": "b6352c1d-067b-4495-bdbe-69f92d3095de",
         "assertions": [
           {
             "assertion": "Status 204",
@@ -6696,15 +6763,15 @@
       },
       {
         "cursor": {
-          "ref": "6518a9db-2eaa-4b31-bcce-81adfa775dbf",
+          "ref": "1193ebc7-eb36-4371-b222-790b90e8e6a0",
           "length": 14,
           "cycles": 1,
           "position": 12,
           "iteration": 0,
-          "httpRequestId": "bb38d026-49cf-4edc-b6f0-d4a6c638a911"
+          "httpRequestId": "fde62080-b573-4250-8d95-9afd5b1e3d40"
         },
         "item": {
-          "id": "a98df5c6-b95e-4eea-a45d-f24c7039825f",
+          "id": "8cc8463f-d21a-4c62-8ad8-3cdb84b97226",
           "name": "91 - DELETE sample B",
           "request": {
             "url": {
@@ -6727,24 +6794,24 @@
             {
               "listen": "test",
               "script": {
-                "id": "2469f9e9-c18b-41d8-ae56-5c23f905fb4f",
+                "id": "17269146-6c84-4e09-a3f6-9f8035109e91",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 204', () => pm.response.to.have.status(204));"
                 ],
-                "_lastExecutionId": "3c3ef933-7798-41d9-86f1-7ba180821e8c"
+                "_lastExecutionId": "2634cd26-d48d-437a-a8ca-4727498dea2d"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
-              "2",
+              "64",
               ""
             ],
             "host": [
@@ -6774,12 +6841,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "231ff131-2556-4e70-a798-725694079d43",
+              "value": "fe3d56e3-b918-442f-b4a8-63404fc375cd",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -6796,21 +6863,25 @@
           "method": "DELETE"
         },
         "response": {
-          "id": "795a6f4a-3682-4cf4-96b0-958aab73fdd3",
+          "id": "fe9878b6-12ad-47ee-bed3-7ebd3184dc9c",
           "status": "No Content",
           "code": 204,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
-            },
-            {
               "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
+            },
+            {
+              "key": "Content-Length",
+              "value": "0"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -6821,8 +6892,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "0"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -6842,10 +6913,10 @@
             "data": []
           },
           "cookie": [],
-          "responseTime": 5,
+          "responseTime": 57,
           "responseSize": 0
         },
-        "id": "a98df5c6-b95e-4eea-a45d-f24c7039825f",
+        "id": "8cc8463f-d21a-4c62-8ad8-3cdb84b97226",
         "assertions": [
           {
             "assertion": "Status 204",
@@ -6855,15 +6926,15 @@
       },
       {
         "cursor": {
-          "ref": "4a916728-06f5-4c88-a7aa-4768ba6ccb9a",
+          "ref": "609b7fd8-9f72-44d2-b94e-575720f44c6a",
           "length": 14,
           "cycles": 1,
           "position": 13,
           "iteration": 0,
-          "httpRequestId": "8c4f130c-d9e3-484b-8a99-13cd0aa98dee"
+          "httpRequestId": "fa2666e0-68eb-4004-9967-9fae0eb14111"
         },
         "item": {
-          "id": "435c319d-0b48-464c-a098-996f4705bd96",
+          "id": "02d7228a-4d6a-41b2-ba3f-9f2c244ab65d",
           "name": "92 - DELETE sample C",
           "request": {
             "url": {
@@ -6886,24 +6957,24 @@
             {
               "listen": "test",
               "script": {
-                "id": "52f7a8ae-88f5-45b4-ae42-0a010c14ee57",
+                "id": "805012a0-acd7-4cb9-8f8c-f9b892c89474",
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status 204', () => pm.response.to.have.status(204));"
                 ],
-                "_lastExecutionId": "63d7c235-fd43-4552-a0b6-ed3f2043f354"
+                "_lastExecutionId": "83fd993e-ca39-47c9-afec-ddd9aa2fd0bb"
               }
             }
           ]
         },
         "request": {
           "url": {
-            "protocol": "http",
-            "port": "8000",
+            "protocol": "https",
+            "port": "8443",
             "path": [
               "api",
               "requests",
-              "3",
+              "65",
               ""
             ],
             "host": [
@@ -6933,12 +7004,12 @@
             },
             {
               "key": "Postman-Token",
-              "value": "972c415a-8a65-49a6-b20b-448d5f0353c6",
+              "value": "05a3016b-117d-4e88-8d1a-f6f07907c5cc",
               "system": true
             },
             {
               "key": "Host",
-              "value": "127.0.0.1:8000",
+              "value": "127.0.0.1:8443",
               "system": true
             },
             {
@@ -6955,21 +7026,25 @@
           "method": "DELETE"
         },
         "response": {
-          "id": "6a64ddc4-5ee5-4180-a548-060cfdb70fd0",
+          "id": "815adcbe-98cd-4ac3-9ef5-a74f69b3e030",
           "status": "No Content",
           "code": 204,
           "header": [
             {
-              "key": "Date",
-              "value": "Sun, 14 Dec 2025 01:44:36 GMT"
-            },
-            {
               "key": "Server",
-              "value": "WSGIServer/0.2 CPython/3.14.0"
+              "value": "nginx/1.29.4"
             },
             {
-              "key": "Vary",
-              "value": "Accept, Cookie"
+              "key": "Date",
+              "value": "Sun, 21 Dec 2025 18:41:31 GMT"
+            },
+            {
+              "key": "Content-Length",
+              "value": "0"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
             },
             {
               "key": "Allow",
@@ -6980,8 +7055,8 @@
               "value": "DENY"
             },
             {
-              "key": "Content-Length",
-              "value": "0"
+              "key": "Vary",
+              "value": "Cookie"
             },
             {
               "key": "X-Content-Type-Options",
@@ -7001,10 +7076,10 @@
             "data": []
           },
           "cookie": [],
-          "responseTime": 7,
+          "responseTime": 24,
           "responseSize": 0
         },
-        "id": "435c319d-0b48-464c-a098-996f4705bd96",
+        "id": "02d7228a-4d6a-41b2-ba3f-9f2c244ab65d",
         "assertions": [
           {
             "assertion": "Status 204",
@@ -7014,7 +7089,7 @@
       }
     ],
     "transfers": {
-      "responseTotal": 3797
+      "responseTotal": 3816
     },
     "failures": [],
     "error": null

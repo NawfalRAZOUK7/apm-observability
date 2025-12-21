@@ -1,0 +1,18 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Hourly incremental to HOT repo2
+0 * * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=2 --type=incr backup >>/proc/1/fd/1 2>>/proc/1/fd/2
+
+# Every 6 hours differential to HOT repo2
+15 */6 * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=2 --type=diff backup >>/proc/1/fd/1 2>>/proc/1/fd/2
+
+# Daily full to COLD repo1 (MinIO/S3)
+0 2 * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=1 --type=full backup >>/proc/1/fd/1 2>>/proc/1/fd/2
+
+# Daily full to HOT repo2
+5 2 * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=2 --type=full backup >>/proc/1/fd/1 2>>/proc/1/fd/2
+
+# Expire daily (retention cleanup)
+0 3 * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=1 expire >>/proc/1/fd/1 2>>/proc/1/fd/2
+5 3 * * * pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm --repo=2 expire >>/proc/1/fd/1 2>>/proc/1/fd/2

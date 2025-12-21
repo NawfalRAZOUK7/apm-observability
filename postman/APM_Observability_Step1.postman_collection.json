@@ -23,7 +23,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "url": {
+          "raw": "{{base_url}}/api/requests/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"time\": \"2025-12-14T01:10:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 500,\n  \"latency_ms\": 150,\n  \"trace_id\": \"tr_a\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
@@ -47,7 +51,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "url": {
+          "raw": "{{base_url}}/api/requests/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"time\": \"2025-12-14T01:12:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 200,\n  \"latency_ms\": 100,\n  \"trace_id\": \"tr_b\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
@@ -71,7 +79,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] },
+        "url": {
+          "raw": "{{base_url}}/api/requests/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"time\": \"2025-12-14T01:12:00Z\",\n  \"service\": \"auth\",\n  \"endpoint\": \"/login\",\n  \"method\": \"POST\",\n  \"status_code\": 200,\n  \"latency_ms\": 200,\n  \"trace_id\": \"tr_c\",\n  \"user_ref\": \"u_42\",\n  \"tags\": {\"env\": \"dev\"}\n}"
@@ -100,7 +112,11 @@
       ],
       "request": {
         "method": "GET",
-        "url": { "raw": "{{base_url}}/api/requests/", "host": ["{{base_url}}"], "path": ["api", "requests", ""] }
+        "url": {
+          "raw": "{{base_url}}/api/requests/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", ""]
+        }
       }
     },
     {
@@ -174,12 +190,12 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{base_url}}/api/requests/?latency_ms__gte=120&latency_ms__lte=220",
+          "raw": "{{base_url}}/api/requests/?latency_min=120&latency_max=220",
           "host": ["{{base_url}}"],
           "path": ["api", "requests", ""],
           "query": [
-            { "key": "latency_ms__gte", "value": "120" },
-            { "key": "latency_ms__lte", "value": "220" }
+            { "key": "latency_min", "value": "120" },
+            { "key": "latency_max", "value": "220" }
           ]
         }
       }
@@ -259,12 +275,20 @@
       "event": [
         {
           "listen": "test",
-          "script": { "exec": ["pm.test('Status 200', () => pm.response.to.have.status(200));"] }
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));"
+            ]
+          }
         }
       ],
       "request": {
         "method": "GET",
-        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] }
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{id_b}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "{{id_b}}", ""]
+        }
       }
     },
     {
@@ -284,38 +308,75 @@
       "request": {
         "method": "PATCH",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] },
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{id_b}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "{{id_b}}", ""]
+        },
         "body": { "mode": "raw", "raw": "{\n  \"latency_ms\": 111\n}" }
       }
     },
     {
       "name": "90 - DELETE sample A",
       "event": [
-        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
       ],
       "request": {
         "method": "DELETE",
-        "url": { "raw": "{{base_url}}/api/requests/{{id_a}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_a}}", ""] }
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{id_a}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "{{id_a}}", ""]
+        }
       }
     },
     {
       "name": "91 - DELETE sample B",
       "event": [
-        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
       ],
       "request": {
         "method": "DELETE",
-        "url": { "raw": "{{base_url}}/api/requests/{{id_b}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_b}}", ""] }
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{id_b}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "{{id_b}}", ""]
+        }
       }
     },
     {
       "name": "92 - DELETE sample C",
       "event": [
-        { "listen": "test", "script": { "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] } }
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
       ],
       "request": {
         "method": "DELETE",
-        "url": { "raw": "{{base_url}}/api/requests/{{id_c}}/", "host": ["{{base_url}}"], "path": ["api", "requests", "{{id_c}}", ""] }
+        "url": {
+          "raw": "{{base_url}}/api/requests/{{id_c}}/",
+          "host": ["{{base_url}}"],
+          "path": ["api", "requests", "{{id_c}}", ""]
+        }
       }
     }
   ]

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_daily.DailyEndpointTests-20251221184632" tests="1" file="observability/tests/test_daily.py" time="0.001" timestamp="2025-12-21T18:46:32" failures="0" errors="0" skipped="1">
+	<testcase classname="observability.tests.test_daily.DailyEndpointTests" name="test_daily_endpoint_returns_daily_buckets_and_totals" time="0.001" timestamp="2025-12-21T18:46:32" file="observability/tests/test_daily.py" line="164">
+		<skipped type="skip" message="Daily endpoint tests require PostgreSQL/TimescaleDB (cagg/view)."/>
+	</testcase>
+</testsuite>
