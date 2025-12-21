@@ -34,6 +34,13 @@ def forwards(apps, schema_editor):
     if schema_editor.connection.vendor != "postgresql":
         return
 
+    # Check if TimescaleDB is available before creating continuous aggregates
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'timescaledb';")
+        if not cursor.fetchone():
+            # TimescaleDB not available, skip continuous aggregate creation
+            return
+
     create_with_p95 = """
     CREATE MATERIALIZED VIEW IF NOT EXISTS apirequest_daily
     WITH (timescaledb.continuous) AS
@@ -145,6 +152,13 @@ def backwards(apps, schema_editor):
     """
     if schema_editor.connection.vendor != "postgresql":
         return
+
+    # Check if TimescaleDB is available before dropping continuous aggregates
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM pg_extension WHERE extname = 'timescaledb';")
+        if not cursor.fetchone():
+            # TimescaleDB not available, skip continuous aggregate removal
+            return
 
     statements = [
         # Remove policy (best-effort across Timescale versions)
