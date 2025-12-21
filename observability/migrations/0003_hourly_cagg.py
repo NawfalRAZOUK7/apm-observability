@@ -34,30 +34,69 @@ def forwards(apps, schema_editor):
         return
 
     statements = [
-        # 1) Create continuous aggregate (WITH NO DATA => policy/manual refresh fills it)
-        """
-        CREATE MATERIALIZED VIEW IF NOT EXISTS apirequest_hourly
-        WITH (timescaledb.continuous) AS
-        SELECT
-            time_bucket(INTERVAL '1 hour', time) AS bucket,
-            service,
-            endpoint,
-            COUNT(*)::bigint AS hits,
-            COUNT(*) FILTER (WHERE status_code >= 500)::bigint AS errors,
-            AVG(latency_ms)::double precision AS avg_latency_ms,
-            MAX(latency_ms)::integer AS max_latency_ms
-        FROM observability_apirequest
-        GROUP BY 1, 2, 3
-        WITH NO DATA;
-        """,
-        # 2) Enable realtime aggregation (include newest raw rows before refresh)
-        "ALTER MATERIALIZED VIEW apirequest_hourly SET (timescaledb.materialized_only = false);",
-        # 3) Indexes
-        "CREATE INDEX IF NOT EXISTS apirequest_hourly_bucket_desc_idx ON apirequest_hourly (bucket DESC);",
-        "CREATE INDEX IF NOT EXISTS apirequest_hourly_svc_ep_bucket_desc_idx ON apirequest_hourly (service, endpoint, bucket DESC);",
-        # 4) Refresh policy (best-effort idempotent across Timescale versions)
+        # Check if TimescaleDB is available before creating continuous aggregates
         """
         DO $$
+        DECLARE
+            has_timescaledb boolean := FALSE;
+        BEGIN
+            -- Check if TimescaleDB extension exists
+            SELECT EXISTS (
+                SELECT 1 FROM pg_extension WHERE extname = 'timescaledb'
+            ) INTO has_timescaledb;
+
+            IF NOT has_timescaledb THEN
+                RAISE NOTICE 'TimescaleDB not available, skipping continuous aggregate creation';
+                RETURN;
+            END IF;
+
+            -- TimescaleDB is available, proceed with continuous aggregate setup
+            -- 1) Create continuous aggregate (WITH NO DATA => policy/manual refresh fills it)
+            CREATE MATERIALIZED VIEW IF NOT EXISTS apirequest_hourly
+            WITH (timescaledb.continuous) AS
+            SELECT
+                time_bucket(INTERVAL '1 hour', time) AS bucket,
+                service,
+                endpoint,
+                COUNT(*)::bigint AS hits,
+                COUNT(*) FILTER (WHERE status_code >= 500)::bigint AS errors,
+                AVG(latency_ms)::double precision AS avg_latency_ms,
+                MAX(latency_ms)::integer AS max_latency_ms
+            FROM observability_apirequest
+            GROUP BY 1, 2, 3
+            WITH NO DATA;
+
+            -- 2) Enable realtime aggregation (include newest raw rows before refresh)
+            ALTER MATERIALIZED VIEW apirequest_hourly SET (timescaledb.materialized_only = false);
+
+            -- 3) Indexes
+            CREATE INDEX IF NOT EXISTS apirequest_hourly_bucket_desc_idx ON apirequest_hourly (bucket DESC);
+            CREATE INDEX IF NOT EXISTS apirequest_hourly_svc_ep_bucket_desc_idx ON apirequest_hourly (service, endpoint, bucket DESC);
+
+            -- 4) Refresh policy (best-effort idempotent across Timescale versions)
+            BEGIN
+                -- Remove any existing policy first (ignore if not present / unsupported)
+                BEGIN
+                    PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass, if_exists => TRUE);
+                EXCEPTION
+                    WHEN undefined_function THEN
+                        BEGIN
+                            PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass, if_not_exists => TRUE);
+                        EXCEPTION
+                            WHEN undefined_function THEN
+                                BEGIN
+                                    PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass);
+                                EXCEPTION
+                                    WHEN others THEN NULL;
+                                END;
+                            WHEN others THEN NULL;
+                        END;
+                    WHEN others THEN NULL;
+                END;
+
+                -- Add the desired policy:
+                -- Try with if_not_exists (newer), fall back to no-flag signature (older).
+                BEGIN
         BEGIN
             -- Remove any existing policy first (ignore if not present / unsupported)
             BEGIN

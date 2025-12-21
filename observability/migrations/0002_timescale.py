@@ -17,52 +17,79 @@ def forwards(apps, schema_editor):
         return
 
     statements = [
-        "CREATE EXTENSION IF NOT EXISTS timescaledb;",
-
-        # If not already a hypertable, drop the primary key constraint on id (Timescale requirement).
-        # We do this dynamically to avoid depending on the constraint name.
+        # Check if TimescaleDB extension is available before creating it
         """
         DO $$
-        DECLARE
-            is_ht boolean;
-            pk_name text;
         BEGIN
-            SELECT EXISTS (
-                SELECT 1
-                FROM timescaledb_information.hypertables
-                WHERE hypertable_schema = 'public'
-                  AND hypertable_name = 'observability_apirequest'
-            ) INTO is_ht;
-
-            IF NOT is_ht THEN
-                SELECT conname
-                INTO pk_name
-                FROM pg_constraint
-                WHERE conrelid = 'observability_apirequest'::regclass
-                  AND contype = 'p'
-                LIMIT 1;
-
-                IF pk_name IS NOT NULL THEN
-                    EXECUTE format('ALTER TABLE observability_apirequest DROP CONSTRAINT %I', pk_name);
-                END IF;
-            END IF;
+            -- Try to create TimescaleDB extension, but don't fail if it's not available
+            BEGIN
+                CREATE EXTENSION IF NOT EXISTS timescaledb;
+                RAISE NOTICE 'TimescaleDB extension created successfully';
+            EXCEPTION
+                WHEN OTHERS THEN
+                    RAISE NOTICE 'TimescaleDB extension not available, skipping TimescaleDB setup';
+                    RETURN;
+            END;
         END $$;
         """,
 
-        # Convert to hypertable (idempotent)
+        # Check if TimescaleDB is available before using TimescaleDB-specific features
         """
-        SELECT create_hypertable(
-            'observability_apirequest',
-            'time',
-            if_not_exists => TRUE,
-            migrate_data => TRUE,
-            create_default_indexes => FALSE,
-            chunk_time_interval => INTERVAL '1 day'
-        );
-        """,
+        DO $$
+        DECLARE
+            has_timescaledb boolean := FALSE;
+        BEGIN
+            -- Check if TimescaleDB extension exists
+            SELECT EXISTS (
+                SELECT 1 FROM pg_extension WHERE extname = 'timescaledb'
+            ) INTO has_timescaledb;
 
-        # Optional index that helps ORDER BY time DESC (your 0001 already has other useful composite indexes)
-        "CREATE INDEX IF NOT EXISTS observability_apirequest_time_desc_idx ON observability_apirequest (time DESC);",
+            IF NOT has_timescaledb THEN
+                RAISE NOTICE 'TimescaleDB not available, skipping hypertable creation';
+                RETURN;
+            END IF;
+
+            -- TimescaleDB is available, proceed with hypertable setup
+            -- If not already a hypertable, drop the primary key constraint on id (Timescale requirement).
+            DECLARE
+                is_ht boolean;
+                pk_name text;
+            BEGIN
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM timescaledb_information.hypertables
+                    WHERE hypertable_schema = 'public'
+                      AND hypertable_name = 'observability_apirequest'
+                ) INTO is_ht;
+
+                IF NOT is_ht THEN
+                    SELECT conname
+                    INTO pk_name
+                    FROM pg_constraint
+                    WHERE conrelid = 'observability_apirequest'::regclass
+                      AND contype = 'p'
+                    LIMIT 1;
+
+                    IF pk_name IS NOT NULL THEN
+                        EXECUTE format('ALTER TABLE observability_apirequest DROP CONSTRAINT %I', pk_name);
+                    END IF;
+                END IF;
+            END;
+
+            -- Convert to hypertable (idempotent)
+            PERFORM create_hypertable(
+                'observability_apirequest',
+                'time',
+                if_not_exists => TRUE,
+                migrate_data => TRUE,
+                create_default_indexes => FALSE,
+                chunk_time_interval => INTERVAL '1 day'
+            );
+
+            -- Optional index that helps ORDER BY time DESC
+            EXECUTE 'CREATE INDEX IF NOT EXISTS observability_apirequest_time_desc_idx ON observability_apirequest (time DESC)';
+        END $$;
+        """,
     ]
 
     with schema_editor.connection.cursor() as cursor:
