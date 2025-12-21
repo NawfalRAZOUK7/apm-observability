@@ -29,18 +29,20 @@ This document provides a detailed analysis of Django migration files in the `obs
 **Status:** ✅ Already updated  
 **Analysis:** Installs TimescaleDB extension and converts table to hypertable.  
 **TimescaleDB Operations:**
+
 - `CREATE EXTENSION IF NOT EXISTS timescaledb;`
 - `SELECT create_hypertable('observability_apirequest', 'time');`  
-**Fix Applied:** Updated with DO $$ block checks for extension availability (skips if not available).
+  **Fix Applied:** Updated with DO $$ block checks for extension availability (skips if not available).
 
 ### 0003_hourly_cagg.py
 
 **Status:** ✅ Already updated  
 **Analysis:** Creates continuous aggregate for hourly data.  
 **TimescaleDB Operations:**
+
 - `CREATE MATERIALIZED VIEW ... WITH (timescaledb.continuous)`
 - `time_bucket()` function  
-**Fix Applied:** Updated with DO $$ block checks for extension availability (skips if not available).
+  **Fix Applied:** Updated with DO $$ block checks for extension availability (skips if not available).
 
 ### 0004_daily_cagg.py
 
