@@ -237,4 +237,4 @@ SECURE_SSL_REDIRECT = False if RUNNING_TESTS else True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Exempt health endpoint from SSL redirect (for Railway healthcheck)
-SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
+SECURE_REDIRECT_EXEMPT = [r'^/api/health/$']
