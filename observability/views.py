@@ -691,16 +691,6 @@ class HealthView(APIView):
     authentication_classes = []
     permission_classes = []
 
-    def dispatch(self, request, *args, **kwargs):
-        # Temporarily disable SSL redirect for health checks
-        # Railway healthcheck hits HTTP internally, but Django redirects to HTTPS
-        old_ssl_redirect = getattr(settings, 'SECURE_SSL_REDIRECT', False)
-        settings.SECURE_SSL_REDIRECT = False
-        try:
-            return super().dispatch(request, *args, **kwargs)
-        finally:
-            settings.SECURE_SSL_REDIRECT = old_ssl_redirect
-
     def get(self, request, *args, **kwargs):
         db_flag = (request.query_params.get("db") or "").strip().lower()
         check_db = db_flag in {"1", "true", "yes", "y", "on"}

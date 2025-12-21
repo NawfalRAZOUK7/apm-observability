@@ -235,3 +235,6 @@ APM_INGEST_MAX_ERRORS = 25         # max number of per-item error details return
 # SSL/HTTPS Security Settings for Production
 SECURE_SSL_REDIRECT = False if RUNNING_TESTS else True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Exempt health endpoint from SSL redirect (for Railway healthcheck)
+SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
