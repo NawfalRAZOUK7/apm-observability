@@ -1,27 +1,59 @@
+# docker/pgbackrest/Dockerfile
+# Build pgBackRest from source (pinned) so it supports newer PostgreSQL catalogs.
+#
+# NOTE:
+# - Your previous pgBackRest binary was too old and failed with:
+#   VersionNotSupportedError unexpected control/catalog version.
+# - This Dockerfile builds pgBackRest with meson/ninja.
+
+ARG PGBACKREST_VERSION=2.57.0
+
+FROM debian:bookworm-slim AS build
+ARG PGBACKREST_VERSION
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    ca-certificates wget \
+    python3-distutils meson ninja-build gcc pkg-config \
+    libpq-dev libssl-dev libxml2-dev liblz4-dev libzstd-dev libbz2-dev zlib1g-dev libyaml-dev libssh2-1-dev \
+  ; \
+  rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+  mkdir -p /build; \
+  wget -q -O - "https://github.com/pgbackrest/pgbackrest/archive/release/${PGBACKREST_VERSION}.tar.gz" \
+    | tar zx -C /build
+
+# Meson: meson setup <builddir> <sourcedir>
+RUN set -eux; \
+  meson setup /build/pgbackrest /build/pgbackrest-release-${PGBACKREST_VERSION}; \
+  ninja -C /build/pgbackrest
 
 FROM debian:bookworm-slim
 
-# Copy entrypoint script for CA cert workaround
-COPY entrypoint.copy-ca.sh /pgbackrest/entrypoint.copy-ca.sh
-RUN chmod +x /pgbackrest/entrypoint.copy-ca.sh
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends \
+    ca-certificates curl openssh-client postgresql-client \
+    libpq5 libssl3 libxml2 liblz4-1 libzstd1 libbz2-1.0 zlib1g libyaml-0-2 libssh2-1 \
+  ; \
+  rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends gnupg2 wget lsb-release ca-certificates curl cron postgresql-client openssh-client sshpass \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg \
-  && echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends pgbackrest \
-  && rm -rf /var/lib/apt/lists/*
+# pgBackRest binary
+COPY --from=build /build/pgbackrest/src/pgbackrest /usr/local/bin/pgbackrest
 
+# Optional: MinIO client for troubleshooting
+RUN set -eux; \
+  curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc; \
+  chmod 755 /usr/local/bin/mc /usr/local/bin/pgbackrest
 
-# pgBackRest standard dirs
-RUN mkdir -p /etc/pgbackrest /var/log/pgbackrest /var/lib/pgbackrest /var/lib/pgbackrest-hot \
-  && rm -rf /tmp/minio-ca-cert-file.crt \
-  && rm -rf /minio-ca.pem /tmp/minio-ca.pem
+RUN set -eux; \
+  mkdir -p /etc/pgbackrest /var/lib/pgbackrest /var/log/pgbackrest /root/.ssh; \
+  chmod 700 /root/.ssh
 
-# Cron schedule
-COPY pgbackrest-cron /etc/cron.d/pgbackrest
-RUN chmod 0644 /etc/cron.d/pgbackrest && crontab /etc/cron.d/pgbackrest
+COPY docker/pgbackrest/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh
 
-CMD ["cron", "-f"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

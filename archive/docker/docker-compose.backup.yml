@@ -1,0 +1,103 @@
+## ============================================================================
+## Backup/Restore Stack Compose File
+##
+## This file defines the backup/restore stack for APM Observability:
+##   - Postgres (custom image with pgBackRest)
+##   - MinIO (S3-compatible, with SSL)
+##   - pgBackRest (backup/restore automation)
+##   - Related services for backup/restore workflows
+##
+## Use this file for backup/restore testing, automation, and disaster recovery scenarios.
+## For the main application stack, see docker-compose.yml
+## ============================================================================
+services:
+  db:
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    container_name: db
+    environment:
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+    volumes:
+      - pgdata:/var/lib/postgresql/17/main
+      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - pgbackrest-hot:/var/lib/pgbackrest-hot
+      - ./backup:/backup:ro
+      - ./initdb/002_postgresql.conf:/var/lib/postgresql/17/main/postgresql.conf:ro
+      - ./initdb/003_pg_hba.conf:/var/lib/postgresql/17/main/pg_hba.conf:ro
+      - ./certs/public.crt:/tmp/ca/public.crt:ro
+      - ssh-keys:/var/lib/postgresql/.ssh
+    command: >
+      postgres -c archive_mode=on -c "archive_command=pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm archive-push %p"
+    networks:
+      - backup-net
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001" --certs-dir /root/.minio/certs
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+      - ./certs:/root/.minio/certs:ro
+    networks:
+      - backup-net
+    healthcheck:
+      test:
+        ["CMD", "curl", "-f", "-k", "https://localhost:9000/minio/health/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  minio-init:
+    image: minio-init-local
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - ./minio/init.sh:/minio/init.sh:ro
+      - ./certs/CAs:/usr/local/share/ca-certificates/minio:ro
+    # Add CA certs for mc trust
+    networks:
+      - backup-net
+
+  pgbackrest:
+    build:
+      context: .
+      dockerfile: pgbackrest/Dockerfile
+    container_name: pgbackrest
+    depends_on:
+      - db
+      - minio
+    volumes:
+      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - pgbackrest-hot:/var/lib/pgbackrest-hot
+      - ./pgbackrest:/pgbackrest
+      - ./backup/pgpass:/etc/pgbackrest/.pgpass:ro
+      - ./backup:/backup:ro
+      - ./certs/public.crt:/tmp/ca/public.crt:ro
+      - ssh-keys:/root/.ssh
+    environment:
+      PGPASSFILE: /etc/pgbackrest/.pgpass
+    networks:
+      - backup-net
+
+volumes:
+  pgdata:
+  minio_data:
+  pgbackrest-hot:
+  ssh-keys:
+
+networks:
+  backup-net:
+    driver: bridge

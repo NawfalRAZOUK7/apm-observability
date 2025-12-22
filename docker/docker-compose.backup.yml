@@ -1,97 +1,185 @@
-## ============================================================================
-## Backup/Restore Stack Compose File
-##
-## This file defines the backup/restore stack for APM Observability:
-##   - Postgres (custom image with pgBackRest)
-##   - MinIO (S3-compatible, with SSL)
-##   - pgBackRest (backup/restore automation)
-##   - Related services for backup/restore workflows
-##
-## Use this file for backup/restore testing, automation, and disaster recovery scenarios.
-## For the main application stack, see docker-compose.yml
-## ============================================================================
+# ============================================================================
+# docker/docker-compose.backup.yml
+# Option 2 — pgBackRest TLS server (mTLS) + db-init + MinIO + minio-init
+# FIX: Share PostgreSQL unix socket between db and pgbackrest-server
+#
+# Services:
+# - pg_socket_init (one-shot): prepares /var/run/postgresql permissions
+# - db: TimescaleDB/Postgres, writes unix socket into shared volume
+# - db-init (one-shot): idempotent init script gate (your backup/db-init.sh)
+# - minio: S3-compatible storage over HTTPS
+# - minio-init (one-shot): creates bucket pgbackrest (idempotent)
+# - pgbackrest-server: pgBackRest TLS server (mTLS) that connects locally to DB via shared socket
+# - pgbackrest: client container you exec into (sleep infinity)
+# ============================================================================
+
 services:
+  pg_socket_init:
+    image: alpine:3.20
+    container_name: apm_pg_socket_init
+    user: "0"
+    volumes:
+      - pg_socket:/var/run/postgresql
+    networks:
+      - backup_network
+    restart: "no"
+    command: ["sh", "-euc", "mkdir -p /var/run/postgresql && chown -R 999:999 /var/run/postgresql && chmod 2775 /var/run/postgresql"]
+
   db:
-    build:
-      context: .
-      dockerfile: db/Dockerfile
-    container_name: db
+    image: timescale/timescaledb:latest-pg16
+    container_name: apm_backup_db
+    depends_on:
+      pg_socket_init:
+        condition: service_completed_successfully
     environment:
-      POSTGRES_DB: apm
       POSTGRES_USER: apm
+      POSTGRES_DB: apm
       POSTGRES_PASSWORD: apm
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
-      - pgbackrest-hot:/var/lib/pgbackrest-hot
-      - ./backup:/backup:ro
-      - ./initdb/002_postgresql.conf:/var/lib/postgresql/14/main/postgresql.conf:ro
-      - ./initdb/003_pg_hba.conf:/var/lib/postgresql/14/main/pg_hba.conf:ro
-    command: >
-      postgres -c archive_mode=on -c "archive_command=pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=apm archive-push %p"
+      - backup_db_data:/var/lib/postgresql/data
+      - pg_socket:/var/run/postgresql
+      - ./initdb:/docker-entrypoint-initdb.d:ro
     networks:
-      - backup-net
+      - backup_network
+    restart: unless-stopped
+    # Force postgres to place socket in the shared dir
+    command: ["postgres", "-c", "unix_socket_directories=/var/run/postgresql"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apm -d apm"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  db-init:
+    image: timescale/timescaledb:latest-pg16
+    container_name: apm_backup_db_init
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backup_network
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: apm
+      PGPASSWORD: apm
+      PGDATABASE: apm
+    volumes:
+      - ./backup/db-init.sh:/db-init.sh:ro
+    restart: "no"
+    command: ["bash", "/db-init.sh"]
 
   minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001" --certs-dir /root/.minio/certs
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
+    build:
+      context: ..
+      dockerfile: docker/minio/Dockerfile
+    container_name: apm_minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    # Run as root to reliably read mounted private.key (often chmod 600 on host)
+    user: "0"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
+      # Expects: /root/.minio/certs/public.crt + private.key
       - ./certs:/root/.minio/certs:ro
+    environment:
+      - MINIO_ROOT_USER=apm_backup
+      - MINIO_ROOT_PASSWORD=apm_backup_secret
+      - MINIO_SERVER_URL=https://minio:9000
+      - MINIO_BROWSER=on
     networks:
-      - backup-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
-      interval: 30s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
+      - backup_network
+    restart: unless-stopped
 
   minio-init:
-    image: minio-init-local
+    image: minio/mc:latest
+    container_name: apm_minio_init
     depends_on:
       minio:
-        condition: service_healthy
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
-    volumes:
-      - ./docker/minio/init.sh:/minio/init.sh:ro
-      - ./certs/CAs:/usr/local/share/ca-certificates/minio:ro
-    # Add CA certs for mc trust
+        condition: service_started
     networks:
-      - backup-net
+      - backup_network
+    environment:
+      MINIO_ENDPOINT: https://minio:9000
+      MINIO_ROOT_USER: apm_backup
+      MINIO_ROOT_PASSWORD: apm_backup_secret
+      MINIO_BUCKET: pgbackrest
+      MINIO_ALIAS: myminio
+      MINIO_ENABLE_VERSIONING: "1"
+      # dev-only: mc ignores TLS verification; pgBackRest still verifies with /certs/public.crt
+      MINIO_INSECURE: "1"
+    volumes:
+      - ./minio/init.sh:/init.sh:ro
+    restart: "no"
+    entrypoint: ["sh", "-lc", "sh /init.sh"]
+
+  pgbackrest-server:
+    build:
+      context: ..
+      dockerfile: docker/pgbackrest/Dockerfile
+    container_name: apm_pgbackrest_server
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+    volumes:
+      # Postgres data directory (read-only)
+      - backup_db_data:/var/lib/postgresql/data:ro
+      # Shared unix socket directory
+      - pg_socket:/var/run/postgresql
+
+      # Server config
+      - ./backup/pgbackrest-server.conf:/etc/pgbackrest/pgbackrest.conf:ro
+
+      # libpq password file (keep untracked, chmod 600)
+      - ./backup/pgpass:/root/.pgpass:ro
+
+      # Certs:
+      # - /certs/public.crt for MinIO TLS verification
+      # - /certs/pgbackrest/* for pgBackRest mTLS server
+      - ./certs:/certs:ro
+
+      # Local state/spool
+      - backup_data:/var/lib/pgbackrest
+    environment:
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+    networks:
+      - backup_network
+    restart: unless-stopped
+    command: ["bash", "-lc", "exec pgbackrest server"]
 
   pgbackrest:
-    image: debian:bookworm-slim
-    container_name: pgbackrest
+    build:
+      context: ..
+      dockerfile: docker/pgbackrest/Dockerfile
+    container_name: apm_pgbackrest_client
     depends_on:
-      - db
-      - minio
+      pgbackrest-server:
+        condition: service_started
     volumes:
-      - ./backup/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
-      - pgdata:/var/lib/postgresql/data:ro
-      - pgbackrest-hot:/var/lib/pgbackrest-hot
-      - ./pgbackrest:/pgbackrest
-      - ./backup/pgpass:/etc/pgbackrest/.pgpass:ro
-      - ./backup:/backup:ro
-      - ./certs/public.crt:/tmp/ca/public.crt:ro
+      - ./backup/pgbackrest-client.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ./certs:/certs:ro
+      - backup_data:/var/lib/pgbackrest
     environment:
-      PGPASSFILE: /etc/pgbackrest/.pgpass
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
     networks:
-      - backup-net
+      - backup_network
+    restart: "no"
+    command: ["sleep", "infinity"]
 
 volumes:
-  pgdata:
+  backup_db_data:
+  backup_data:
   minio_data:
-  pgbackrest-hot:
+  pg_socket:
 
 networks:
-  backup-net:
+  backup_network:
     driver: bridge

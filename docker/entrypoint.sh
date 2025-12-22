@@ -1,67 +1,50 @@
 #!/usr/bin/env bash
-# entrypoint.sh - Main entrypoint for the APM Observability Django application container.
-# Handles DB connection checks, migrations, static file collection, and Gunicorn startup.
 set -euo pipefail
 
-echo "==> APM Observability entrypoint starting..."
+# ============================================================================
+# docker/entrypoint.sh
+# Review notes:
+# - This script is executed by the web service entrypoint.
+# - Ensure your web image has bash installed.
+# - Keeps your existing behavior: wait for DB, migrate, collectstatic, start gunicorn.
+# ============================================================================
 
-: "${POSTGRES_HOST:=db}"
-: "${POSTGRES_PORT:=5432}"
-: "${POSTGRES_DB:=apm}"
-: "${POSTGRES_USER:=apm}"
-: "${POSTGRES_PASSWORD:=apm}"
+: "${DB_HOST:=db}"
+: "${DB_PORT:=5432}"
+: "${DB_CONNECT_RETRIES:=60}"
+: "${DB_CONNECT_DELAY:=1}"
 
-: "${GUNICORN_WORKERS:=3}"
-: "${GUNICORN_TIMEOUT:=60}"
-: "${GUNICORN_BIND:=0.0.0.0:8000}"
-
-: "${SKIP_MIGRATE:=0}"
-: "${SKIP_COLLECTSTATIC:=0}"
-
-echo "==> DB: ${POSTGRES_HOST}:${POSTGRES_PORT} (db=${POSTGRES_DB}, user=${POSTGRES_USER})"
-echo "==> Gunicorn: bind=${GUNICORN_BIND}, workers=${GUNICORN_WORKERS}, timeout=${GUNICORN_TIMEOUT}"
-
-# Safety net (compose already waits for db health, but keep this to avoid race conditions)
-echo "==> Checking DB port..."
-for i in $(seq 1 30); do
-  if (echo >"/dev/tcp/${POSTGRES_HOST}/${POSTGRES_PORT}") >/dev/null 2>&1; then
-    echo "==> DB port reachable."
-    break
-  fi
-  if [ "$i" -eq 30 ]; then
-    echo "!! DB not reachable after 30s (${POSTGRES_HOST}:${POSTGRES_PORT})"
-    exit 1
-  fi
-  sleep 1
-done
-
-if [ "${SKIP_MIGRATE}" = "1" ]; then
-  echo "==> SKIP_MIGRATE=1, skipping migrations."
-else
-  echo "==> Running migrations..."
-  for i in $(seq 1 10); do
-    if python manage.py migrate --noinput; then
-      echo "==> Migrations applied."
-      break
+wait_for_db() {
+  echo "Waiting for DB at ${DB_HOST}:${DB_PORT} ..."
+  for i in $(seq 1 "${DB_CONNECT_RETRIES}"); do
+    # TCP-level check (fast)
+    if (echo >"/dev/tcp/${DB_HOST}/${DB_PORT}") >/dev/null 2>&1; then
+      echo "DB is reachable."
+      return 0
     fi
-    if [ "$i" -eq 10 ]; then
-      echo "!! Migrations failed after 10 attempts."
-      exit 1
-    fi
-    echo "==> Migrate failed, retrying in 2s... ($i/10)"
-    sleep 2
+    sleep "${DB_CONNECT_DELAY}"
   done
+  echo "ERROR: DB not reachable after ${DB_CONNECT_RETRIES} attempts" >&2
+  return 1
+}
+
+wait_for_db
+
+if [[ "${SKIP_MIGRATE:-0}" != "1" ]]; then
+  echo "Running migrations..."
+  python manage.py migrate --noinput
 fi
 
-if [ "${SKIP_COLLECTSTATIC}" = "1" ]; then
-  echo "==> SKIP_COLLECTSTATIC=1, skipping collectstatic."
-else
-  echo "==> Collecting static files..."
+if [[ "${SKIP_COLLECTSTATIC:-0}" != "1" ]]; then
+  echo "Collecting static files..."
   python manage.py collectstatic --noinput
 fi
 
-echo "==> Starting Gunicorn..."
+echo "Starting Gunicorn..."
 exec gunicorn apm_platform.wsgi:application \
-  --bind "${GUNICORN_BIND}" \
-  --workers "${GUNICORN_WORKERS}" \
-  --timeout "${GUNICORN_TIMEOUT}"
+  --bind 0.0.0.0:8000 \
+  --workers "${GUNICORN_WORKERS:-2}" \
+  --threads "${GUNICORN_THREADS:-2}" \
+  --timeout "${GUNICORN_TIMEOUT:-60}" \
+  --access-logfile - \
+  --error-logfile -

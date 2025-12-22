@@ -1,0 +1,6 @@
+Host db
+    HostName db
+    User postgres
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    IdentityFile /root/.ssh/id_rsa

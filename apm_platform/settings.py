@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def _env_bool_top(name: str, default: bool = False) -> bool:
     val = os.environ.get(name)
@@ -232,8 +236,9 @@ APM_INGEST_BATCH_SIZE = 1000       # bulk_create batch size
 APM_INGEST_MAX_EVENTS = 50_000     # max number of events accepted per request
 APM_INGEST_MAX_ERRORS = 25         # max number of per-item error details returned
 
-# SSL/HTTPS Security Settings for Production
-SECURE_SSL_REDIRECT = False if RUNNING_TESTS else True
+# SSL/HTTPS Security Settings
+# Enable SSL redirect when nginx with SSL is available (production or local with nginx)
+SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Exempt health endpoint from SSL redirect (for Railway healthcheck)

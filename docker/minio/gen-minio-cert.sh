@@ -1,30 +1,43 @@
-#!/bin/bash
-# gen-minio-cert.sh - Generates a self-signed SSL certificate for MinIO using OpenSSL and a custom SAN config.
-# NOTE: This script is for development certificate generation only. Certificates are generated in ../certs/
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Generate certificates in the centralized certs directory
-CERT_DIR="../certs"
-mkdir -p "$CERT_DIR"
-cd "$CERT_DIR"
+# ============================================================================
+# docker/minio/gen-minio-cert.sh
+#
+# Generates the MinIO TLS certificate + key in docker/certs/ using the shared
+# SAN-capable script docker/certs/setup-ssl.sh.
+#
+# This ensures the cert includes SANs for:
+#   - DNS:minio   (containers connect to https://minio:9000)
+#   - DNS:localhost
+#   - IP:127.0.0.1
+#
+# Output files:
+#   docker/certs/public.crt
+#   docker/certs/private.key
+#
+# Run from repo root:
+#   bash docker/minio/gen-minio-cert.sh
+# ============================================================================
 
-CONF="../minio/minio-san-openssl.cnf"
-KEY="private.key"
-CSR="minio.csr"
-CRT="public.crt"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}" )" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 
-# Generate private key
-echo "Generating private key..."
-openssl genrsa -out "$KEY" 2048
+SETUP_SSL="$REPO_ROOT/docker/certs/setup-ssl.sh"
 
-# Generate CSR
-echo "Generating CSR..."
-openssl req -new -key "$KEY" -out "$CSR" -config "$CONF"
+if [[ ! -f "$SETUP_SSL" ]]; then
+  echo "ERROR: Missing $SETUP_SSL" >&2
+  exit 1
+fi
 
-# Generate self-signed certificate with SANs
-echo "Generating self-signed certificate with SANs..."
-openssl x509 -req -in "$CSR" -signkey "$KEY" -out "$CRT" -days 365 -extensions v3_req -extfile "$CONF"
+# You can override SANs via env if needed
+export CN="${CN:-minio}"
+export DNS1="${DNS1:-minio}"
+export DNS2="${DNS2:-localhost}"
+export IP1="${IP1:-127.0.0.1}"
 
-echo "Certificate and key generated: $CRT, $KEY"
-echo "Certificates placed in: $CERT_DIR"
-echo "These are development certificates for local SSL testing."
+bash "$SETUP_SSL"
+
+echo
+echo "MinIO TLS cert generated. Files:" 
+ls -la "$REPO_ROOT/docker/certs/public.crt" "$REPO_ROOT/docker/certs/private.key"

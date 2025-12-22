@@ -1,1 +1,15 @@
-db:5432:*:apm:apm
+# ==========================================================================
+# docker/backup/pgpass  (DO NOT COMMIT)
+#
+# Purpose:
+# - Prevent any interactive password prompt when pgBackRest connects to Postgres.
+#
+# Format:
+#   hostname:port:database:username:password
+#
+# Notes:
+# - Must be chmod 0600 or libpq will ignore it.
+# - Using wildcards avoids mismatches (TCP host vs local unix socket).
+# ==========================================================================
+
+*:*:*:apm:apm

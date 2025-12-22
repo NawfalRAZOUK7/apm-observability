@@ -1,21 +1,21 @@
 # ============================================================================
-# Main Application Stack Compose File
+# docker/docker-compose.yml
+# Main app stack (Django + TimescaleDB + Nginx)
 #
-# This file defines the main application stack for APM Observability:
-#   - TimescaleDB/Postgres database
-#   - Django web app (with Gunicorn)
+# - This compose is for your application runtime.
+# - Backups (pgBackRest + MinIO + TLS/mTLS) live in docker-compose.backup.yml.
 #
-# Use this file for local development and running the core app.
-# For backup/restore automation, see docker-compose.backup.yml
+# Ports (dev):
+# - http://localhost:8080  -> nginx:80  (can redirect to https)
+# - https://localhost:8443 -> nginx:443 (reverse proxy to web:8000)
+# - http://localhost:8000  -> web:8000  (direct access, optional)
 # ============================================================================
-#version: "3.9"
 
 services:
   db:
     image: timescale/timescaledb:latest-pg16
     container_name: apm_timescaledb
 
-    # Explicit: use the Docker env file (POSTGRES_HOST=db, etc.)
     env_file:
       - ../.env.docker
 
@@ -23,12 +23,13 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-apm}
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
+      # Optional: if your init SQL uses these
       POSTGRES_APP_USER: ${POSTGRES_APP_USER:-apm_app}
       POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-apm_app_pass}
       POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_readonly}
       POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_readonly_pass}
 
-    # Local dev port exposure; for non-dev, remove this to avoid publishing the DB
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
 
@@ -37,14 +38,14 @@ services:
       - ./initdb:/docker-entrypoint-initdb.d:ro
 
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}"]
       interval: 5s
       timeout: 5s
       retries: 20
+
+    restart: unless-stopped
+    networks:
+      - app_network
 
   web:
     build:
@@ -56,34 +57,26 @@ services:
       db:
         condition: service_healthy
 
-    # Explicit: use the Docker env file (so POSTGRES_HOST=db)
     env_file:
       - ../.env.docker
 
-    # If you want, you can remove this whole environment: block (env_file is enough).
-    # Keeping it is ok for defaults/clarity.
     environment:
-      # Django runtime
       DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
 
-      # DB connection
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       POSTGRES_DB: ${POSTGRES_DB:-apm}
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
 
-      # Optional
       DB_SSLMODE: ${DB_SSLMODE:-disable}
 
-      # Optional
       DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-UTC}
       DRF_PAGE_SIZE: ${DRF_PAGE_SIZE:-50}
       DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
 
-      # Gunicorn (entrypoint)
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
       GUNICORN_BIND: ${GUNICORN_BIND:-0.0.0.0:8000}
@@ -93,37 +86,48 @@ services:
 
     entrypoint: ["bash", "docker/entrypoint.sh"]
     restart: unless-stopped
+    networks:
+      - app_network
 
   nginx:
     image: nginx:alpine
     container_name: apm_nginx
+
+    depends_on:
+      - web
+
     ports:
+      - "8080:80"
       - "8443:443"
-      - "80:80" # HTTP port for ACME challenges
+
     volumes:
       - ../docker/certs:/etc/nginx/certs:ro
       - ../docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../docker/nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot_webroot:/var/www/certbot:ro # Webroot for ACME challenges
-    depends_on:
-      - web
-    networks:
-      - default
+      - certbot_webroot:/var/www/certbot:ro
 
-  # Certbot service for SSL certificate management (production only)
-  # Enable this service for production deployments with real domains
+    restart: unless-stopped
+    networks:
+      - app_network
+
   certbot:
     image: certbot/certbot:latest
     container_name: apm_certbot
-    volumes:
-      - ../docker/certs:/etc/nginx/certs:rw # Writable for certificate storage
-      - certbot_webroot:/var/www/certbot:rw # Webroot for ACME challenges
-      - certbot_config:/etc/letsencrypt:rw # Let's Encrypt configuration
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
     profiles:
-      - production # Only start in production mode
+      - production
+    volumes:
+      - ../docker/certs:/etc/nginx/certs:rw
+      - certbot_webroot:/var/www/certbot:rw
+      - certbot_config:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
+    networks:
+      - app_network
 
 volumes:
   db_data:
   certbot_webroot:
   certbot_config:
+
+networks:
+  app_network:
+    driver: bridge

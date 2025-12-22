@@ -1,165 +1,73 @@
-#!/bin/bash
-# Certbot SSL Certificate Management Script
-# This script handles SSL certificate generation and renewal for production
-
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Configuration
-DOMAIN="${DOMAIN:-localhost}"
-EMAIL="${SSL_EMAIL:-admin@example.com}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CERT_DIR="${SCRIPT_DIR}"
-WEBROOT="/var/www/certbot"
+# ============================================================================
+# docker/certs/setup-ssl.sh
+#
+# Generates a self-signed TLS certificate for LOCAL DEV with proper SANs.
+# This is suitable for MinIO when clients connect to: https://minio:9000
+#
+# Outputs (in docker/certs/):
+#   - public.crt
+#   - private.key
+#
+# SECURITY:
+#   - DO NOT COMMIT private.key
+#   - chmod 600 private.key
+# ============================================================================
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+CERT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CRT_OUT="${CRT_OUT:-$CERT_DIR/public.crt}"
+KEY_OUT="${KEY_OUT:-$CERT_DIR/private.key}"
+DAYS="${DAYS:-825}"
+CN="${CN:-minio}"
 
-log() {
-    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
-}
+# Default SANs (override if needed)
+DNS1="${DNS1:-minio}"
+DNS2="${DNS2:-localhost}"
+IP1="${IP1:-127.0.0.1}"
 
-error() {
-    echo -e "${RED}[ERROR] $1${NC}" >&2
-}
+umask 077
 
-warn() {
-    echo -e "${YELLOW}[WARN] $1${NC}"
-}
+echo "Generating self-signed cert with SANs: DNS:${DNS1}, DNS:${DNS2}, IP:${IP1}"
 
-# Create webroot directory for HTTP-01 challenge
-setup_webroot() {
-    log "Setting up webroot directory for ACME challenges..."
-    mkdir -p "$WEBROOT"
-    chmod 755 "$WEBROOT"
-}
+TMP_CONF="$(mktemp)"
+trap 'rm -f "$TMP_CONF"' EXIT
 
-# Generate self-signed certificate for development
-generate_self_signed() {
-    log "Generating self-signed certificate for development..."
-    mkdir -p "$CERT_DIR"
+cat >"$TMP_CONF" <<EOF
+[req]
+prompt = no
+distinguished_name = dn
+x509_extensions = v3_req
 
-    # Check if we're running in container or host
-    if [ -w "$CERT_DIR" ]; then
-        # Running on host or with write permissions
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout "$CERT_DIR/private.key" \
-            -out "$CERT_DIR/public.crt" \
-            -subj "/C=US/ST=State/L=City/O=Organization/CN=$DOMAIN"
+[dn]
+CN = ${CN}
 
-        chmod 600 "$CERT_DIR/private.key"
-        chmod 644 "$CERT_DIR/public.crt"
+[v3_req]
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
 
-        log "Self-signed certificate generated successfully"
-    else
-        # Running in container without write permissions
-        log "Certificate directory not writable. Please run this script on the host or ensure proper permissions."
-        log "Certificates should be generated in: $CERT_DIR"
-        exit 1
-    fi
-}
+[alt_names]
+DNS.1 = ${DNS1}
+DNS.2 = ${DNS2}
+IP.1  = ${IP1}
+EOF
 
-# Obtain Let's Encrypt certificate
-obtain_letsencrypt_cert() {
-    log "Obtaining Let's Encrypt certificate for $DOMAIN..."
+# Key
+openssl genrsa -out "$KEY_OUT" 2048
 
-    if [ "$DOMAIN" = "localhost" ]; then
-        warn "Domain is localhost - using self-signed certificate instead"
-        generate_self_signed
-        return
-    fi
+# Cert
+openssl req -x509 -new -nodes -key "$KEY_OUT" \
+  -sha256 -days "$DAYS" \
+  -out "$CRT_OUT" \
+  -config "$TMP_CONF"
 
-    # Check if certbot is available
-    if ! command -v certbot &> /dev/null; then
-        error "certbot is not installed. Please install certbot first."
-        error "For Ubuntu/Debian: apt-get install certbot"
-        error "For CentOS/RHEL: yum install certbot"
-        exit 1
-    fi
+chmod 600 "$KEY_OUT" || true
 
-    # Obtain certificate
-    certbot certonly --webroot \
-        --webroot-path "$WEBROOT" \
-        --email "$EMAIL" \
-        --agree-tos \
-        --no-eff-email \
-        --domain "$DOMAIN"
+echo "OK: wrote: $CRT_OUT"
+echo "OK: wrote: $KEY_OUT"
 
-    # Create symlinks for nginx
-    ln -sf "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" "$CERT_DIR/public.crt"
-    ln -sf "/etc/letsencrypt/live/$DOMAIN/privkey.pem" "$CERT_DIR/private.key"
-
-    log "Let's Encrypt certificate obtained successfully"
-}
-
-# Renew certificates
-renew_certificates() {
-    log "Checking for certificate renewal..."
-
-    if [ "$DOMAIN" = "localhost" ]; then
-        log "Development mode - no renewal needed for self-signed certificate"
-        return
-    fi
-
-    certbot renew --quiet
-
-    # Reload nginx if certificates were renewed
-    if [ -f /var/run/nginx.pid ]; then
-        log "Reloading nginx configuration..."
-        nginx -s reload
-    fi
-
-    log "Certificate renewal check completed"
-}
-
-# Setup cron job for automatic renewal
-setup_cron_renewal() {
-    log "Setting up automatic certificate renewal..."
-
-    if [ "$DOMAIN" = "localhost" ]; then
-        log "Development mode - skipping cron setup"
-        return
-    fi
-
-    # Add cron job for renewal (runs twice daily)
-    CRON_JOB="0 */12 * * * /usr/bin/certbot renew --quiet --post-hook 'nginx -s reload'"
-
-    # Check if cron job already exists
-    if ! crontab -l 2>/dev/null | grep -q "certbot renew"; then
-        (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-        log "Certificate renewal cron job added"
-    else
-        log "Certificate renewal cron job already exists"
-    fi
-}
-
-# Main function
-main() {
-    local action="${1:-setup}"
-
-    case "$action" in
-        "setup")
-            setup_webroot
-            if [ "$DOMAIN" = "localhost" ]; then
-                generate_self_signed
-            else
-                obtain_letsencrypt_cert
-            fi
-            setup_cron_renewal
-            ;;
-        "renew")
-            renew_certificates
-            ;;
-        "self-signed")
-            generate_self_signed
-            ;;
-        *)
-            error "Usage: $0 {setup|renew|self-signed}"
-            exit 1
-            ;;
-    esac
-}
-
-main "$@"
+echo
+echo "Verify SANs:"
+openssl x509 -in "$CRT_OUT" -noout -subject -ext subjectAltName
