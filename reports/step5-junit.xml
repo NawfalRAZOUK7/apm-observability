@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="APM Observability — Step 5 (KPIs + Top Endpoints)" tests="4" time="0.158">
-  <testsuite name="KPIs — default" id="41b83e64-1e4a-4d02-80dc-e3fbca01f6ec" timestamp="2025-12-21T18:45:15.047Z" tests="2" failures="0" errors="0" time="0.089">
-    <testcase name="Status is 200" time="0.089" classname="KpIsDefault"/>
-    <testcase name="Has KPI keys" time="0.089" classname="KpIsDefault"/>
+<testsuites name="APM Observability — Step 5 (KPIs + Top Endpoints)" tests="4" time="6.850">
+  <testsuite name="KPIs — default" id="6d0ac3fa-b8a8-447d-909b-798d24689788" timestamp="2025-12-23T17:01:26.591Z" tests="2" failures="0" errors="0" time="5.723">
+    <testcase name="Status is 200" time="5.723" classname="KpIsDefault"/>
+    <testcase name="Has KPI keys" time="5.723" classname="KpIsDefault"/>
   </testsuite>
-  <testsuite name="KPIs — filtered by service" id="67d3cc7a-0f88-4e91-8173-ba8ee934ef50" timestamp="2025-12-21T18:45:15.047Z" tests="2" failures="0" errors="0" time="0.018">
-    <testcase name="Status is 200" time="0.018" classname="KpIsFilteredByService"/>
-    <testcase name="Has source" time="0.018" classname="KpIsFilteredByService"/>
+  <testsuite name="KPIs — filtered by service" id="c86d8979-0056-485d-a002-8d0829cd4c3d" timestamp="2025-12-23T17:01:26.591Z" tests="2" failures="0" errors="0" time="0.514">
+    <testcase name="Status is 200" time="0.514" classname="KpIsFilteredByService"/>
+    <testcase name="Has source" time="0.514" classname="KpIsFilteredByService"/>
   </testsuite>
-  <testsuite name="Top Endpoints — by hits (desc)" id="e1de86a1-dade-48d5-86e5-a33567ff8be3" timestamp="2025-12-21T18:45:15.047Z" tests="2" failures="0" errors="0" time="0.023">
-    <testcase name="Status is 200" time="0.023" classname="TopEndpointsByHitsDesc"/>
-    <testcase name="Has source + results array" time="0.023" classname="TopEndpointsByHitsDesc"/>
+  <testsuite name="Top Endpoints — by hits (desc)" id="d38a0661-f3fb-460a-98b1-af0be882f4b6" timestamp="2025-12-23T17:01:26.591Z" tests="2" failures="0" errors="0" time="0.374">
+    <testcase name="Status is 200" time="0.374" classname="TopEndpointsByHitsDesc"/>
+    <testcase name="Has source + results array" time="0.374" classname="TopEndpointsByHitsDesc"/>
   </testsuite>
-  <testsuite name="Top Endpoints — by error_rate (desc)" id="1ba2edcc-e305-4bd9-838c-848ec288df7f" timestamp="2025-12-21T18:45:15.047Z" tests="2" failures="0" errors="0" time="0.028">
-    <testcase name="Status is 200" time="0.028" classname="TopEndpointsByErrorRateDesc"/>
-    <testcase name="Has source + results array" time="0.028" classname="TopEndpointsByErrorRateDesc"/>
+  <testsuite name="Top Endpoints — by error_rate (desc)" id="ff077d3d-1ae7-4003-a8e6-adf60c44f01a" timestamp="2025-12-23T17:01:26.591Z" tests="2" failures="0" errors="0" time="0.239">
+    <testcase name="Status is 200" time="0.239" classname="TopEndpointsByErrorRateDesc"/>
+    <testcase name="Has source + results array" time="0.239" classname="TopEndpointsByErrorRateDesc"/>
   </testsuite>
 </testsuites>
