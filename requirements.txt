@@ -3,6 +3,7 @@ djangorestframework
 django-filter
 psycopg[binary]
 python-dotenv
+Faker
 unittest-xml-reporting
 ruff
 black
