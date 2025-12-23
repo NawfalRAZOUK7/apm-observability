@@ -1,1 +1,1 @@
-{"hits":3,"errors":0,"error_rate":0.0,"avg_latency_ms":45.0,"p95_latency_ms":95.99999999999999,"max_latency_ms":105,"source":"hourly"}
+{"hits":57,"errors":4,"error_rate":0.07017543859649122,"avg_latency_ms":269.7719298245614,"p95_latency_ms":749.8999999999996,"max_latency_ms":1298,"source":"hourly"}
