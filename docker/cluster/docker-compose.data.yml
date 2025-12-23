@@ -49,6 +49,14 @@ services:
       - "-c"
       - "archive_mode=on"
       - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "wal_keep_size=256MB"
+      - "-c"
       - "archive_command=pgbackrest --stanza=apm --repo1-s3-endpoint=https://minio:${CLUSTER_CONTROL_MINIO_API_HOST_PORT} archive-push %p"
     ports:
       - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_HOST_PORT:-5432}:5432"
@@ -77,6 +85,88 @@ services:
     command: ["bash", "/db-init.sh"]
     restart: "no"
 
+  db-replica-setup:
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:latest-pg16}
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-apm}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-apm}
+      PGDATABASE: ${POSTGRES_DB:-apm}
+      REPLICA_USER: ${REPLICA_USER:-replicator}
+      REPLICA_PASSWORD: ${REPLICA_PASSWORD:-replicator_pass}
+      REPLICA_CIDR: ${REPLICA_CIDR:-0.0.0.0/0}
+    volumes:
+      - data_db:/var/lib/postgresql/data
+      - ./replica/primary-setup.sh:/primary-setup.sh:ro
+    command: ["bash", "/primary-setup.sh"]
+    restart: "no"
+
+  db-replica-data-init:
+    image: alpine:3.20
+    user: "0"
+    volumes:
+      - data_db_replica:/var/lib/postgresql/data
+    restart: "no"
+    command: ["sh", "-euc", "mkdir -p /var/lib/postgresql/data && chown -R 70:70 /var/lib/postgresql/data"]
+
+  db-replica:
+    image: apm-data-db
+    user: "70"
+    depends_on:
+      db-replica-setup:
+        condition: service_completed_successfully
+      db-replica-data-init:
+        condition: service_completed_successfully
+    environment:
+      PRIMARY_HOST: ${REPLICA_PRIMARY_HOST:-db}
+      PRIMARY_PORT: ${REPLICA_PRIMARY_PORT:-5432}
+      REPLICA_USER: ${REPLICA_USER:-replicator}
+      REPLICA_PASSWORD: ${REPLICA_PASSWORD:-replicator_pass}
+      PGPASSFILE: /var/lib/postgresql/.pgpass
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - data_db_replica:/var/lib/postgresql/data
+      - ./replica/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    command: ["/bin/sh", "/replica-entrypoint.sh"]
+    ports:
+      - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_REPLICA1_HOST_PORT:-25433}:5432"
+    restart: unless-stopped
+
+  db-replica-2-data-init:
+    image: alpine:3.20
+    user: "0"
+    volumes:
+      - data_db_replica2:/var/lib/postgresql/data
+    restart: "no"
+    command: ["sh", "-euc", "mkdir -p /var/lib/postgresql/data && chown -R 70:70 /var/lib/postgresql/data"]
+
+  db-replica-2:
+    image: apm-data-db
+    user: "70"
+    depends_on:
+      db-replica-setup:
+        condition: service_completed_successfully
+      db-replica-2-data-init:
+        condition: service_completed_successfully
+    environment:
+      PRIMARY_HOST: ${REPLICA_PRIMARY_HOST:-db}
+      PRIMARY_PORT: ${REPLICA_PRIMARY_PORT:-5432}
+      REPLICA_USER: ${REPLICA_USER:-replicator}
+      REPLICA_PASSWORD: ${REPLICA_PASSWORD:-replicator_pass}
+      PGPASSFILE: /var/lib/postgresql/.pgpass
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - data_db_replica2:/var/lib/postgresql/data
+      - ./replica/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    command: ["/bin/sh", "/replica-entrypoint.sh"]
+    ports:
+      - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_REPLICA2_HOST_PORT:-25434}:5432"
+    restart: unless-stopped
+
   pgbackrest-server:
     build:
       context: ../..
@@ -102,5 +192,7 @@ services:
 
 volumes:
   data_db:
+  data_db_replica:
+  data_db_replica2:
   pgbackrest_spool:
   pg_socket:

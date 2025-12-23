@@ -106,6 +106,38 @@ def _env_bool(name: str, default: bool = False) -> bool:
         return default
     return val.lower() in {"1", "true", "yes", "y", "on"}
 
+def _split_host_port(raw: str, default_port: int) -> tuple[str, int]:
+    value = raw.strip() if raw else ""
+    if not value:
+        return "localhost", default_port
+
+    if value.startswith("["):
+        host_part, _, rest = value[1:].partition("]")
+        if not host_part:
+            raise ValueError(f"Invalid host entry: {raw}")
+        if not rest:
+            return host_part, default_port
+        if not rest.startswith(":"):
+            raise ValueError(f"Invalid host entry: {raw}")
+        port_part = rest[1:]
+    else:
+        if ":" in value:
+            host_part, port_part = value.rsplit(":", 1)
+        else:
+            host_part = value
+            port_part = str(default_port)
+
+    try:
+        port = int(port_part)
+    except ValueError as exc:
+        raise ValueError(f"Invalid port in host entry: {raw}") from exc
+
+    return host_part, port
+
+def _parse_host_list(raw: str, default_port: int) -> list[tuple[str, int]]:
+    entries = [entry.strip() for entry in raw.split(",") if entry.strip()]
+    return [_split_host_port(entry, default_port) for entry in entries]
+
 FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
 
 POSTGRES_NAME = _env("POSTGRES_DB") or _env("DB_NAME")
@@ -115,29 +147,48 @@ POSTGRES_PASSWORD = _env("POSTGRES_APP_PASSWORD") or _env("POSTGRES_PASSWORD") o
 POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
 POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
 
+CLUSTER_DB_PRIMARY_HOST = _env("CLUSTER_DB_PRIMARY_HOST") or POSTGRES_HOST
+CLUSTER_DB_REPLICA_HOSTS = _env("CLUSTER_DB_REPLICA_HOSTS")
+
 # Optional SSL mode for hosted Postgres (examples: disable, require, verify-ca, verify-full)
 DB_SSLMODE = _env("DB_SSLMODE")
 DB_OPTIONS = {"sslmode": DB_SSLMODE} if DB_SSLMODE else {}
 
 HAS_POSTGRES_ENV = all([POSTGRES_NAME, POSTGRES_USER, POSTGRES_PASSWORD])
 
+REPLICA_DATABASES: list[str] = []
+
 if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": POSTGRES_NAME,
-            "USER": POSTGRES_USER,
-            "PASSWORD": POSTGRES_PASSWORD,
-            "HOST": POSTGRES_HOST,
-            "PORT": POSTGRES_PORT,
-            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
-            # psycopg/Django expects a dict here
-            "OPTIONS": DB_OPTIONS,
-            "TEST": {
-                "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
-            },
-        }
+    primary_host, primary_port = _split_host_port(CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432"))
+    default_db = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": POSTGRES_NAME,
+        "USER": POSTGRES_USER,
+        "PASSWORD": POSTGRES_PASSWORD,
+        "HOST": primary_host,
+        "PORT": str(primary_port),
+        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+        # psycopg/Django expects a dict here
+        "OPTIONS": DB_OPTIONS,
+        "TEST": {
+            "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
+        },
     }
+    DATABASES = {
+        "default": default_db,
+    }
+
+    if CLUSTER_DB_REPLICA_HOSTS:
+        for idx, (host, port) in enumerate(_parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1):
+            alias = f"replica_{idx}"
+            replica_db = default_db.copy()
+            replica_db["HOST"] = host
+            replica_db["PORT"] = str(port)
+            DATABASES[alias] = replica_db
+            REPLICA_DATABASES.append(alias)
+
+    if REPLICA_DATABASES:
+        DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
 else:
     # SQLite fallback (great for quick local runs / CI without Postgres)
     BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
