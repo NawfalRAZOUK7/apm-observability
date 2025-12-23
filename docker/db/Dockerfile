@@ -30,7 +30,9 @@ USER root
 RUN set -eux; \
   apk add --no-cache --virtual .build-deps \
     build-base \
+    clang19 \
     git \
+    llvm19 \
     postgresql-dev
 
 RUN set -eux; \
