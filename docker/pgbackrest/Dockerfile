@@ -35,7 +35,7 @@ FROM debian:bookworm-slim
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-    ca-certificates curl openssh-client postgresql-client \
+    ca-certificates cron curl openssh-client postgresql-client \
     libpq5 libssl3 libxml2 liblz4-1 libzstd1 libbz2-1.0 zlib1g libyaml-0-2 libssh2-1 \
   ; \
   rm -rf /var/lib/apt/lists/*
@@ -54,6 +54,8 @@ RUN set -eux; \
 
 COPY docker/pgbackrest/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 755 /usr/local/bin/entrypoint.sh
+COPY docker/backup/pgbackrest-cron.sh /usr/local/bin/pgbackrest-cron.sh
+RUN chmod 755 /usr/local/bin/pgbackrest-cron.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]

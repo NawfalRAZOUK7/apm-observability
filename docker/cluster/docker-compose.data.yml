@@ -32,6 +32,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
       PGBACKREST_CONFIG: /etc/pgbackrest/pgbackrest.conf
+      PGBACKREST_REPO1_CIPHER_PASS: ${PGBACKREST_CIPHER_PASS:-}
+      PGBACKREST_REPO1_S3_ENDPOINT: https://minio:${CLUSTER_CONTROL_MINIO_API_HOST_PORT:-9000}
     volumes:
       - data_db:/var/lib/postgresql/data
       - pg_socket:/var/run/postgresql
@@ -187,6 +189,8 @@ services:
       - ../certs/public.crt:/certs/public.crt:ro
     environment:
       - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+      - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+      - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
     # FIX IMPORTANT: on lance bien "pgbackrest server"
     entrypoint: ["/usr/local/bin/entrypoint.sh", "pgbackrest", "server"]
 

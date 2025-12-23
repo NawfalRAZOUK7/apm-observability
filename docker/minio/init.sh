@@ -24,6 +24,7 @@ set -eu
 
 : "${MINIO_ENDPOINT:=https://minio:9000}"
 : "${MINIO_BUCKET:=pgbackrest}"
+: "${MINIO_BUCKET_COLD:=}"
 : "${MINIO_ALIAS:=myminio}"
 : "${MINIO_ENABLE_VERSIONING:=1}"
 : "${MINIO_INSECURE:=0}"
@@ -60,6 +61,15 @@ mc $MC_INSECURE_FLAG mb --ignore-existing "$MINIO_ALIAS/$MINIO_BUCKET" >/dev/nul
 if [ "$MINIO_ENABLE_VERSIONING" = "1" ]; then
   echo "minio-init: enabling versioning on '${MINIO_BUCKET}' (idempotent) ..."
   mc $MC_INSECURE_FLAG version enable "$MINIO_ALIAS/$MINIO_BUCKET" >/dev/null 2>&1 || true
+fi
+
+if [ -n "$MINIO_BUCKET_COLD" ] && [ "$MINIO_BUCKET_COLD" != "$MINIO_BUCKET" ]; then
+  echo "minio-init: creating cold bucket '${MINIO_BUCKET_COLD}' (idempotent) ..."
+  mc $MC_INSECURE_FLAG mb --ignore-existing "$MINIO_ALIAS/$MINIO_BUCKET_COLD" >/dev/null
+  if [ "$MINIO_ENABLE_VERSIONING" = "1" ]; then
+    echo "minio-init: enabling versioning on '${MINIO_BUCKET_COLD}' (idempotent) ..."
+    mc $MC_INSECURE_FLAG version enable "$MINIO_ALIAS/$MINIO_BUCKET_COLD" >/dev/null 2>&1 || true
+  fi
 fi
 
 echo "minio-init: OK"

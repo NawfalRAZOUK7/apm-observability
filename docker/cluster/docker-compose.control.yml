@@ -29,6 +29,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-apm_backup}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-apm_backup_secret}
       MINIO_BUCKET: ${MINIO_BUCKET:-pgbackrest}
+      MINIO_BUCKET_COLD: ${MINIO_BUCKET_COLD:-pgbackrest-cold}
       MINIO_ALIAS: myminio
       MINIO_ENABLE_VERSIONING: "1"
       MINIO_INSECURE: "1"
@@ -50,11 +51,33 @@ services:
       - pgbackrest_spool:/var/lib/pgbackrest
     environment:
       - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+      - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+      - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
     # Garde ton nom: pgbackrest-server résout vers l'IP du DATA node
     extra_hosts:
       - "pgbackrest-server:${DATA_NODE_IP}"
     restart: "no"
     command: ["sleep", "infinity"]
+
+  pgbackrest-cron:
+    build:
+      context: ../..
+      dockerfile: docker/pgbackrest/Dockerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    volumes:
+      - ../backup/pgbackrest-client.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ../certs:/certs:ro
+      - pgbackrest_spool:/var/lib/pgbackrest
+    environment:
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+      - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+      - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+    extra_hosts:
+      - "pgbackrest-server:${DATA_NODE_IP}"
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/pgbackrest-cron.sh"]
 
 volumes:
   minio_data:
