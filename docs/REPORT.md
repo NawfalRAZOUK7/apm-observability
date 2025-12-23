@@ -68,6 +68,13 @@
 
 TimescaleDB marie PostgreSQL et fonctionnalités time-series (hypertables, CAGG, policies de rétention/compression) adaptées à l’APM. Les coûts et l’opérationnel sont plus légers qu’un stack Oracle pour le même besoin; le déploiement peut être on-prem ou managé (RDS/Aurora/Timescale Cloud) selon l’équilibre recherché entre contrôle et coût.
 
+## Task 7 — Optimisation avec indexes
+
+- Index composite pour filtres fréquents par service/endpoint/method + temps.
+- Index partiel sur erreurs (status_code >= 500) pour accélérer l’analytics d’erreurs.
+- Indexes complémentaires sur CAGG hourly/daily (service|endpoint + bucket DESC) si requêtes lentes.
+- Migration: `observability/migrations/0007_task7_indexes.py` (idempotente côté Timescale).
+
 # pgBackRest S3/MinIO Compatibility Note
 
 For reliable S3/MinIO backups with Docker, pgBackRest **v2.41 or newer** is required. Older versions may have endpoint/bucket parsing bugs that prevent correct operation. Always use the config file for S3 settings and avoid environment variable overrides. See official documentation for details.
