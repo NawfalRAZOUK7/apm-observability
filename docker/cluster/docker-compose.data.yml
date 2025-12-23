@@ -1,0 +1,106 @@
+# docker/cluster/docker-compose.data.yml
+services:
+  pg_socket_init:
+    image: alpine:3.20
+    user: "0"
+    volumes:
+      - pg_socket:/var/run/postgresql
+    restart: "no"
+    command: ["sh", "-euc", "mkdir -p /var/run/postgresql && chown -R 70:70 /var/run/postgresql && chmod 2775 /var/run/postgresql"]
+
+  pgbackrest_spool_init:
+    image: alpine:3.20
+    user: "0"
+    volumes:
+      - pgbackrest_spool:/var/lib/pgbackrest
+    restart: "no"
+    command: ["sh", "-euc", "mkdir -p /var/lib/pgbackrest && chown -R 70:70 /var/lib/pgbackrest"]
+
+  db:
+    build:
+      context: ../..
+      dockerfile: docker/db/Dockerfile
+    image: apm-data-db
+    depends_on:
+      pg_socket_init:
+        condition: service_completed_successfully
+      pgbackrest_spool_init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+      PGBACKREST_CONFIG: /etc/pgbackrest/pgbackrest.conf
+    volumes:
+      - data_db:/var/lib/postgresql/data
+      - pg_socket:/var/run/postgresql
+      - pgbackrest_spool:/var/lib/pgbackrest
+      - ../initdb:/docker-entrypoint-initdb.d:ro
+      - ./pgbackrest-db.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ../certs/pgbackrest:/certs/pgbackrest:ro
+      - ../certs/public.crt:/certs/public.crt:ro
+    extra_hosts:
+      - "minio:${CONTROL_NODE_IP}"
+    command:
+      - "postgres"
+      - "-c"
+      - "unix_socket_directories=/var/run/postgresql"
+      - "-c"
+      - "archive_mode=on"
+      - "-c"
+      - "archive_command=pgbackrest --stanza=apm --repo1-s3-endpoint=https://minio:${CLUSTER_CONTROL_MINIO_API_HOST_PORT} archive-push %p"
+    ports:
+      - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm} -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  db-init:
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:latest-pg16}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-apm}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-apm}
+      PGDATABASE: ${POSTGRES_DB:-apm}
+    volumes:
+      - ../backup/db-init.sh:/db-init.sh:ro
+      # IMPORTANT: ton script db-init.sh peut appliquer /initdb/*.sql si présent
+      - ../initdb:/initdb:ro
+    # FIX: ne pas chmod un mount :ro
+    command: ["bash", "/db-init.sh"]
+    restart: "no"
+
+  pgbackrest-server:
+    build:
+      context: ../..
+      dockerfile: docker/pgbackrest/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_PGBR_TLS_HOST_PORT:-8432}:8432"
+    volumes:
+      - data_db:/var/lib/postgresql/data:ro
+      - pg_socket:/var/run/postgresql
+      - pgbackrest_spool:/var/lib/pgbackrest
+      - ../backup/pgbackrest-server.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ../backup/pgpass:/root/.pgpass:ro
+      - ../certs/pgbackrest:/certs/pgbackrest:ro
+      - ../certs/public.crt:/certs/public.crt:ro
+    environment:
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+    # FIX IMPORTANT: on lance bien "pgbackrest server"
+    entrypoint: ["/usr/local/bin/entrypoint.sh", "pgbackrest", "server"]
+
+volumes:
+  data_db:
+  pgbackrest_spool:
+  pg_socket:

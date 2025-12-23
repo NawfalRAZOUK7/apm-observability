@@ -1,22 +1,11 @@
 # ============================================================================
 # docker/docker-compose.backup.yml
 # Option 2 — pgBackRest TLS server (mTLS) + db-init + MinIO + minio-init
-# FIX: Share PostgreSQL unix socket between db and pgbackrest-server
-#
-# Services:
-# - pg_socket_init (one-shot): prepares /var/run/postgresql permissions
-# - db: TimescaleDB/Postgres, writes unix socket into shared volume
-# - db-init (one-shot): idempotent init script gate (your backup/db-init.sh)
-# - minio: S3-compatible storage over HTTPS
-# - minio-init (one-shot): creates bucket pgbackrest (idempotent)
-# - pgbackrest-server: pgBackRest TLS server (mTLS) that connects locally to DB via shared socket
-# - pgbackrest: client container you exec into (sleep infinity)
 # ============================================================================
 
 services:
   pg_socket_init:
     image: alpine:3.20
-    container_name: apm_pg_socket_init
     user: "0"
     volumes:
       - pg_socket:/var/run/postgresql
@@ -27,7 +16,6 @@ services:
 
   db:
     image: timescale/timescaledb:latest-pg16
-    container_name: apm_backup_db
     depends_on:
       pg_socket_init:
         condition: service_completed_successfully
@@ -42,7 +30,6 @@ services:
     networks:
       - backup_network
     restart: unless-stopped
-    # Force postgres to place socket in the shared dir
     command: ["postgres", "-c", "unix_socket_directories=/var/run/postgresql"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U apm -d apm"]
@@ -52,7 +39,6 @@ services:
 
   db-init:
     image: timescale/timescaledb:latest-pg16
-    container_name: apm_backup_db_init
     depends_on:
       db:
         condition: service_healthy
@@ -73,16 +59,13 @@ services:
     build:
       context: ..
       dockerfile: docker/minio/Dockerfile
-    container_name: apm_minio
     command: ["server", "/data", "--console-address", ":9001"]
-    # Run as root to reliably read mounted private.key (often chmod 600 on host)
     user: "0"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${BACKUP_MINIO_API_HOST_PORT:-9000}:9000"
+      - "${BACKUP_MINIO_CONSOLE_HOST_PORT:-9001}:9001"
     volumes:
       - minio_data:/data
-      # Expects: /root/.minio/certs/public.crt + private.key
       - ./certs:/root/.minio/certs:ro
     environment:
       - MINIO_ROOT_USER=apm_backup
@@ -95,7 +78,6 @@ services:
 
   minio-init:
     image: minio/mc:latest
-    container_name: apm_minio_init
     depends_on:
       minio:
         condition: service_started
@@ -108,7 +90,6 @@ services:
       MINIO_BUCKET: pgbackrest
       MINIO_ALIAS: myminio
       MINIO_ENABLE_VERSIONING: "1"
-      # dev-only: mc ignores TLS verification; pgBackRest still verifies with /certs/public.crt
       MINIO_INSECURE: "1"
     volumes:
       - ./minio/init.sh:/init.sh:ro
@@ -119,7 +100,6 @@ services:
     build:
       context: ..
       dockerfile: docker/pgbackrest/Dockerfile
-    container_name: apm_pgbackrest_server
     depends_on:
       db:
         condition: service_healthy
@@ -130,23 +110,11 @@ services:
       minio-init:
         condition: service_completed_successfully
     volumes:
-      # Postgres data directory (read-only)
       - backup_db_data:/var/lib/postgresql/data:ro
-      # Shared unix socket directory
       - pg_socket:/var/run/postgresql
-
-      # Server config
       - ./backup/pgbackrest-server.conf:/etc/pgbackrest/pgbackrest.conf:ro
-
-      # libpq password file (keep untracked, chmod 600)
       - ./backup/pgpass:/root/.pgpass:ro
-
-      # Certs:
-      # - /certs/public.crt for MinIO TLS verification
-      # - /certs/pgbackrest/* for pgBackRest mTLS server
       - ./certs:/certs:ro
-
-      # Local state/spool
       - backup_data:/var/lib/pgbackrest
     environment:
       - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
@@ -159,7 +127,6 @@ services:
     build:
       context: ..
       dockerfile: docker/pgbackrest/Dockerfile
-    container_name: apm_pgbackrest_client
     depends_on:
       pgbackrest-server:
         condition: service_started

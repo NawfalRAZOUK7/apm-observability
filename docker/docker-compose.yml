@@ -1,20 +1,11 @@
 # ============================================================================
 # docker/docker-compose.yml
 # Main app stack (Django + TimescaleDB + Nginx)
-#
-# - This compose is for your application runtime.
-# - Backups (pgBackRest + MinIO + TLS/mTLS) live in docker-compose.backup.yml.
-#
-# Ports (dev):
-# - http://localhost:8080  -> nginx:80  (can redirect to https)
-# - https://localhost:8443 -> nginx:443 (reverse proxy to web:8000)
-# - http://localhost:8000  -> web:8000  (direct access, optional)
 # ============================================================================
 
 services:
   db:
     image: timescale/timescaledb:latest-pg16
-    container_name: apm_timescaledb
 
     env_file:
       - ../.env.docker
@@ -24,14 +15,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-apm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
 
-      # Optional: if your init SQL uses these
       POSTGRES_APP_USER: ${POSTGRES_APP_USER:-apm_app}
       POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-apm_app_pass}
       POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_readonly}
       POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_readonly_pass}
 
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${MAIN_DB_HOST_PORT:-5432}:5432"
 
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -51,7 +41,6 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    container_name: apm_web
 
     depends_on:
       db:
@@ -72,7 +61,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
 
       DB_SSLMODE: ${DB_SSLMODE:-disable}
-
       DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-UTC}
       DRF_PAGE_SIZE: ${DRF_PAGE_SIZE:-50}
       DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
@@ -82,7 +70,7 @@ services:
       GUNICORN_BIND: ${GUNICORN_BIND:-0.0.0.0:8000}
 
     ports:
-      - "${WEB_PORT:-8000}:8000"
+      - "${MAIN_WEB_HOST_PORT:-8000}:8000"
 
     entrypoint: ["bash", "docker/entrypoint.sh"]
     restart: unless-stopped
@@ -91,14 +79,13 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: apm_nginx
 
     depends_on:
       - web
 
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "${MAIN_NGINX_HTTP_HOST_PORT:-8080}:80"
+      - "${MAIN_NGINX_HTTPS_HOST_PORT:-8443}:443"
 
     volumes:
       - ../docker/certs:/etc/nginx/certs:ro
@@ -112,7 +99,6 @@ services:
 
   certbot:
     image: certbot/certbot:latest
-    container_name: apm_certbot
     profiles:
       - production
     volumes:

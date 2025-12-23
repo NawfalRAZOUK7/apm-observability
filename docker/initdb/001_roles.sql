@@ -28,6 +28,7 @@ GRANT CONNECT ON DATABASE apm TO apm_readonly;
 
 -- Schema privileges (public schema)
 GRANT USAGE ON SCHEMA public TO apm_app;
+GRANT CREATE ON SCHEMA public TO apm_app;
 GRANT USAGE ON SCHEMA public TO apm_readonly;
 
 -- Read/write role: CRUD on tables + sequences + execute functions

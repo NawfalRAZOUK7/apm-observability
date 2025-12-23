@@ -1,0 +1,41 @@
+# docker/cluster/docker-compose.app.yml
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    env_file:
+      - ../../.env.docker
+    environment:
+      # "db" va pointer vers l'IP du DATA node (via extra_hosts)
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      # FIX : on utilise bien le HOST PUBLISHED PORT du DATA node (25432 en localdev)
+      POSTGRES_PORT: ${CLUSTER_DATA_DB_HOST_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,192.168.0.127}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+
+    extra_hosts:
+      - "db:${DATA_NODE_IP}"
+
+    ports:
+      - "${APP_BIND_IP:-0.0.0.0}:${CLUSTER_APP_WEB_HOST_PORT:-8000}:8000"
+
+    entrypoint: ["bash", "docker/entrypoint.sh"]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - web
+    ports:
+      - "${APP_BIND_IP:-0.0.0.0}:${CLUSTER_APP_NGINX_HTTP_HOST_PORT:-80}:80"
+      - "${APP_BIND_IP:-0.0.0.0}:${CLUSTER_APP_NGINX_HTTPS_HOST_PORT:-443}:443"
+    volumes:
+      - ../certs:/etc/nginx/certs:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+    restart: unless-stopped

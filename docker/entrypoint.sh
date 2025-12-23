@@ -9,8 +9,8 @@ set -euo pipefail
 # - Keeps your existing behavior: wait for DB, migrate, collectstatic, start gunicorn.
 # ============================================================================
 
-: "${DB_HOST:=db}"
-: "${DB_PORT:=5432}"
+: "${DB_HOST:=${POSTGRES_HOST:-db}}"
+: "${DB_PORT:=${POSTGRES_PORT:-5432}}"
 : "${DB_CONNECT_RETRIES:=60}"
 : "${DB_CONNECT_DELAY:=1}"
 

@@ -97,29 +97,6 @@ def forwards(apps, schema_editor):
                 -- Add the desired policy:
                 -- Try with if_not_exists (newer), fall back to no-flag signature (older).
                 BEGIN
-        BEGIN
-            -- Remove any existing policy first (ignore if not present / unsupported)
-            BEGIN
-                PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass, if_exists => TRUE);
-            EXCEPTION
-                WHEN undefined_function THEN
-                    BEGIN
-                        PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass, if_not_exists => TRUE);
-                    EXCEPTION
-                        WHEN undefined_function THEN
-                            BEGIN
-                                PERFORM remove_continuous_aggregate_policy('apirequest_hourly'::regclass);
-                            EXCEPTION
-                                WHEN others THEN NULL;
-                            END;
-                        WHEN others THEN NULL;
-                    END;
-                WHEN others THEN NULL;
-            END;
-
-            -- Add the desired policy:
-            -- Try with if_not_exists (newer), fall back to no-flag signature (older).
-            BEGIN
                 PERFORM add_continuous_aggregate_policy(
                     'apirequest_hourly'::regclass,
                     start_offset => INTERVAL '7 days',
@@ -127,17 +104,18 @@ def forwards(apps, schema_editor):
                     schedule_interval => INTERVAL '15 minutes',
                     if_not_exists => TRUE
                 );
-            EXCEPTION
-                WHEN undefined_function THEN
-                    PERFORM add_continuous_aggregate_policy(
-                        'apirequest_hourly'::regclass,
-                        start_offset => INTERVAL '7 days',
-                        end_offset => INTERVAL '1 hour',
-                        schedule_interval => INTERVAL '15 minutes'
-                    );
-                WHEN others THEN
-                    -- If anything unexpected happens, don't block migration
-                    NULL;
+                EXCEPTION
+                    WHEN undefined_function THEN
+                        PERFORM add_continuous_aggregate_policy(
+                            'apirequest_hourly'::regclass,
+                            start_offset => INTERVAL '7 days',
+                            end_offset => INTERVAL '1 hour',
+                            schedule_interval => INTERVAL '15 minutes'
+                        );
+                    WHEN others THEN
+                        -- If anything unexpected happens, don't block migration
+                        NULL;
+                END;
             END;
         END $$;
         """,
