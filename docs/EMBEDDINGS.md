@@ -55,3 +55,11 @@ Optional filters:
 
 - The first version embeds **errors only** (status >= 500) for high-signal search.
 - If you move to a new embedding model, re-run embeddings with `--force`.
+
+## Troubleshooting
+
+- 429 `RESOURCE_EXHAUSTED` means your Gemini quota/billing is exhausted. Check usage, enable billing,
+  or wait for quota reset.
+- If the semantic search endpoint returns 503, the query embedding failed upstream (often quota).
+- To reduce rate-limit pressure: lower `--limit`, reduce `--batch-size`, add `--sleep`, and/or set
+  `GEMINI_EMBED_MIN_DELAY_S`. Use `--dry-run` to validate the pipeline without API calls.

@@ -42,6 +42,7 @@ class Migration(migrations.Migration):
                 (
                     "request",
                     models.OneToOneField(
+                        db_constraint=False,
                         on_delete=models.deletion.CASCADE,
                         related_name="embedding",
                         to="observability.apirequest",

@@ -71,6 +71,7 @@ class ApiRequestEmbedding(models.Model):
         ApiRequest,
         on_delete=models.CASCADE,
         related_name="embedding",
+        db_constraint=False,
     )
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.ERROR)
     model = models.CharField(max_length=64, default="text-embedding-004")
