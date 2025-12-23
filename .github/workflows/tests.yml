@@ -21,6 +21,7 @@ env:
   DRF_PAGE_SIZE: "50"
   DB_SSLMODE: "disable"
   DB_CONN_MAX_AGE: "0"
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
 jobs:
   preflight:
