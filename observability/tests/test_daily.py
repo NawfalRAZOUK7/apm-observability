@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from django.db import connection
 from django.utils import timezone
@@ -17,7 +17,7 @@ class DailyEndpointTests(APITestCase):
 
     # --- Helpers -------------------------------------------------
 
-    def _as_rows(self, data: Any) -> List[Dict[str, Any]]:
+    def _as_rows(self, data: Any) -> list[dict[str, Any]]:
         """
         Accept both response shapes:
           - list of rows
@@ -29,13 +29,13 @@ class DailyEndpointTests(APITestCase):
             return data
         self.fail(f"Unexpected response shape: {type(data)} => {data}")
 
-    def _to_regclass(self, name: str) -> Optional[str]:
+    def _to_regclass(self, name: str) -> str | None:
         with connection.cursor() as cur:
             cur.execute("SELECT to_regclass(%s);", [name])
             row = cur.fetchone()
             return row[0] if row else None
 
-    def _find_daily_relation(self) -> Optional[str]:
+    def _find_daily_relation(self) -> str | None:
         """
         Try common names for the daily continuous aggregate / view.
         Return the regclass name if found, else None.
@@ -53,7 +53,7 @@ class DailyEndpointTests(APITestCase):
         return None
 
     def _call_with_first_working_timerange(self, start_iso: str, end_iso: str):
-        candidates: List[Tuple[str, str]] = [
+        candidates: list[tuple[str, str]] = [
             ("start", "end"),
             ("time_min", "time_max"),
             ("from", "to"),
@@ -185,7 +185,9 @@ class DailyEndpointTests(APITestCase):
             if k in first:
                 bucket_key = k
                 break
-        self.assertIsNotNone(bucket_key, f"Missing bucket field in row keys: {sorted(first.keys())}")
+        self.assertIsNotNone(
+            bucket_key, f"Missing bucket field in row keys: {sorted(first.keys())}"
+        )
 
         hits_key = None
         for k in ("hits", "count", "requests"):
@@ -197,7 +199,8 @@ class DailyEndpointTests(APITestCase):
         total_hits = sum(int(r.get(hits_key, 0) or 0) for r in rows)
         self.assertEqual(total_hits, self.expected_total_hits)
 
-        # We seeded 3 distinct days -> expect >= 2 distinct buckets (some setups may merge if time zone / bucketing differs)
+        # We seeded 3 distinct days -> expect >= 2 distinct buckets
+        # (some setups may merge if time zone / bucketing differs)
         unique_buckets = {r.get(bucket_key) for r in rows}
         self.assertGreaterEqual(len(unique_buckets), 2, unique_buckets)
 

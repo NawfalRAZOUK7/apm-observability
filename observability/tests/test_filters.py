@@ -1,8 +1,9 @@
 # observability/tests/test_filters.py
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from datetime import timedelta
-from typing import Any, Dict, Iterable, List, Sequence, Tuple
+from typing import Any
 
 from django.utils import timezone
 from rest_framework import status
@@ -15,7 +16,7 @@ class ApiRequestFilterTests(APITestCase):
     LIST_URL = "/api/requests/"
 
     @staticmethod
-    def _rows(data: Any) -> List[Dict[str, Any]]:
+    def _rows(data: Any) -> list[dict[str, Any]]:
         """
         Accept both DRF response shapes:
           - paginated: {"count":..., "results":[...]}
@@ -28,7 +29,7 @@ class ApiRequestFilterTests(APITestCase):
         raise AssertionError(f"Unexpected response shape: {type(data)} => {data}")
 
     @staticmethod
-    def _ids(rows: Iterable[Dict[str, Any]]) -> List[int]:
+    def _ids(rows: Iterable[dict[str, Any]]) -> list[int]:
         return [int(r["id"]) for r in rows]
 
     def setUp(self):
@@ -104,7 +105,9 @@ class ApiRequestFilterTests(APITestCase):
     # ----------------------------
     # Internal helpers to be robust to param naming
     # ----------------------------
-    def _get_with_first_working_param(self, candidates: Sequence[str], value: Any, expected_ids: set[int]):
+    def _get_with_first_working_param(
+        self, candidates: Sequence[str], value: Any, expected_ids: set[int]
+    ):
         """
         Try candidate query param names until one returns exactly expected_ids.
         If none match, fail with a helpful message.
@@ -134,7 +137,7 @@ class ApiRequestFilterTests(APITestCase):
         start_iso: str,
         end_iso: str,
         expected_ids: set[int],
-        candidates: Sequence[Tuple[str, str]],
+        candidates: Sequence[tuple[str, str]],
     ):
         last = None
         for start_key, end_key in candidates:
@@ -255,6 +258,8 @@ class ApiRequestFilterTests(APITestCase):
 
         # If search isn't wired (no search_fields), many setups will just return all rows.
         if got == self.all_ids:
-            self.skipTest("Search is not configured on the ViewSet (search_fields missing); skipping.")
+            self.skipTest(
+                "Search is not configured on the ViewSet (search_fields missing); skipping."
+            )
 
         self.assertEqual(got, {self.r4.id, self.r5.id})

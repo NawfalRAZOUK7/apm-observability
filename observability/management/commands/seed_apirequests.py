@@ -6,9 +6,9 @@ import random
 import ssl
 import urllib.error
 import urllib.request
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone as dt_timezone
-from typing import Iterable
+from datetime import UTC, datetime, timedelta
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -61,8 +61,8 @@ def _parse_dt_or_date(value: str, *, end_of_day: bool) -> datetime:
     dt = parse_datetime(value)
     if dt is not None:
         if timezone.is_naive(dt):
-            dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
-        return dt.astimezone(dt_timezone.utc)
+            dt = timezone.make_aware(dt, timezone=UTC)
+        return dt.astimezone(UTC)
 
     d = parse_date(value)
     if d is not None:
@@ -70,14 +70,14 @@ def _parse_dt_or_date(value: str, *, end_of_day: bool) -> datetime:
             dt2 = datetime.combine(d, datetime.max.time()).replace(microsecond=999999)
         else:
             dt2 = datetime.combine(d, datetime.min.time()).replace(microsecond=0)
-        dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
-        return dt2.astimezone(dt_timezone.utc)
+        dt2 = timezone.make_aware(dt2, timezone=UTC)
+        return dt2.astimezone(UTC)
 
     raise CommandError("Invalid format. Use ISO datetime or date (e.g. 2025-12-14T10:00:00Z).")
 
 
 def _resolve_window(days: int, start_raw: str | None, end_raw: str | None) -> SeedWindow:
-    now = timezone.now().astimezone(dt_timezone.utc)
+    now = timezone.now().astimezone(UTC)
     start = _parse_dt_or_date(start_raw, end_of_day=False) if start_raw else None
     end = _parse_dt_or_date(end_raw, end_of_day=True) if end_raw else None
 
@@ -101,7 +101,7 @@ def _random_datetime(start: datetime, end: datetime) -> datetime:
     start_ts = start.timestamp()
     end_ts = end.timestamp()
     ts = random.uniform(start_ts, end_ts)
-    return datetime.fromtimestamp(ts, tz=dt_timezone.utc)
+    return datetime.fromtimestamp(ts, tz=UTC)
 
 
 def _pick_endpoint(service: str, override_endpoints: list[str] | None) -> str:
@@ -247,8 +247,12 @@ class Command(BaseCommand):
             default="",
             help='Required with --truncate. Set to "yes" to proceed.',
         )
-        parser.add_argument("--validate", action="store_true", help="Validate each event via serializer.")
-        parser.add_argument("--via-api", action="store_true", help="Seed via /api/requests/ingest/.")
+        parser.add_argument(
+            "--validate", action="store_true", help="Validate each event via serializer."
+        )
+        parser.add_argument(
+            "--via-api", action="store_true", help="Seed via /api/requests/ingest/."
+        )
         parser.add_argument(
             "--base-url",
             default="",
@@ -304,7 +308,8 @@ class Command(BaseCommand):
         if use_api and batch_size > max_events:
             self.stdout.write(
                 self.style.WARNING(
-                    f"--batch-size {batch_size} exceeds APM_INGEST_MAX_EVENTS ({max_events}); capping."
+                    f"--batch-size {batch_size} exceeds APM_INGEST_MAX_EVENTS "
+                    f"({max_events}); capping."
                 )
             )
             batch_size = max_events
@@ -336,7 +341,7 @@ class Command(BaseCommand):
 
                 payload = {
                     **event,
-                    "time": event["time"].astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z"),
+                    "time": event["time"].astimezone(UTC).isoformat().replace("+00:00", "Z"),
                 }
                 batch_payload.append(payload)
 

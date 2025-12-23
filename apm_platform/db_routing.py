@@ -13,6 +13,7 @@ _REQUEST_METHOD: ContextVar[str | None] = ContextVar("apm_request_method", defau
 def set_request_method(method: str) -> Token:
     return _REQUEST_METHOD.set(method.upper() if method else "")
 
+
 def reset_request_method(token: Token) -> None:
     _REQUEST_METHOD.reset(token)
 

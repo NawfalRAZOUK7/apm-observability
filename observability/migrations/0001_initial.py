@@ -13,7 +13,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ApiRequest",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
                 ("time", models.DateTimeField(db_index=True)),
                 ("service", models.CharField(db_index=True, max_length=100)),
                 ("endpoint", models.CharField(db_index=True, max_length=255)),
@@ -35,8 +40,14 @@ class Migration(migrations.Migration):
                 ),
                 ("status_code", models.PositiveSmallIntegerField(db_index=True)),
                 ("latency_ms", models.PositiveIntegerField(db_index=True)),
-                ("trace_id", models.CharField(blank=True, db_index=True, max_length=128, null=True)),
-                ("user_ref", models.CharField(blank=True, db_index=True, max_length=128, null=True)),
+                (
+                    "trace_id",
+                    models.CharField(blank=True, db_index=True, max_length=128, null=True),
+                ),
+                (
+                    "user_ref",
+                    models.CharField(blank=True, db_index=True, max_length=128, null=True),
+                ),
                 ("tags", models.JSONField(blank=True, default=dict)),
             ],
             options={
@@ -45,7 +56,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="apirequest",
-            index=models.Index(fields=["service", "endpoint", "-time"], name="api_req_svc_ep_time_idx"),
+            index=models.Index(
+                fields=["service", "endpoint", "-time"], name="api_req_svc_ep_time_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="apirequest",
@@ -61,7 +74,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="apirequest",
-            constraint=models.CheckConstraint(condition=Q(("latency_ms__gte", 0)), name="api_req_latency_ms_gte_0"),
+            constraint=models.CheckConstraint(
+                condition=Q(("latency_ms__gte", 0)), name="api_req_latency_ms_gte_0"
+            ),
         ),
         migrations.AddConstraint(
             model_name="apirequest",

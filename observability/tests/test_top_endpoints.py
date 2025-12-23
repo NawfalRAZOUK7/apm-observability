@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from django.db import connection
 from django.utils import timezone
@@ -32,7 +32,7 @@ class TopEndpointsEndpointTests(APITestCase):
         # service web:
         #   /home GET: 3 hits, 0 error
         #   /search GET: 1 hit, 1 error, high latency
-        rows: List[ApiRequest] = []
+        rows: list[ApiRequest] = []
 
         # api /orders (6 hits, 1 error)
         for i, ms in enumerate([20, 30, 40, 50, 60]):
@@ -115,7 +115,7 @@ class TopEndpointsEndpointTests(APITestCase):
     # ----------------------------
     # Helpers
     # ----------------------------
-    def _as_rows(self, data: Any) -> List[Dict[str, Any]]:
+    def _as_rows(self, data: Any) -> list[dict[str, Any]]:
         """
         Accept both response shapes:
           - list of rows
@@ -147,7 +147,15 @@ class TopEndpointsEndpointTests(APITestCase):
         self.assertEqual(first["endpoint"], "/orders")
 
         # Ensure key fields exist
-        for k in ("service", "endpoint", "hits", "errors", "error_rate", "avg_latency_ms", "max_latency_ms"):
+        for k in (
+            "service",
+            "endpoint",
+            "hits",
+            "errors",
+            "error_rate",
+            "avg_latency_ms",
+            "max_latency_ms",
+        ):
             self.assertIn(k, first)
 
         self.assertTrue(isinstance(first["hits"], int))
@@ -177,7 +185,9 @@ class TopEndpointsEndpointTests(APITestCase):
 
     def test_sort_by_avg_latency_desc_orders_slowest_first(self):
         # web:/search should be slowest avg latency due to high latency_ms
-        res = self.client.get(self.URL, {"sort_by": "avg_latency_ms", "direction": "desc", "limit": 1})
+        res = self.client.get(
+            self.URL, {"sort_by": "avg_latency_ms", "direction": "desc", "limit": 1}
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
 
         rows = self._as_rows(res.data)
@@ -196,7 +206,10 @@ class TopEndpointsEndpointTests(APITestCase):
         self.assertTrue(any("p95_latency_ms" in r for r in rows))
         self.assertTrue(
             any(
-                (r.get("p95_latency_ms") is not None and isinstance(r.get("p95_latency_ms"), (int, float)))
+                (
+                    r.get("p95_latency_ms") is not None
+                    and isinstance(r.get("p95_latency_ms"), (int, float))
+                )
                 for r in rows
             )
             or True  # tolerate None depending on your implementation/data

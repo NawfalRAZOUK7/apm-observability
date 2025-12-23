@@ -1,8 +1,8 @@
 # observability/serializers.py
 from __future__ import annotations
 
-from datetime import datetime, time, timezone as dt_timezone
-from typing import Any, Optional
+from datetime import UTC, datetime, time
+from typing import Any
 
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
@@ -112,7 +112,7 @@ class IsoDateTimeOrDateField(serializers.Field):
         super().__init__(*args, **kwargs)
         self.end_of_day = end_of_day
 
-    def to_internal_value(self, data: Any) -> Optional[datetime]:
+    def to_internal_value(self, data: Any) -> datetime | None:
         if data is None or data == "":
             return None
 
@@ -122,8 +122,8 @@ class IsoDateTimeOrDateField(serializers.Field):
         dt = parse_datetime(s)
         if dt is not None:
             if timezone.is_naive(dt):
-                dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
-            return dt.astimezone(dt_timezone.utc)
+                dt = timezone.make_aware(dt, timezone=UTC)
+            return dt.astimezone(UTC)
 
         # Then try date
         d = parse_date(s)
@@ -132,8 +132,8 @@ class IsoDateTimeOrDateField(serializers.Field):
                 dt2 = datetime.combine(d, time(23, 59, 59, 999999))
             else:
                 dt2 = datetime.combine(d, time(0, 0, 0))
-            dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
-            return dt2.astimezone(dt_timezone.utc)
+            dt2 = timezone.make_aware(dt2, timezone=UTC)
+            return dt2.astimezone(UTC)
 
         self.fail("invalid")
 
@@ -142,7 +142,7 @@ class IsoDateTimeOrDateField(serializers.Field):
         if value is None:
             return None
         if hasattr(value, "isoformat"):
-            return value.astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z")
+            return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
         return str(value)
 
 

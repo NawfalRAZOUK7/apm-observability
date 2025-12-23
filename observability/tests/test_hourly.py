@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from django.db import connection
 from django.utils import timezone
@@ -17,7 +17,7 @@ class HourlyEndpointTests(APITestCase):
 
     # --- Helpers -------------------------------------------------
 
-    def _as_rows(self, data: Any) -> List[Dict[str, Any]]:
+    def _as_rows(self, data: Any) -> list[dict[str, Any]]:
         """
         Accept both response shapes:
           - list of rows
@@ -29,13 +29,13 @@ class HourlyEndpointTests(APITestCase):
             return data
         self.fail(f"Unexpected response shape: {type(data)} => {data}")
 
-    def _to_regclass(self, name: str) -> Optional[str]:
+    def _to_regclass(self, name: str) -> str | None:
         with connection.cursor() as cur:
             cur.execute("SELECT to_regclass(%s);", [name])
             row = cur.fetchone()
             return row[0] if row else None
 
-    def _find_hourly_relation(self) -> Optional[str]:
+    def _find_hourly_relation(self) -> str | None:
         """
         Try common names for the hourly continuous aggregate / view.
         Return the regclass name if found, else None.
@@ -52,14 +52,12 @@ class HourlyEndpointTests(APITestCase):
                 return found
         return None
 
-    def _call_with_first_working_timerange(
-        self, start_iso: str, end_iso: str
-    ):
+    def _call_with_first_working_timerange(self, start_iso: str, end_iso: str):
         """
         Try common param name pairs for time range.
         If endpoint ignores time params, we still accept 200 and validate totals.
         """
-        candidates: List[Tuple[str, str]] = [
+        candidates: list[tuple[str, str]] = [
             ("start", "end"),
             ("time_min", "time_max"),
             ("from", "to"),
@@ -184,7 +182,9 @@ class HourlyEndpointTests(APITestCase):
             if k in first:
                 bucket_key = k
                 break
-        self.assertIsNotNone(bucket_key, f"Missing bucket field in row keys: {sorted(first.keys())}")
+        self.assertIsNotNone(
+            bucket_key, f"Missing bucket field in row keys: {sorted(first.keys())}"
+        )
 
         hits_key = None
         for k in ("hits", "count", "requests"):

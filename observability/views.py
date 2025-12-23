@@ -1,8 +1,8 @@
 # observability/views.py
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, timezone as dt_timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime, time, timedelta
+from typing import Any
 
 from django.conf import settings
 from django.db import connection, transaction
@@ -10,11 +10,12 @@ from django.db.utils import ProgrammingError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from django_filters import rest_framework as df_filters
-from rest_framework import filters as drf_filters, status, viewsets
+from rest_framework import filters as drf_filters
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .analytics.sql import (
     AnalyticsFilters,
@@ -27,8 +28,8 @@ from .analytics.sql import (
     top_endpoints_from_cagg_sql,
     top_endpoints_from_raw_sql,
 )
-from .guards import postgres_required
 from .filters import ApiRequestFilter
+from .guards import postgres_required
 from .models import ApiRequest
 from .serializers import (
     ApiRequestIngestItemSerializer,
@@ -38,7 +39,6 @@ from .serializers import (
     KpiQueryParamsSerializer,
     TopEndpointsQueryParamsSerializer,
 )
-
 
 
 class ApiRequestViewSet(viewsets.ModelViewSet):
@@ -79,7 +79,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         default: int,
         *,
         min_value: int,
-        max_value: Optional[int] = None,
+        max_value: int | None = None,
     ) -> int:
         raw = request.query_params.get(name)
         if raw is None or raw == "":
@@ -87,8 +87,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         else:
             try:
                 value = int(raw)
-            except (TypeError, ValueError):
-                raise ValidationError({name: "Must be an integer."})
+            except (TypeError, ValueError) as exc:
+                raise ValidationError({name: "Must be an integer."}) from exc
 
         if value < min_value:
             raise ValidationError({name: f"Must be >= {min_value}."})
@@ -119,8 +119,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         dt = parse_datetime(s)
         if dt is not None:
             if timezone.is_naive(dt):
-                dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
-            return dt.astimezone(dt_timezone.utc)
+                dt = timezone.make_aware(dt, timezone=UTC)
+            return dt.astimezone(UTC)
 
         d = parse_date(s)
         if d is not None:
@@ -128,14 +128,14 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 dt2 = datetime.combine(d, time(23, 59, 59, 999999))
             else:
                 dt2 = datetime.combine(d, time(0, 0, 0))
-            dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
-            return dt2.astimezone(dt_timezone.utc)
+            dt2 = timezone.make_aware(dt2, timezone=UTC)
+            return dt2.astimezone(UTC)
 
         raise ValidationError(
             {name: "Must be an ISO datetime or date (e.g. 2025-12-14T10:00:00Z or 2025-12-14)."}
         )
 
-    def _parse_ingest_payload(self, data: Any) -> List[Any]:
+    def _parse_ingest_payload(self, data: Any) -> list[Any]:
         if isinstance(data, list):
             return data
 
@@ -182,8 +182,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             )
 
-        validated_rows: List[Dict[str, Any]] = []
-        errors: List[Dict[str, Any]] = []
+        validated_rows: list[dict[str, Any]] = []
+        errors: list[dict[str, Any]] = []
         invalid_found = False
 
         for idx, item in enumerate(events):
@@ -193,7 +193,9 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                     errors.append(
                         {
                             "index": idx,
-                            "errors": {"non_field_errors": ["Each event must be a JSON object/dict."]},
+                            "errors": {
+                                "non_field_errors": ["Each event must be a JSON object/dict."]
+                            },
                         }
                     )
                 continue
@@ -209,7 +211,10 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         if strict and invalid_found:
             return Response(
                 {
-                    "detail": "Strict mode enabled: payload contains invalid items. Nothing was inserted.",
+                    "detail": (
+                        "Strict mode enabled: payload contains invalid items. "
+                        "Nothing was inserted."
+                    ),
                     "inserted": 0,
                     "rejected": len(events),
                     "errors": errors,
@@ -217,7 +222,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        instances: List[ApiRequest] = [ApiRequest(**row) for row in validated_rows]
+        instances: list[ApiRequest] = [ApiRequest(**row) for row in validated_rows]
 
         inserted = 0
         if instances:
@@ -236,14 +241,16 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # Step 3 endpoint: /api/requests/hourly/
     # ----------------------------
     @action(detail=False, methods=["get"], url_path="hourly")
-    @postgres_required("Hourly analytics requires PostgreSQL + TimescaleDB (hypertable + hourly CAGG).")
+    @postgres_required(
+        "Hourly analytics requires PostgreSQL + TimescaleDB (hypertable + hourly CAGG)."
+    )
     def hourly(self, request, *args, **kwargs):
         limit = self._get_int_qp(request, "limit", default=500, min_value=1, max_value=5000)
 
         start = self._get_dt_or_date_qp(request, "start", end_of_day=False)
         end = self._get_dt_or_date_qp(request, "end", end_of_day=True)
 
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
         if end is None:
             end = now
         if start is None:
@@ -255,8 +262,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         service = request.query_params.get("service")
         endpoint = request.query_params.get("endpoint")
 
-        where_clauses: List[str] = ["bucket >= %s", "bucket <= %s"]
-        params: List[Any] = [start, end]
+        where_clauses: list[str] = ["bucket >= %s", "bucket <= %s"]
+        params: list[Any] = [start, end]
 
         if service:
             where_clauses.append("service = %s")
@@ -291,17 +298,20 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         except ProgrammingError as e:
             return Response(
                 {
-                    "detail": "Hourly aggregate view is not available yet. Did you apply Step 3 migrations?",
+                    "detail": (
+                        "Hourly aggregate view is not available yet. "
+                        "Did you apply Step 3 migrations?"
+                    ),
                     "hint": "Run: python manage.py migrate",
                     "error": str(e),
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for bucket, svc, ep, hits, errors, avg_latency_ms, max_latency_ms in rows:
             if hasattr(bucket, "astimezone"):
-                bucket_iso = bucket.astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z")
+                bucket_iso = bucket.astimezone(UTC).isoformat().replace("+00:00", "Z")
             else:
                 bucket_iso = str(bucket)
 
@@ -331,7 +341,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         qp.is_valid(raise_exception=True)
         v = qp.validated_data
 
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
         end = v.get("end") or now
         start = v.get("start") or (end - timedelta(hours=24))
 
@@ -352,7 +362,9 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
             method=method,
         )
 
-        source = select_kpis_source(filters=filters_obj, granularity=granularity, error_from=error_from)
+        source = select_kpis_source(
+            filters=filters_obj, granularity=granularity, error_from=error_from
+        )
 
         # totals/errors/avg/max
         try:
@@ -362,7 +374,9 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                     filters=filters_obj,
                 )
             else:
-                totals_sql, totals_params = kpis_from_raw_sql(filters=filters_obj, error_from=error_from)
+                totals_sql, totals_params = kpis_from_raw_sql(
+                    filters=filters_obj, error_from=error_from
+                )
 
             with connection.cursor() as cursor:
                 cursor.execute(totals_sql, totals_params)
@@ -370,7 +384,9 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         except ProgrammingError:
             # Missing CAGG or other SQL issue => raw fallback
             source = "raw"
-            totals_sql, totals_params = kpis_from_raw_sql(filters=filters_obj, error_from=error_from)
+            totals_sql, totals_params = kpis_from_raw_sql(
+                filters=filters_obj, error_from=error_from
+            )
             with connection.cursor() as cursor:
                 cursor.execute(totals_sql, totals_params)
                 totals_row = cursor.fetchone()
@@ -416,14 +432,15 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # ----------------------------
     @action(detail=False, methods=["get"], url_path="top-endpoints")
     @postgres_required(
-        "Top endpoints requires PostgreSQL (percentile_cont for p95) and optionally TimescaleDB (CAGG fast-path)."
+        "Top endpoints requires PostgreSQL (percentile_cont for p95) and "
+        "optionally TimescaleDB (CAGG fast-path)."
     )
     def top_endpoints(self, request, *args, **kwargs):
         qp = TopEndpointsQueryParamsSerializer(data=request.query_params)
         qp.is_valid(raise_exception=True)
         v = qp.validated_data
 
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
         end = v.get("end") or now
         start = v.get("start") or (end - timedelta(hours=24))
         if start > end:
@@ -471,7 +488,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                     cursor.execute(sql, params)
                     rows = cursor.fetchall()
 
-                items: List[Dict[str, Any]] = []
+                items: list[dict[str, Any]] = []
                 for r in rows:
                     if include_p95:
                         svc, ep, hits, errors, err_rate, avg_lat, max_lat, p95_lat = r
@@ -522,7 +539,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 cursor.execute(sql, params)
                 rows = cursor.fetchall()
 
-            items: List[Dict[str, Any]] = []
+            items: list[dict[str, Any]] = []
             for r in rows:
                 if include_p95:
                     svc, ep, hits, errors, err_rate, avg_lat, max_lat, p95_lat = r
@@ -545,8 +562,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
             return Response({"source": source, "results": items}, status=status.HTTP_200_OK)
 
         # Parse CAGG rows
-        items: List[Dict[str, Any]] = []
-        endpoints_list: List[tuple[str, str]] = []
+        items: list[dict[str, Any]] = []
+        endpoints_list: list[tuple[str, str]] = []
         for svc, ep, hits, errors, err_rate, avg_lat, max_lat in rows:
             endpoints_list.append((svc, ep))
             items.append(
@@ -578,7 +595,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 cursor.execute(p95_sql, p95_params)
                 p95_rows = cursor.fetchall()
 
-            p95_map: Dict[tuple[str, str], float] = {}
+            p95_map: dict[tuple[str, str], float] = {}
             for svc, ep, p95_lat in p95_rows:
                 if p95_lat is not None:
                     p95_map[(svc, ep)] = float(p95_lat)
@@ -605,7 +622,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         service = v.get("service")
         endpoint = v.get("endpoint")
 
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
         if end is None:
             end = now
         if start is None:
@@ -614,8 +631,8 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         if start > end:
             raise ValidationError({"detail": "`start` must be <= `end`."})
 
-        where_clauses: List[str] = ["bucket >= %s", "bucket <= %s"]
-        params: List[Any] = [start, end]
+        where_clauses: list[str] = ["bucket >= %s", "bucket <= %s"]
+        params: list[Any] = [start, end]
 
         if service:
             where_clauses.append("service = %s")
@@ -651,20 +668,23 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         except ProgrammingError as e:
             return Response(
                 {
-                    "detail": "Daily aggregate view is not available yet. Did you apply Step 4 migrations?",
+                    "detail": (
+                        "Daily aggregate view is not available yet. "
+                        "Did you apply Step 4 migrations?"
+                    ),
                     "hint": "Run: python manage.py migrate",
                     "error": str(e),
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
-        items: List[Dict[str, Any]] = []
+        items: list[dict[str, Any]] = []
         for bucket, svc, ep, hits, errors, avg_latency_ms, p95_latency_ms, max_latency_ms in rows:
             if bucket is not None:
                 if hasattr(bucket, "astimezone"):
-                    bucket = bucket.astimezone(dt_timezone.utc)
+                    bucket = bucket.astimezone(UTC)
                 elif timezone.is_naive(bucket):
-                    bucket = timezone.make_aware(bucket, timezone=dt_timezone.utc)
+                    bucket = timezone.make_aware(bucket, timezone=UTC)
 
             items.append(
                 {
@@ -688,6 +708,7 @@ class HealthView(APIView):
     GET /api/health/
     Optional DB check: /api/health/?db=1  (or db=true/yes/on)
     """
+
     authentication_classes = []
     permission_classes = []
 

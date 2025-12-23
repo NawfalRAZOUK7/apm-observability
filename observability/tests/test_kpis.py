@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from django.db import connection
 from django.utils import timezone
@@ -25,7 +25,7 @@ class KpisEndpointTests(APITestCase):
         now = timezone.now()
 
         # Seed: 10 hits total, 2 errors => error_rate = 0.2
-        rows: List[ApiRequest] = []
+        rows: list[ApiRequest] = []
 
         # 8 OK
         for i in range(8):
@@ -71,7 +71,7 @@ class KpisEndpointTests(APITestCase):
         res = self.client.get(self.URL, {"service": "svc", "method": "GET"})
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
 
-        j: Dict[str, Any] = res.data
+        j: dict[str, Any] = res.data
 
         # Required keys (based on your Step 5 behavior)
         required = [

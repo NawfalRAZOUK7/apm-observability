@@ -1,9 +1,10 @@
 # observability/analytics/sql.py
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import List, Literal, Optional, Sequence, Tuple
+from typing import Literal
 
 Granularity = Literal["hourly", "daily"]
 GranularityParam = Literal["auto", "hourly", "daily"]
@@ -15,16 +16,17 @@ DAILY_CAGG = "apirequest_daily"
 
 DEFAULT_AUTO_HOURLY_MAX_HOURS = 48
 
+
 # ----------------------------
 # Filters / where-clause builder
 # ----------------------------
 @dataclass(frozen=True)
 class AnalyticsFilters:
-    start: Optional[datetime] = None
-    end: Optional[datetime] = None
-    service: Optional[str] = None
-    endpoint: Optional[str] = None
-    method: Optional[str] = None  # raw-only
+    start: datetime | None = None
+    end: datetime | None = None
+    service: str | None = None
+    endpoint: str | None = None
+    method: str | None = None  # raw-only
 
 
 def build_where_clause(
@@ -32,13 +34,13 @@ def build_where_clause(
     *,
     kind: TableKind,
     time_column: str | None = None,
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     Returns: ("WHERE ...", [params]) or ("", []).
     Uses parameter placeholders (%s) only (safe).
     """
-    clauses: List[str] = []
-    params: List[object] = []
+    clauses: list[str] = []
+    params: list[object] = []
 
     if kind == "raw":
         tcol = time_column or "time"
@@ -75,8 +77,8 @@ def build_where_clause(
 # Source selection helpers (Step 6)
 # ----------------------------
 def _auto_granularity(
-    start: Optional[datetime],
-    end: Optional[datetime],
+    start: datetime | None,
+    end: datetime | None,
     *,
     hourly_max_hours: int = DEFAULT_AUTO_HOURLY_MAX_HOURS,
 ) -> Granularity:
@@ -157,7 +159,7 @@ def kpis_from_cagg_sql(
     *,
     granularity: Granularity,
     filters: AnalyticsFilters,
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     KPI totals/errors/avg/max using Timescale CAGGs (fast).
     NOTE: error threshold is baked into caggs as status_code >= 500.
@@ -191,7 +193,7 @@ def kpis_from_raw_sql(
     *,
     filters: AnalyticsFilters,
     error_from: int = 500,
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     KPI totals/errors/avg/max using raw hypertable (fallback path).
     Supports custom error_from and method.
@@ -204,7 +206,10 @@ def kpis_from_raw_sql(
         COUNT(*) FILTER (WHERE status_code >= %s)::bigint AS errors,
         CASE
             WHEN COUNT(*) > 0
-            THEN (COUNT(*) FILTER (WHERE status_code >= %s)::double precision / COUNT(*)::double precision)
+            THEN (
+                COUNT(*) FILTER (WHERE status_code >= %s)::double precision
+                / COUNT(*)::double precision
+            )
             ELSE 0::double precision
         END AS error_rate,
         AVG(latency_ms)::double precision AS avg_latency_ms,
@@ -219,7 +224,7 @@ def kpis_from_raw_sql(
 def p95_global_from_raw_sql(
     *,
     filters: AnalyticsFilters,
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     Global p95 over raw table (correct).
     """
@@ -227,7 +232,8 @@ def p95_global_from_raw_sql(
 
     sql = f"""
     SELECT
-        (percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms))::double precision AS p95_latency_ms
+        (percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms))::double precision
+            AS p95_latency_ms
     FROM {RAW_TABLE}
     {where_sql}
     """
@@ -237,25 +243,33 @@ def p95_global_from_raw_sql(
 def p95_by_endpoints_from_raw_sql(
     *,
     filters: AnalyticsFilters,
-    endpoints: Sequence[Tuple[str, str]],
-) -> Tuple[str, List[object]]:
+    endpoints: Sequence[tuple[str, str]],
+) -> tuple[str, list[object]]:
     """
     p95 per (service, endpoint) for a *given list* of endpoints (safe, fast enough).
     Uses a VALUES table to avoid unsafe SQL concatenation.
     """
     if not endpoints:
         return (
-            "SELECT NULL::text AS service, NULL::text AS endpoint, NULL::double precision AS p95_latency_ms WHERE FALSE",
+            "SELECT NULL::text AS service, NULL::text AS endpoint, "
+            "NULL::double precision AS p95_latency_ms WHERE FALSE",
             [],
         )
 
     values_rows = ", ".join(["(%s, %s)"] * len(endpoints))
-    values_params: List[object] = []
+    values_params: list[object] = []
     for svc, ep in endpoints:
         values_params.append(svc)
         values_params.append(ep)
 
     where_sql, where_params = build_where_clause(filters, kind="raw", time_column="time")
+
+    where_sql_prefixed = (
+        where_sql.replace("service = %s", "r.service = %s")
+        .replace("endpoint = %s", "r.endpoint = %s")
+        .replace("method = %s", "r.method = %s")
+        .replace("time", "r.time")
+    )
 
     sql = f"""
     WITH targets(service, endpoint) AS (
@@ -264,12 +278,13 @@ def p95_by_endpoints_from_raw_sql(
     SELECT
         t.service,
         t.endpoint,
-        (percentile_cont(0.95) WITHIN GROUP (ORDER BY r.latency_ms))::double precision AS p95_latency_ms
+        (percentile_cont(0.95) WITHIN GROUP (ORDER BY r.latency_ms))::double precision
+            AS p95_latency_ms
     FROM targets t
     JOIN {RAW_TABLE} r
       ON r.service = t.service
      AND r.endpoint = t.endpoint
-    {where_sql.replace("service = %s", "r.service = %s").replace("endpoint = %s", "r.endpoint = %s").replace("method = %s", "r.method = %s").replace("time", "r.time")}
+    {where_sql_prefixed}
     GROUP BY t.service, t.endpoint
     """
     params = values_params + where_params
@@ -295,7 +310,7 @@ def top_endpoints_from_cagg_sql(
     limit: int = 20,
     sort_by: str = "hits",
     direction: Literal["asc", "desc"] = "desc",
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     Top endpoints using CAGGs (fast).
     NOTE: Does NOT compute p95 here.
@@ -350,7 +365,7 @@ def top_endpoints_from_raw_sql(
     sort_by: str = "hits",
     direction: Literal["asc", "desc"] = "desc",
     include_p95: bool = False,
-) -> Tuple[str, List[object]]:
+) -> tuple[str, list[object]]:
     """
     Top endpoints from raw table (fallback).
     Can optionally include p95 in the same query (heavier).
@@ -361,7 +376,8 @@ def top_endpoints_from_raw_sql(
     p95_select = ""
     if include_p95:
         p95_select = """,
-        (percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms))::double precision AS p95_latency_ms
+        (percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms))::double precision
+            AS p95_latency_ms
         """
 
     sort_col = _RAW_SORT_ALLOWLIST.get(sort_by, "hits")
@@ -374,7 +390,10 @@ def top_endpoints_from_raw_sql(
         COUNT(*) FILTER (WHERE status_code >= %s)::bigint AS errors,
         CASE
             WHEN COUNT(*) > 0
-            THEN (COUNT(*) FILTER (WHERE status_code >= %s)::double precision / COUNT(*)::double precision)
+            THEN (
+                COUNT(*) FILTER (WHERE status_code >= %s)::double precision
+                / COUNT(*)::double precision
+            )
             ELSE 0::double precision
         END AS error_rate,
         AVG(latency_ms)::double precision AS avg_latency_ms,

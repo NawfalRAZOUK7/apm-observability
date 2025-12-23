@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta, timezone as dt_timezone
+from datetime import UTC, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
@@ -32,8 +32,8 @@ class Command(BaseCommand):
         if dt is None:
             raise CommandError(f"{name} must be an ISO datetime (e.g. 2025-12-14T10:00:00Z).")
         if timezone.is_naive(dt):
-            dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
-        return dt.astimezone(dt_timezone.utc)
+            dt = timezone.make_aware(dt, timezone=UTC)
+        return dt.astimezone(UTC)
 
     def handle(self, *args, **options):
         if connection.vendor != "postgresql":
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         start = self._parse_dt(options.get("start"), "start")
         end = self._parse_dt(options.get("end"), "end")
 
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
 
         # Safe defaults matching policy window:
         # start_offset = 7 days, end_offset = 1 hour

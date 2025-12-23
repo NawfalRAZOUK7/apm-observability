@@ -15,9 +15,11 @@ class BulkIngestMixedNonStrictTests(APITestCase):
         before = ApiRequest.objects.count()
 
         valid = make_events(3, trace_id_prefix="ok-")
-        invalid_1 = make_event(trace_id="bad-1", status_code=700)     # invalid HTTP status
-        invalid_2 = make_event(trace_id="bad-2", method="NOPE")       # invalid method (depending on your validation)
-        invalid_3 = {"not": "an event"}                               # invalid shape
+        invalid_1 = make_event(trace_id="bad-1", status_code=700)  # invalid HTTP status
+        invalid_2 = make_event(
+            trace_id="bad-2", method="NOPE"
+        )  # invalid method (depending on your validation)
+        invalid_3 = {"not": "an event"}  # invalid shape
 
         payload = valid + [invalid_1, invalid_2, invalid_3]
 

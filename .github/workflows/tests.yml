@@ -455,6 +455,7 @@ jobs:
         run: |
           set -euxo pipefail
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci run --rm --no-deps \
+            -e DJANGO_SETTINGS_MODULE=apm_platform.ci_settings \
             --entrypoint bash web -lc "
               python manage.py check &&
               python manage.py migrate --noinput --verbosity 2 &&

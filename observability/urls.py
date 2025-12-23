@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import ApiRequestViewSet, HealthView  # add HealthView
 
+
 class OptionalSlashRouter(DefaultRouter):
     trailing_slash = "/?"
 

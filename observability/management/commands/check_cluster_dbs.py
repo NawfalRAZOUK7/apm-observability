@@ -76,7 +76,8 @@ class Command(BaseCommand):
             default=None,
             help=(
                 "Comma-separated host[:port] or [ipv6]:port list. "
-                "Defaults to CLUSTER_DB_HOSTS, then CLUSTER_DB_PRIMARY_HOST/CLUSTER_DB_REPLICA_HOSTS."
+                "Defaults to CLUSTER_DB_HOSTS, then "
+                "CLUSTER_DB_PRIMARY_HOST/CLUSTER_DB_REPLICA_HOSTS."
             ),
         )
         parser.add_argument(
@@ -97,12 +98,16 @@ class Command(BaseCommand):
 
         db_name = _env("POSTGRES_DB") or _env("DB_NAME")
         db_user = _env("POSTGRES_APP_USER") or _env("POSTGRES_USER") or _env("DB_USER")
-        db_password = _env("POSTGRES_APP_PASSWORD") or _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
+        db_password = (
+            _env("POSTGRES_APP_PASSWORD") or _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
+        )
 
         if not db_name:
             raise CommandError("Missing POSTGRES_DB/DB_NAME.")
         if not db_user or not db_password:
-            raise CommandError("Missing DB user/password (POSTGRES_APP_USER/PASSWORD or POSTGRES_USER/PASSWORD).")
+            raise CommandError(
+                "Missing DB user/password (POSTGRES_APP_USER/PASSWORD or POSTGRES_USER/PASSWORD)."
+            )
 
         timeout = options.get("timeout") or float(_env("DB_CONNECT_TIMEOUT", "5") or "5")
         sslmode = options.get("sslmode") or _env("DB_SSLMODE")
@@ -132,7 +137,8 @@ class Command(BaseCommand):
                         if not in_recovery:
                             cursor.execute(
                                 "CREATE TEMP TABLE IF NOT EXISTS apm_cluster_probe ("
-                                "id serial PRIMARY KEY, payload text, created_at timestamptz default now()"
+                                "id serial PRIMARY KEY, payload text, "
+                                "created_at timestamptz default now()"
                                 ");"
                             )
                             cursor.execute(

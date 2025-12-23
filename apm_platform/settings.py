@@ -10,19 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
 
 def _env_bool_top(name: str, default: bool = False) -> bool:
     val = os.environ.get(name)
     if val is None:
         return default
     return val.strip().lower() in {"1", "true", "yes", "y", "on"}
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +42,9 @@ DEBUG = _env_bool_top("DJANGO_DEBUG", default=True)
 
 # Comma-separated: "localhost,127.0.0.1"
 ALLOWED_HOSTS = [
-    h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if h.strip()
+    h.strip()
+    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
+    if h.strip()
 ]
 
 # Application definition
@@ -52,11 +57,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # Third-party
     "rest_framework",
     "django_filters",
-
     # Local
     "observability",
 ]
@@ -98,14 +101,17 @@ WSGI_APPLICATION = 'apm_platform.wsgi.application'
 
 RUNNING_TESTS = any(arg in sys.argv for arg in ["test", "pytest"])
 
+
 def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
+
 
 def _env_bool(name: str, default: bool = False) -> bool:
     val = _env(name, "")
     if not val:
         return default
     return val.lower() in {"1", "true", "yes", "y", "on"}
+
 
 def _split_host_port(raw: str, default_port: int) -> tuple[str, int]:
     value = raw.strip() if raw else ""
@@ -135,9 +141,11 @@ def _split_host_port(raw: str, default_port: int) -> tuple[str, int]:
 
     return host_part, port
 
+
 def _parse_host_list(raw: str, default_port: int) -> list[tuple[str, int]]:
     entries = [entry.strip() for entry in raw.split(",") if entry.strip()]
     return [_split_host_port(entry, default_port) for entry in entries]
+
 
 FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
 
@@ -149,10 +157,14 @@ ADMIN_USER = _env("POSTGRES_USER") or _env("DB_USER")
 ADMIN_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
 
 WRITER_USER = _env("POSTGRES_WRITER_USER") or _env("POSTGRES_APP_USER") or ADMIN_USER
-WRITER_PASSWORD = _env("POSTGRES_WRITER_PASSWORD") or _env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
+WRITER_PASSWORD = (
+    _env("POSTGRES_WRITER_PASSWORD") or _env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
+)
 
 READER_USER = _env("POSTGRES_READER_USER") or _env("POSTGRES_READONLY_USER") or WRITER_USER
-READER_PASSWORD = _env("POSTGRES_READER_PASSWORD") or _env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
+READER_PASSWORD = (
+    _env("POSTGRES_READER_PASSWORD") or _env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
+)
 
 if not ADMIN_USER:
     ADMIN_USER = WRITER_USER
@@ -172,7 +184,9 @@ HAS_POSTGRES_ENV = all([POSTGRES_NAME, WRITER_USER, WRITER_PASSWORD])
 REPLICA_DATABASES: list[str] = []
 
 if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
-    primary_host, primary_port = _split_host_port(CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432"))
+    primary_host, primary_port = _split_host_port(
+        CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432")
+    )
     default_db = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": POSTGRES_NAME,
@@ -202,7 +216,9 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
     }
 
     if CLUSTER_DB_REPLICA_HOSTS:
-        for idx, (host, port) in enumerate(_parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1):
+        for idx, (host, port) in enumerate(
+            _parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1
+        ):
             alias = f"replica_{idx}"
             replica_db = reader_db.copy()
             replica_db["HOST"] = host
@@ -216,6 +232,7 @@ else:
     BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
     if BASE_DIR is None:
         from pathlib import Path
+
         BASE_DIR = Path(__file__).resolve().parent.parent
 
     DATABASES = {
@@ -305,9 +322,9 @@ REST_FRAMEWORK = {
 
 # --- APM ingestion defaults (Step 2) ---
 # Used by /api/requests/ingest/ (can be overridden via query params)
-APM_INGEST_BATCH_SIZE = 1000       # bulk_create batch size
-APM_INGEST_MAX_EVENTS = 50_000     # max number of events accepted per request
-APM_INGEST_MAX_ERRORS = 25         # max number of per-item error details returned
+APM_INGEST_BATCH_SIZE = 1000  # bulk_create batch size
+APM_INGEST_MAX_EVENTS = 50_000  # max number of events accepted per request
+APM_INGEST_MAX_ERRORS = 25  # max number of per-item error details returned
 
 # SSL/HTTPS Security Settings
 # Enable SSL redirect when nginx with SSL is available (production or local with nginx)

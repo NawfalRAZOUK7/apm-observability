@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, time, timedelta, timezone as dt_timezone
+from datetime import UTC, datetime, time, timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
@@ -20,8 +20,8 @@ def _parse_dt_or_date(value: str, *, end_of_day: bool) -> datetime:
     dt = parse_datetime(value)
     if dt is not None:
         if timezone.is_naive(dt):
-            dt = timezone.make_aware(dt, timezone=dt_timezone.utc)
-        return dt.astimezone(dt_timezone.utc)
+            dt = timezone.make_aware(dt, timezone=UTC)
+        return dt.astimezone(UTC)
 
     d = parse_date(value)
     if d is not None:
@@ -29,8 +29,8 @@ def _parse_dt_or_date(value: str, *, end_of_day: bool) -> datetime:
             dt2 = datetime.combine(d, time(23, 59, 59, 999999))
         else:
             dt2 = datetime.combine(d, time(0, 0, 0))
-        dt2 = timezone.make_aware(dt2, timezone=dt_timezone.utc)
-        return dt2.astimezone(dt_timezone.utc)
+        dt2 = timezone.make_aware(dt2, timezone=UTC)
+        return dt2.astimezone(UTC)
 
     raise CommandError(
         "Invalid format. Use ISO datetime (2025-12-14T10:00:00Z) or date (2025-12-14)."
@@ -57,12 +57,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Defaults: last 7 days
-        now = timezone.now().astimezone(dt_timezone.utc)
+        now = timezone.now().astimezone(UTC)
         end_raw = options.get("end")
         start_raw = options.get("start")
 
         end = _parse_dt_or_date(end_raw, end_of_day=True) if end_raw else now
-        start = _parse_dt_or_date(start_raw, end_of_day=False) if start_raw else (end - timedelta(days=7))
+        start = (
+            _parse_dt_or_date(start_raw, end_of_day=False)
+            if start_raw
+            else (end - timedelta(days=7))
+        )
 
         if start > end:
             raise CommandError("`--start` must be <= `--end`.")
@@ -75,8 +79,8 @@ class Command(BaseCommand):
         try:
             with connection.cursor() as cursor:
                 cursor.execute(sql, [start, end])
-        except Exception as e:
-            raise CommandError(f"Failed to refresh apirequest_daily: {e}")
+        except Exception as exc:
+            raise CommandError(f"Failed to refresh apirequest_daily: {exc}") from exc
 
         self.stdout.write(
             self.style.SUCCESS(

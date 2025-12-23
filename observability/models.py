@@ -55,4 +55,7 @@ class ApiRequest(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"[{self.time}] {self.service} {self.method} {self.endpoint} {self.status_code} ({self.latency_ms}ms)"
+        return (
+            f"[{self.time}] {self.service} {self.method} {self.endpoint} "
+            f"{self.status_code} ({self.latency_ms}ms)"
+        )

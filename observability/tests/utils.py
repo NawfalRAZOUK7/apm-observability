@@ -2,21 +2,20 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import urlencode
 
 from django.utils import timezone
 
-
 DEFAULT_INGEST_URL = "/api/requests/ingest/"
 
 
-def make_event(**overrides: Any) -> Dict[str, Any]:
+def make_event(**overrides: Any) -> dict[str, Any]:
     """
     Build a valid ingestion event (one item).
     You can override any field via kwargs.
     """
-    base: Dict[str, Any] = {
+    base: dict[str, Any] = {
         "time": timezone.now().isoformat(),
         "service": "billing",
         "endpoint": "/api/v1/invoices",
@@ -31,17 +30,25 @@ def make_event(**overrides: Any) -> Dict[str, Any]:
     return base
 
 
-def make_events(n: int, *, trace_id_prefix: str = "t", start_index: int = 1, **overrides: Any) -> List[Dict[str, Any]]:
+def make_events(
+    n: int, *, trace_id_prefix: str = "t", start_index: int = 1, **overrides: Any
+) -> list[dict[str, Any]]:
     """
     Build N valid events with unique trace_id values.
     """
-    events: List[Dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
     for i in range(start_index, start_index + n):
         events.append(make_event(trace_id=f"{trace_id_prefix}{i}", **overrides))
     return events
 
 
-def post_ingest(client: Any, events: Any, strict: bool = False, ingest_url: str = DEFAULT_INGEST_URL, **query: Any):
+def post_ingest(
+    client: Any,
+    events: Any,
+    strict: bool = False,
+    ingest_url: str = DEFAULT_INGEST_URL,
+    **query: Any,
+):
     """
     Post to the ingest endpoint.
 
@@ -51,7 +58,7 @@ def post_ingest(client: Any, events: Any, strict: bool = False, ingest_url: str 
     - strict=True adds ?strict=true
     - extra query params can be passed: max_events=2, max_errors=2, etc.
     """
-    params: Dict[str, Any] = dict(query)
+    params: dict[str, Any] = dict(query)
     if strict:
         params["strict"] = "true"
 
@@ -65,7 +72,11 @@ def post_ingest(client: Any, events: Any, strict: bool = False, ingest_url: str 
         payload = dict(events)
 
     # Accept sequences (lists/tuples) of events
-    if isinstance(events, Sequence) and not isinstance(events, (str, bytes, bytearray)) and not isinstance(events, Mapping):
+    if (
+        isinstance(events, Sequence)
+        and not isinstance(events, (str, bytes, bytearray))
+        and not isinstance(events, Mapping)
+    ):
         payload = list(events)
 
     return client.post(url, data=payload, format="json")

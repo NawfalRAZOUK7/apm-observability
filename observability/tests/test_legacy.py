@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from django.db import connection
 from django.utils import timezone
@@ -323,7 +323,7 @@ class Step5AnalyticsApiTests(APITestCase):
     # ----------------------------
     # Helpers
     # ----------------------------
-    def _as_rows(self, data: Any) -> List[Dict[str, Any]]:
+    def _as_rows(self, data: Any) -> list[dict[str, Any]]:
         """
         Accept both response shapes:
           - list of rows

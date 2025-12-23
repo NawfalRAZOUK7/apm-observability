@@ -32,7 +32,6 @@ def forwards(apps, schema_editor):
             END;
         END $$;
         """,
-
         # Check if TimescaleDB is available before using TimescaleDB-specific features
         """
         DO $$
