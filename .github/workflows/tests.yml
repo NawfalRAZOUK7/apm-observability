@@ -53,6 +53,22 @@ jobs:
           pip -V
           pip freeze | sed -n '1,200p'
 
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+
       - name: Django system check
         run: |
           set -euxo pipefail
@@ -62,6 +78,64 @@ jobs:
         run: |
           set -euxo pipefail
           python manage.py makemigrations --check --dry-run
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ruff
+        run: |
+          set -euxo pipefail
+          ruff check .
+
+  format-check:
+    name: Format Check (black)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Black
+        run: |
+          set -euxo pipefail
+          black --check .
 
   test-sqlite:
     name: Tests (SQLite)
@@ -89,6 +163,22 @@ jobs:
           set -euxo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
       - name: Apply migrations (SQLite)
         run: |
@@ -154,6 +244,22 @@ jobs:
           set -euxo pipefail
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
       - name: Install postgres client tools (for diagnostics)
         run: |
@@ -277,19 +383,36 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+
       - name: Prepare CI env
         run: |
           set -euxo pipefail
           cp .env.docker .env.docker.ci
           sed -i 's/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-not-secret/' .env.docker.ci
           sed -i 's/^DJANGO_DEBUG=.*/DJANGO_DEBUG=0/' .env.docker.ci
+          {
+            echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings"
+            echo "POSTGRES_HOST=db"
+            echo "POSTGRES_PORT=5432"
 
-          echo "POSTGRES_HOST=db" >> .env.docker.ci
-          echo "POSTGRES_PORT=5432" >> .env.docker.ci
-
-          # Reduce any accidental runtime overhead if web ever starts
-          echo "GUNICORN_WORKERS=1" >> .env.docker.ci
-          echo "GUNICORN_TIMEOUT=60" >> .env.docker.ci
+            # Reduce any accidental runtime overhead if web ever starts
+            echo "GUNICORN_WORKERS=1"
+            echo "GUNICORN_TIMEOUT=60"
+          } >> .env.docker.ci
 
       - name: Build image (web)
         run: |
