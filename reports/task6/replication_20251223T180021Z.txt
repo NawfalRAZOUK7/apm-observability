@@ -1,0 +1,2 @@
+walreceiver|172.19.0.3|streaming|async
+walreceiver|172.19.0.5|streaming|async
