@@ -5,6 +5,7 @@ psycopg[binary]
 python-dotenv
 Faker
 unittest-xml-reporting
+pgvector
 ruff
 black
 whitenoise

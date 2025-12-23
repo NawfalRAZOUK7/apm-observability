@@ -10,6 +10,7 @@ from django.db.utils import ProgrammingError
 from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime
 from django_filters import rest_framework as df_filters
+from pgvector.django import CosineDistance
 from rest_framework import filters as drf_filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -17,6 +18,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .ai.gemini import GeminiEmbedError, embed_texts
 from .analytics.sql import (
     AnalyticsFilters,
     kpis_from_cagg_sql,
@@ -30,13 +32,14 @@ from .analytics.sql import (
 )
 from .filters import ApiRequestFilter
 from .guards import postgres_required
-from .models import ApiRequest
+from .models import ApiRequest, ApiRequestEmbedding
 from .serializers import (
     ApiRequestIngestItemSerializer,
     ApiRequestSerializer,
     DailyAggRowSerializer,
     DailyQueryParamsSerializer,
     KpiQueryParamsSerializer,
+    SemanticSearchQueryParamsSerializer,
     TopEndpointsQueryParamsSerializer,
 )
 
@@ -605,6 +608,71 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
                 item["p95_latency_ms"] = p95_map.get(key)
 
         return Response({"source": source, "results": items}, status=status.HTTP_200_OK)
+
+    # ----------------------------
+    # Embeddings: /api/requests/semantic-search/
+    # ----------------------------
+    @action(detail=False, methods=["get"], url_path="semantic-search")
+    @postgres_required("Semantic search requires PostgreSQL + pgvector.")
+    def semantic_search(self, request, *args, **kwargs):
+        qp = SemanticSearchQueryParamsSerializer(data=request.query_params)
+        qp.is_valid(raise_exception=True)
+        v = qp.validated_data
+
+        query_text = v["query_text"]
+        limit = int(v.get("limit", 20))
+        status_from = int(v.get("status_from", 500))
+        service = v.get("service")
+        endpoint = v.get("endpoint")
+
+        try:
+            query_vector = embed_texts([query_text])[0]
+        except GeminiEmbedError as exc:
+            return Response(
+                {"detail": f"Embedding failed: {exc}"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        qs = ApiRequestEmbedding.objects.select_related("request").filter(
+            source=ApiRequestEmbedding.Source.ERROR,
+            request__status_code__gte=status_from,
+        )
+        if service:
+            qs = qs.filter(request__service=service)
+        if endpoint:
+            qs = qs.filter(request__endpoint=endpoint)
+
+        rows = qs.annotate(distance=CosineDistance("embedding", query_vector)).order_by("distance")[
+            :limit
+        ]
+
+        results = []
+        for row in rows:
+            req = row.request
+            distance = float(row.distance) if row.distance is not None else None
+            score = None if distance is None else max(0.0, 1.0 - distance)
+            results.append(
+                {
+                    "id": req.id,
+                    "time": req.time.astimezone(UTC).isoformat().replace("+00:00", "Z"),
+                    "service": req.service,
+                    "endpoint": req.endpoint,
+                    "method": req.method,
+                    "status_code": req.status_code,
+                    "latency_ms": req.latency_ms,
+                    "distance": distance,
+                    "score": score,
+                }
+            )
+
+        return Response(
+            {
+                "query": query_text,
+                "count": len(results),
+                "results": results,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     # ----------------------------
     # Step 4 endpoint: /api/requests/daily/

@@ -1,7 +1,7 @@
 # observability/admin.py
 from django.contrib import admin
 
-from .models import ApiRequest
+from .models import ApiRequest, ApiRequestEmbedding
 
 
 @admin.register(ApiRequest)
@@ -34,3 +34,11 @@ class ApiRequestAdmin(admin.ModelAdmin):
     # Performance on big tables
     list_select_related = ()
     list_per_page = 50
+
+
+@admin.register(ApiRequestEmbedding)
+class ApiRequestEmbeddingAdmin(admin.ModelAdmin):
+    list_display = ("request", "source", "model", "created_at")
+    list_filter = ("source", "model", ("created_at", admin.DateFieldListFilter))
+    search_fields = ("request__service", "request__endpoint")
+    ordering = ("-created_at",)

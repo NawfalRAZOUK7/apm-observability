@@ -5,7 +5,10 @@
 
 services:
   db:
-    image: timescale/timescaledb:latest-pg16
+    build:
+      context: ..
+      dockerfile: docker/db/Dockerfile
+    image: apm-db
 
     env_file:
       - ../.env.docker

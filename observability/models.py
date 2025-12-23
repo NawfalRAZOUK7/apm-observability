@@ -1,6 +1,7 @@
 # observability/models.py
 from django.db import models
 from django.db.models import Q
+from pgvector.django import VectorField
 
 
 class ApiRequest(models.Model):
@@ -59,3 +60,25 @@ class ApiRequest(models.Model):
             f"[{self.time}] {self.service} {self.method} {self.endpoint} "
             f"{self.status_code} ({self.latency_ms}ms)"
         )
+
+
+class ApiRequestEmbedding(models.Model):
+    class Source(models.TextChoices):
+        ERROR = "error", "error"
+        REQUEST = "request", "request"
+
+    request = models.OneToOneField(
+        ApiRequest,
+        on_delete=models.CASCADE,
+        related_name="embedding",
+    )
+    source = models.CharField(max_length=16, choices=Source.choices, default=Source.ERROR)
+    model = models.CharField(max_length=64, default="text-embedding-004")
+    content_hash = models.CharField(max_length=64, db_index=True)
+    embedding = VectorField(dimensions=768)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["source", "created_at"], name="api_req_emb_source_time_idx"),
+        ]

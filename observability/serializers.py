@@ -288,6 +288,28 @@ class TopEndpointsQueryParamsSerializer(serializers.Serializer):
         return attrs
 
 
+class SemanticSearchQueryParamsSerializer(serializers.Serializer):
+    """
+    Validates query params for GET /api/requests/semantic-search/
+    """
+
+    q = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    query = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    limit = serializers.IntegerField(required=False, default=20, min_value=1, max_value=200)
+    status_from = serializers.IntegerField(
+        required=False, default=500, min_value=100, max_value=599
+    )
+    service = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+    endpoint = serializers.CharField(required=False, allow_blank=False, trim_whitespace=True)
+
+    def validate(self, attrs):
+        q = attrs.get("q") or attrs.get("query")
+        if not q:
+            raise serializers.ValidationError({"detail": "Missing query. Use ?q=... or ?query=..."})
+        attrs["query_text"] = q
+        return attrs
+
+
 # ----------------------------
 # Step 4: Daily analytics response serializer
 # ----------------------------

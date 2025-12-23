@@ -2,6 +2,7 @@
 # TimescaleDB with pgBackRest installed for WAL archiving.
 
 ARG PGBACKREST_VERSION=2.57.0
+ARG PGVECTOR_VERSION=0.7.4
 
 FROM alpine:3.21 AS pgbackrest-build
 ARG PGBACKREST_VERSION
@@ -21,6 +22,24 @@ RUN set -eux; \
   meson setup /build/pgbackrest /build/pgbackrest-release-${PGBACKREST_VERSION}; \
   ninja -C /build/pgbackrest
 
+FROM timescale/timescaledb:latest-pg16 AS pgvector-build
+ARG PGVECTOR_VERSION
+
+USER root
+
+RUN set -eux; \
+  apk add --no-cache --virtual .build-deps \
+    build-base \
+    git \
+    postgresql-dev
+
+RUN set -eux; \
+  git clone --branch "v${PGVECTOR_VERSION}" --depth 1 \
+    https://github.com/pgvector/pgvector.git /tmp/pgvector; \
+  make -C /tmp/pgvector; \
+  make -C /tmp/pgvector install DESTDIR=/pgvector-install; \
+  rm -rf /tmp/pgvector
+
 FROM timescale/timescaledb:latest-pg16
 
 USER root
@@ -31,6 +50,7 @@ RUN set -eux; \
     libpq openssl libxml2 lz4 zstd bzip2-dev zlib yaml libssh2; \
   ln -sf /usr/lib/libbz2.so /usr/lib/libbz2.so.1
 
+COPY --from=pgvector-build /pgvector-install /
 COPY --from=pgbackrest-build /build/pgbackrest/src/pgbackrest /usr/local/bin/pgbackrest
 
 RUN set -eux; \
