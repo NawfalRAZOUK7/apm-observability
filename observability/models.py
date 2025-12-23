@@ -30,9 +30,18 @@ class ApiRequest(models.Model):
         ordering = ["-time"]
         indexes = [
             models.Index(fields=["service", "endpoint", "-time"], name="api_req_svc_ep_time_idx"),
+            models.Index(
+                fields=["service", "endpoint", "method", "-time"],
+                name="api_req_svc_ep_method_time_idx",
+            ),
             models.Index(fields=["service", "-time"], name="api_req_svc_time_idx"),
             models.Index(fields=["endpoint", "-time"], name="api_req_ep_time_idx"),
             models.Index(fields=["status_code", "-time"], name="api_req_status_time_idx"),
+            models.Index(
+                fields=["service", "endpoint", "-time"],
+                name="api_req_err_svc_ep_time_idx",
+                condition=Q(status_code__gte=500),
+            ),
         ]
         constraints = [
             models.CheckConstraint(
