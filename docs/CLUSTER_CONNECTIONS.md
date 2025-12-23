@@ -15,6 +15,16 @@
 - Control node pgBackRest client -> Data node pgBackRest server (TLS 8432): backup commands.
 - Data node Postgres -> Control node MinIO (HTTPS 9000): WAL archive + backup storage.
 
+## DB role separation (Scenario A)
+- `apm_writer`: write access for ingest + CRUD routes.
+- `apm_reader`: read-only access for analytics/Grafana/API reads.
+- `default` (admin user): migrations and admin tasks.
+- Credentials come from `POSTGRES_APP_USER/PASSWORD` and `POSTGRES_READONLY_USER/PASSWORD`.
+- Routing defaults:
+  - Safe methods (GET/HEAD/OPTIONS) -> replicas/reader.
+  - Unsafe methods -> primary/writer.
+  - Read-after-write pinned to primary for `READ_AFTER_WRITE_TTL` seconds.
+
 ## How this repo maps roles
 - Primary host: `CLUSTER_DB_PRIMARY_HOST` (host or host:port)
 - Replica hosts: `CLUSTER_DB_REPLICA_HOSTS` (comma list, host or host:port)

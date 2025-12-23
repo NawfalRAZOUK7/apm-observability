@@ -64,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'apm_platform.db_middleware.DbRoleRoutingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -141,11 +142,22 @@ def _parse_host_list(raw: str, default_port: int) -> list[tuple[str, int]]:
 FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
 
 POSTGRES_NAME = _env("POSTGRES_DB") or _env("DB_NAME")
-# Prefer dedicated app user if provided; fallback to legacy POSTGRES_USER/DB_USER
-POSTGRES_USER = _env("POSTGRES_APP_USER") or _env("POSTGRES_USER") or _env("DB_USER")
-POSTGRES_PASSWORD = _env("POSTGRES_APP_PASSWORD") or _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
 POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
 POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
+
+ADMIN_USER = _env("POSTGRES_USER") or _env("DB_USER")
+ADMIN_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
+
+WRITER_USER = _env("POSTGRES_WRITER_USER") or _env("POSTGRES_APP_USER") or ADMIN_USER
+WRITER_PASSWORD = _env("POSTGRES_WRITER_PASSWORD") or _env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
+
+READER_USER = _env("POSTGRES_READER_USER") or _env("POSTGRES_READONLY_USER") or WRITER_USER
+READER_PASSWORD = _env("POSTGRES_READER_PASSWORD") or _env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
+
+if not ADMIN_USER:
+    ADMIN_USER = WRITER_USER
+if not ADMIN_PASSWORD:
+    ADMIN_PASSWORD = WRITER_PASSWORD
 
 CLUSTER_DB_PRIMARY_HOST = _env("CLUSTER_DB_PRIMARY_HOST") or POSTGRES_HOST
 CLUSTER_DB_REPLICA_HOSTS = _env("CLUSTER_DB_REPLICA_HOSTS")
@@ -153,8 +165,9 @@ CLUSTER_DB_REPLICA_HOSTS = _env("CLUSTER_DB_REPLICA_HOSTS")
 # Optional SSL mode for hosted Postgres (examples: disable, require, verify-ca, verify-full)
 DB_SSLMODE = _env("DB_SSLMODE")
 DB_OPTIONS = {"sslmode": DB_SSLMODE} if DB_SSLMODE else {}
+READ_AFTER_WRITE_TTL = int(_env("READ_AFTER_WRITE_TTL", "2") or "2")
 
-HAS_POSTGRES_ENV = all([POSTGRES_NAME, POSTGRES_USER, POSTGRES_PASSWORD])
+HAS_POSTGRES_ENV = all([POSTGRES_NAME, WRITER_USER, WRITER_PASSWORD])
 
 REPLICA_DATABASES: list[str] = []
 
@@ -163,8 +176,8 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
     default_db = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": POSTGRES_NAME,
-        "USER": POSTGRES_USER,
-        "PASSWORD": POSTGRES_PASSWORD,
+        "USER": ADMIN_USER,
+        "PASSWORD": ADMIN_PASSWORD,
         "HOST": primary_host,
         "PORT": str(primary_port),
         "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
@@ -174,21 +187,30 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
             "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
         },
     }
+    writer_db = default_db.copy()
+    writer_db["USER"] = WRITER_USER
+    writer_db["PASSWORD"] = WRITER_PASSWORD
+
+    reader_db = default_db.copy()
+    reader_db["USER"] = READER_USER
+    reader_db["PASSWORD"] = READER_PASSWORD
+
     DATABASES = {
         "default": default_db,
+        "writer": writer_db,
+        "reader": reader_db,
     }
 
     if CLUSTER_DB_REPLICA_HOSTS:
         for idx, (host, port) in enumerate(_parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1):
             alias = f"replica_{idx}"
-            replica_db = default_db.copy()
+            replica_db = reader_db.copy()
             replica_db["HOST"] = host
             replica_db["PORT"] = str(port)
             DATABASES[alias] = replica_db
             REPLICA_DATABASES.append(alias)
 
-    if REPLICA_DATABASES:
-        DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
+    DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
 else:
     # SQLite fallback (great for quick local runs / CI without Postgres)
     BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
