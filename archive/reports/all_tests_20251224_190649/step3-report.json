@@ -1,0 +1,1657 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "f2cfe8a6-9d5f-4c7b-9a8c-4f6c7a0d3c33"
+    },
+    "item": [
+      {
+        "id": "33e655d8-6334-43b6-af76-123d64504dcf",
+        "name": "Seed — ingest sample (strict=true)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [
+              {
+                "key": "strict",
+                "value": "true"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\"time\":\"{{t1}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":200,\"latency_ms\":120,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t2}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":503,\"latency_ms\":540,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t3}}\",\"service\":\"auth\",\"endpoint\":\"/login\",\"method\":\"POST\",\"status_code\":201,\"latency_ms\":230,\"tags\":{\"source\":\"postman-step3\"}}\n]\n"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "id": "84514943-e434-4857-a7ec-26942547b8d6",
+              "type": "text/javascript",
+              "exec": [
+                "// Generate dynamic timestamps so the collection works any day/time",
+                "const now = new Date();",
+                "const iso = (d) => d.toISOString();",
+                "",
+                "// Events inside the last ~2 hours",
+                "pm.collectionVariables.set('t1', iso(new Date(now.getTime() - 2 * 60 * 60 * 1000)));",
+                "pm.collectionVariables.set('t2', iso(new Date(now.getTime() - 90 * 60 * 1000)));",
+                "pm.collectionVariables.set('t3', iso(new Date(now.getTime() - 60 * 60 * 1000)));",
+                "",
+                "// Query window: last 4 hours",
+                "pm.collectionVariables.set('start', iso(new Date(now.getTime() - 4 * 60 * 60 * 1000)));",
+                "pm.collectionVariables.set('end', iso(new Date(now.getTime() + 5 * 60 * 1000)));",
+                "",
+                "// Default base_url if user didn't set it elsewhere",
+                "if (!pm.collectionVariables.get('base_url')) {",
+                "  const host = pm.collectionVariables.get('app_host') || '127.0.0.1';",
+                "  const port = pm.collectionVariables.get('app_https_port') || '8443';",
+                "  pm.collectionVariables.set('base_url', `https://${host}:${port}`);",
+                "}"
+              ],
+              "_lastExecutionId": "f60bb015-f9ae-4b7a-bffe-71ea6bcf361b"
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "id": "faec9c1b-d0bf-4328-a435-9ecfcbff0a8d",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status is 200', function () {",
+                "  pm.response.to.have.status(200);",
+                "});",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('Has inserted/rejected fields', function () {",
+                "  pm.expect(json).to.have.property('inserted');",
+                "  pm.expect(json).to.have.property('rejected');",
+                "});",
+                "",
+                "pm.test('Inserted >= 1', function () {",
+                "  pm.expect(json.inserted).to.be.a('number');",
+                "  pm.expect(json.inserted).to.be.at.least(1);",
+                "});",
+                "",
+                "pm.test('Errors is an array', function () {",
+                "  pm.expect(json.errors).to.be.an('array');",
+                "});"
+              ],
+              "_lastExecutionId": "b2890d58-a61d-4253-b9ca-499c01605801"
+            }
+          }
+        ]
+      },
+      {
+        "id": "99de6c58-39ec-41fa-9315-657ae13e63f8",
+        "name": "Hourly — billing /x (last 4h)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "hourly",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [
+              {
+                "key": "start",
+                "value": "{{start}}"
+              },
+              {
+                "key": "end",
+                "value": "{{end}}"
+              },
+              {
+                "key": "service",
+                "value": "billing"
+              },
+              {
+                "key": "endpoint",
+                "value": "/x"
+              },
+              {
+                "key": "limit",
+                "value": "1000"
+              }
+            ],
+            "variable": []
+          },
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "c35e098c-1cc1-4810-a76b-383bfe94611c",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+                "  pm.expect([200, 501]).to.include(pm.response.code);",
+                "});",
+                "",
+                "if (pm.response.code === 501) {",
+                "  const j = pm.response.json();",
+                "  pm.test('Has detail for SQLite guard', function () {",
+                "    pm.expect(j).to.have.property('detail');",
+                "    pm.expect(j).to.have.property('db_vendor');",
+                "  });",
+                "  return;",
+                "}",
+                "",
+                "const rows = pm.response.json();",
+                "pm.test('Response is an array', function () {",
+                "  pm.expect(rows).to.be.an('array');",
+                "});",
+                "",
+                "pm.test('At least 1 row', function () {",
+                "  pm.expect(rows.length).to.be.at.least(1);",
+                "});",
+                "",
+                "const r = rows[0];",
+                "pm.test('Row has required fields', function () {",
+                "  pm.expect(r).to.have.property('bucket');",
+                "  pm.expect(r).to.have.property('service');",
+                "  pm.expect(r).to.have.property('endpoint');",
+                "  pm.expect(r).to.have.property('hits');",
+                "  pm.expect(r).to.have.property('errors');",
+                "  pm.expect(r).to.have.property('avg_latency_ms');",
+                "  pm.expect(r).to.have.property('max_latency_ms');",
+                "});",
+                "",
+                "pm.test('Types look correct', function () {",
+                "  pm.expect(r.bucket).to.be.a('string');",
+                "  pm.expect(r.service).to.be.a('string');",
+                "  pm.expect(r.endpoint).to.be.a('string');",
+                "  pm.expect(r.hits).to.be.a('number');",
+                "  pm.expect(r.errors).to.be.a('number');",
+                "});",
+                "",
+                "pm.test('bucket is UTC-like (ends with Z)', function () {",
+                "  pm.expect(r.bucket.endsWith('Z')).to.eql(true);",
+                "});"
+              ],
+              "_lastExecutionId": "dbac6d4b-5245-4106-b988-27827e8bfead"
+            }
+          }
+        ]
+      },
+      {
+        "id": "539034c4-a591-4a97-81f5-8243ed809cbe",
+        "name": "Hourly — all services (last 4h)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "hourly",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [
+              {
+                "key": "start",
+                "value": "{{start}}"
+              },
+              {
+                "key": "end",
+                "value": "{{end}}"
+              },
+              {
+                "key": "limit",
+                "value": "1000"
+              }
+            ],
+            "variable": []
+          },
+          "method": "GET"
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "1d36d9b0-047f-446c-8ff7-f83c92209deb",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+                "  pm.expect([200, 501]).to.include(pm.response.code);",
+                "});",
+                "",
+                "if (pm.response.code === 501) return;",
+                "",
+                "const rows = pm.response.json();",
+                "pm.test('Response is an array', function () {",
+                "  pm.expect(rows).to.be.an('array');",
+                "});",
+                "",
+                "pm.test('At least 1 row', function () {",
+                "  pm.expect(rows.length).to.be.at.least(1);",
+                "});"
+              ],
+              "_lastExecutionId": "751d9718-ce6c-4f7f-b691-31b4db182641"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "https://{{app_host}}:{{app_https_port}}",
+        "key": "base_url"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "start"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "end"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "t1"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "t2"
+      },
+      {
+        "type": "string",
+        "value": "",
+        "key": "t3"
+      },
+      {
+        "type": "string",
+        "value": "127.0.0.1",
+        "key": "app_host"
+      },
+      {
+        "type": "string",
+        "value": "8443",
+        "key": "app_https_port"
+      }
+    ],
+    "info": {
+      "_postman_id": "f2cfe8a6-9d5f-4c7b-9a8c-4f6c7a0d3c33",
+      "name": "APM Observability — Step 3 (Timescale Hourly)",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_using": "Newman"
+    },
+    "id": "b09bad80-78ed-42c2-ba1f-b8a7b8bb475d",
+    "name": "APM Observability - Main (Local)",
+    "values": [
+      {
+        "type": "any",
+        "value": "https://127.0.0.1:18444",
+        "key": "base_url"
+      },
+      {
+        "type": "any",
+        "value": "127.0.0.1",
+        "key": "app_host"
+      },
+      {
+        "type": "any",
+        "value": "18444",
+        "key": "app_https_port"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_a"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_b"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_c"
+      }
+    ]
+  },
+  "globals": {
+    "id": "0b52f7cb-92ee-4ea0-919f-b62dc03f1327",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 3,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 3,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 3,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 3,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 13,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 3,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 97,
+      "responseMin": 32,
+      "responseMax": 192,
+      "responseSd": 68.67799259345506,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1766603232901,
+      "completed": 1766603233387
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 3,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "e95fdecb-3775-4773-a813-07ae4a0fda95",
+          "httpRequestId": "9ddc4ebf-f29d-49b8-8c85-136dd49c4476"
+        },
+        "item": {
+          "id": "33e655d8-6334-43b6-af76-123d64504dcf",
+          "name": "Seed — ingest sample (strict=true)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "ingest",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [
+                {
+                  "key": "strict",
+                  "value": "true"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\"time\":\"{{t1}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":200,\"latency_ms\":120,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t2}}\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":503,\"latency_ms\":540,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"{{t3}}\",\"service\":\"auth\",\"endpoint\":\"/login\",\"method\":\"POST\",\"status_code\":201,\"latency_ms\":230,\"tags\":{\"source\":\"postman-step3\"}}\n]\n"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "84514943-e434-4857-a7ec-26942547b8d6",
+                "type": "text/javascript",
+                "exec": [
+                  "// Generate dynamic timestamps so the collection works any day/time",
+                  "const now = new Date();",
+                  "const iso = (d) => d.toISOString();",
+                  "",
+                  "// Events inside the last ~2 hours",
+                  "pm.collectionVariables.set('t1', iso(new Date(now.getTime() - 2 * 60 * 60 * 1000)));",
+                  "pm.collectionVariables.set('t2', iso(new Date(now.getTime() - 90 * 60 * 1000)));",
+                  "pm.collectionVariables.set('t3', iso(new Date(now.getTime() - 60 * 60 * 1000)));",
+                  "",
+                  "// Query window: last 4 hours",
+                  "pm.collectionVariables.set('start', iso(new Date(now.getTime() - 4 * 60 * 60 * 1000)));",
+                  "pm.collectionVariables.set('end', iso(new Date(now.getTime() + 5 * 60 * 1000)));",
+                  "",
+                  "// Default base_url if user didn't set it elsewhere",
+                  "if (!pm.collectionVariables.get('base_url')) {",
+                  "  const host = pm.collectionVariables.get('app_host') || '127.0.0.1';",
+                  "  const port = pm.collectionVariables.get('app_https_port') || '8443';",
+                  "  pm.collectionVariables.set('base_url', `https://${host}:${port}`);",
+                  "}"
+                ],
+                "_lastExecutionId": "f60bb015-f9ae-4b7a-bffe-71ea6bcf361b"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "id": "faec9c1b-d0bf-4328-a435-9ecfcbff0a8d",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('Has inserted/rejected fields', function () {",
+                  "  pm.expect(json).to.have.property('inserted');",
+                  "  pm.expect(json).to.have.property('rejected');",
+                  "});",
+                  "",
+                  "pm.test('Inserted >= 1', function () {",
+                  "  pm.expect(json.inserted).to.be.a('number');",
+                  "  pm.expect(json.inserted).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Errors is an array', function () {",
+                  "  pm.expect(json.errors).to.be.an('array');",
+                  "});"
+                ],
+                "_lastExecutionId": "b2890d58-a61d-4253-b9ca-499c01605801"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "18444",
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [
+              {
+                "key": "strict",
+                "value": "true"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "2b02f1c7-832d-41b2-aaa5-d5f5debf3c9f",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:18444",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "482",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\"time\":\"2025-12-24T17:07:12.960Z\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":200,\"latency_ms\":120,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"2025-12-24T17:37:12.960Z\",\"service\":\"billing\",\"endpoint\":\"/x\",\"method\":\"GET\",\"status_code\":503,\"latency_ms\":540,\"tags\":{\"source\":\"postman-step3\"}},\n  {\"time\":\"2025-12-24T18:07:12.960Z\",\"service\":\"auth\",\"endpoint\":\"/login\",\"method\":\"POST\",\"status_code\":201,\"latency_ms\":230,\"tags\":{\"source\":\"postman-step3\"}}\n]\n"
+          }
+        },
+        "response": {
+          "id": "6bd5c08e-aa21-4763-bac4-e1000b859058",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Wed, 24 Dec 2025 19:07:13 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "39"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "POST, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              34,
+              58,
+              51,
+              44,
+              34,
+              114,
+              101,
+              106,
+              101,
+              99,
+              116,
+              101,
+              100,
+              34,
+              58,
+              48,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              91,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 192,
+          "responseSize": 39
+        },
+        "id": "33e655d8-6334-43b6-af76-123d64504dcf",
+        "assertions": [
+          {
+            "assertion": "Status is 200",
+            "skipped": false
+          },
+          {
+            "assertion": "Has inserted/rejected fields",
+            "skipped": false
+          },
+          {
+            "assertion": "Inserted >= 1",
+            "skipped": false
+          },
+          {
+            "assertion": "Errors is an array",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "95ecb0bd-38c8-4c38-b437-08aab2e31fd5",
+          "length": 3,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "11d31d01-3242-463f-80c4-c2ab9dc2fb53"
+        },
+        "item": {
+          "id": "99de6c58-39ec-41fa-9315-657ae13e63f8",
+          "name": "Hourly — billing /x (last 4h)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "hourly",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "{{start}}"
+                },
+                {
+                  "key": "end",
+                  "value": "{{end}}"
+                },
+                {
+                  "key": "service",
+                  "value": "billing"
+                },
+                {
+                  "key": "endpoint",
+                  "value": "/x"
+                },
+                {
+                  "key": "limit",
+                  "value": "1000"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "c35e098c-1cc1-4810-a76b-383bfe94611c",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+                  "  pm.expect([200, 501]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 501) {",
+                  "  const j = pm.response.json();",
+                  "  pm.test('Has detail for SQLite guard', function () {",
+                  "    pm.expect(j).to.have.property('detail');",
+                  "    pm.expect(j).to.have.property('db_vendor');",
+                  "  });",
+                  "  return;",
+                  "}",
+                  "",
+                  "const rows = pm.response.json();",
+                  "pm.test('Response is an array', function () {",
+                  "  pm.expect(rows).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('At least 1 row', function () {",
+                  "  pm.expect(rows.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "const r = rows[0];",
+                  "pm.test('Row has required fields', function () {",
+                  "  pm.expect(r).to.have.property('bucket');",
+                  "  pm.expect(r).to.have.property('service');",
+                  "  pm.expect(r).to.have.property('endpoint');",
+                  "  pm.expect(r).to.have.property('hits');",
+                  "  pm.expect(r).to.have.property('errors');",
+                  "  pm.expect(r).to.have.property('avg_latency_ms');",
+                  "  pm.expect(r).to.have.property('max_latency_ms');",
+                  "});",
+                  "",
+                  "pm.test('Types look correct', function () {",
+                  "  pm.expect(r.bucket).to.be.a('string');",
+                  "  pm.expect(r.service).to.be.a('string');",
+                  "  pm.expect(r.endpoint).to.be.a('string');",
+                  "  pm.expect(r.hits).to.be.a('number');",
+                  "  pm.expect(r.errors).to.be.a('number');",
+                  "});",
+                  "",
+                  "pm.test('bucket is UTC-like (ends with Z)', function () {",
+                  "  pm.expect(r.bucket.endsWith('Z')).to.eql(true);",
+                  "});"
+                ],
+                "_lastExecutionId": "dbac6d4b-5245-4106-b988-27827e8bfead"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "18444",
+            "path": [
+              "api",
+              "requests",
+              "hourly",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [
+              {
+                "key": "start",
+                "value": "2025-12-24T15:07:12.960Z"
+              },
+              {
+                "key": "end",
+                "value": "2025-12-24T19:12:12.960Z"
+              },
+              {
+                "key": "service",
+                "value": "billing"
+              },
+              {
+                "key": "endpoint",
+                "value": "/x"
+              },
+              {
+                "key": "limit",
+                "value": "1000"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "df1733e6-7750-4e81-943d-788f2d8ef54a",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:18444",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "b2613ddc-5e3b-4de5-9431-44bcd6798311",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Wed, 24 Dec 2025 19:07:13 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "135"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "GET, HEAD, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              91,
+              123,
+              34,
+              98,
+              117,
+              99,
+              107,
+              101,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
+              49,
+              50,
+              45,
+              50,
+              52,
+              84,
+              49,
+              55,
+              58,
+              48,
+              48,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              98,
+              105,
+              108,
+              108,
+              105,
+              110,
+              103,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              120,
+              34,
+              44,
+              34,
+              104,
+              105,
+              116,
+              115,
+              34,
+              58,
+              50,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              49,
+              44,
+              34,
+              97,
+              118,
+              103,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              51,
+              51,
+              48,
+              46,
+              48,
+              44,
+              34,
+              109,
+              97,
+              120,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              53,
+              52,
+              48,
+              125,
+              93
+            ]
+          },
+          "cookie": [],
+          "responseTime": 67,
+          "responseSize": 135
+        },
+        "id": "99de6c58-39ec-41fa-9315-657ae13e63f8",
+        "assertions": [
+          {
+            "assertion": "Status is 200 (or 501 if SQLite)",
+            "skipped": false
+          },
+          {
+            "assertion": "Response is an array",
+            "skipped": false
+          },
+          {
+            "assertion": "At least 1 row",
+            "skipped": false
+          },
+          {
+            "assertion": "Row has required fields",
+            "skipped": false
+          },
+          {
+            "assertion": "Types look correct",
+            "skipped": false
+          },
+          {
+            "assertion": "bucket is UTC-like (ends with Z)",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "802bd905-2bff-4947-b7d2-f9f79a0db9e2",
+          "length": 3,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "44ff2ca8-ac3a-4997-884d-082d4238a93b"
+        },
+        "item": {
+          "id": "539034c4-a591-4a97-81f5-8243ed809cbe",
+          "name": "Hourly — all services (last 4h)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "hourly",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "{{start}}"
+                },
+                {
+                  "key": "end",
+                  "value": "{{end}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "1000"
+                }
+              ],
+              "variable": []
+            },
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "1d36d9b0-047f-446c-8ff7-f83c92209deb",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 (or 501 if SQLite)', function () {",
+                  "  pm.expect([200, 501]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 501) return;",
+                  "",
+                  "const rows = pm.response.json();",
+                  "pm.test('Response is an array', function () {",
+                  "  pm.expect(rows).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('At least 1 row', function () {",
+                  "  pm.expect(rows.length).to.be.at.least(1);",
+                  "});"
+                ],
+                "_lastExecutionId": "751d9718-ce6c-4f7f-b691-31b4db182641"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "18444",
+            "path": [
+              "api",
+              "requests",
+              "hourly",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [
+              {
+                "key": "start",
+                "value": "2025-12-24T15:07:12.960Z"
+              },
+              {
+                "key": "end",
+                "value": "2025-12-24T19:12:12.960Z"
+              },
+              {
+                "key": "limit",
+                "value": "1000"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "da4a4a60-fb74-4a10-904b-28efbf80b7b5",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:18444",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            }
+          ],
+          "method": "GET"
+        },
+        "response": {
+          "id": "d3a5e552-c04d-42b4-85a3-248b262545d6",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Wed, 24 Dec 2025 19:07:13 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "270"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "GET, HEAD, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              91,
+              123,
+              34,
+              98,
+              117,
+              99,
+              107,
+              101,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
+              49,
+              50,
+              45,
+              50,
+              52,
+              84,
+              49,
+              56,
+              58,
+              48,
+              48,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              97,
+              117,
+              116,
+              104,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              108,
+              111,
+              103,
+              105,
+              110,
+              34,
+              44,
+              34,
+              104,
+              105,
+              116,
+              115,
+              34,
+              58,
+              49,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              48,
+              44,
+              34,
+              97,
+              118,
+              103,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              50,
+              51,
+              48,
+              46,
+              48,
+              44,
+              34,
+              109,
+              97,
+              120,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              50,
+              51,
+              48,
+              125,
+              44,
+              123,
+              34,
+              98,
+              117,
+              99,
+              107,
+              101,
+              116,
+              34,
+              58,
+              34,
+              50,
+              48,
+              50,
+              53,
+              45,
+              49,
+              50,
+              45,
+              50,
+              52,
+              84,
+              49,
+              55,
+              58,
+              48,
+              48,
+              58,
+              48,
+              48,
+              90,
+              34,
+              44,
+              34,
+              115,
+              101,
+              114,
+              118,
+              105,
+              99,
+              101,
+              34,
+              58,
+              34,
+              98,
+              105,
+              108,
+              108,
+              105,
+              110,
+              103,
+              34,
+              44,
+              34,
+              101,
+              110,
+              100,
+              112,
+              111,
+              105,
+              110,
+              116,
+              34,
+              58,
+              34,
+              47,
+              120,
+              34,
+              44,
+              34,
+              104,
+              105,
+              116,
+              115,
+              34,
+              58,
+              50,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              49,
+              44,
+              34,
+              97,
+              118,
+              103,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              51,
+              51,
+              48,
+              46,
+              48,
+              44,
+              34,
+              109,
+              97,
+              120,
+              95,
+              108,
+              97,
+              116,
+              101,
+              110,
+              99,
+              121,
+              95,
+              109,
+              115,
+              34,
+              58,
+              53,
+              52,
+              48,
+              125,
+              93
+            ]
+          },
+          "cookie": [],
+          "responseTime": 32,
+          "responseSize": 270
+        },
+        "id": "539034c4-a591-4a97-81f5-8243ed809cbe",
+        "assertions": [
+          {
+            "assertion": "Status is 200 (or 501 if SQLite)",
+            "skipped": false
+          },
+          {
+            "assertion": "Response is an array",
+            "skipped": false
+          },
+          {
+            "assertion": "At least 1 row",
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 444
+    },
+    "failures": [],
+    "error": null
+  }
+}

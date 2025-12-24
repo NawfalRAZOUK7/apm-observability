@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_ingest_strict.BulkIngestStrictModeTests-20251224190745" tests="3" file="observability/tests/test_ingest_strict.py" time="0.175" timestamp="2025-12-24T19:07:49" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_ingest_strict.BulkIngestStrictModeTests" name="test_strict_mode_all_valid_still_inserts" time="0.151" timestamp="2025-12-24T19:07:49" file="observability/tests/test_ingest_strict.py" line="54"/>
+	<testcase classname="observability.tests.test_ingest_strict.BulkIngestStrictModeTests" name="test_strict_mode_mixed_invalid_returns_400_inserts_0" time="0.013" timestamp="2025-12-24T19:07:49" file="observability/tests/test_ingest_strict.py" line="14"/>
+	<testcase classname="observability.tests.test_ingest_strict.BulkIngestStrictModeTests" name="test_strict_mode_non_dict_item_rejects_all" time="0.011" timestamp="2025-12-24T19:07:49" file="observability/tests/test_ingest_strict.py" line="33"/>
+</testsuite>

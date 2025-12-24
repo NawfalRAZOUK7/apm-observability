@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_hourly.HourlyEndpointTests-20251224190745" tests="1" file="observability/tests/test_hourly.py" time="0.114" timestamp="2025-12-24T19:07:48" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_hourly.HourlyEndpointTests" name="test_hourly_endpoint_returns_buckets_and_totals" time="0.114" timestamp="2025-12-24T19:07:48" file="observability/tests/test_hourly.py" line="159"/>
+</testsuite>

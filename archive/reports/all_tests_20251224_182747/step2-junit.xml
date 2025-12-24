@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 2 (Ingest)" tests="4" time="0.617">
+  <testsuite name="Ingest — valid (raw list)" id="e38faf9f-698d-4b65-87ea-fcd79d90aa6c" timestamp="2025-12-24T18:28:06.386Z" tests="3" failures="0" errors="0" time="0.435">
+    <testcase name="status is 200" time="0.435" classname="IngestValidRawList"/>
+    <testcase name="inserted is 2" time="0.435" classname="IngestValidRawList"/>
+    <testcase name="rejected is 0" time="0.435" classname="IngestValidRawList"/>
+  </testsuite>
+  <testsuite name="Ingest — mixed invalid (raw list)" id="41e8669d-292f-4c9b-bc5e-8da3ca72e982" timestamp="2025-12-24T18:28:06.386Z" tests="4" failures="0" errors="0" time="0.019">
+    <testcase name="status is 200" time="0.019" classname="IngestMixedInvalidRawList"/>
+    <testcase name="inserted is 1" time="0.019" classname="IngestMixedInvalidRawList"/>
+    <testcase name="rejected is 1" time="0.019" classname="IngestMixedInvalidRawList"/>
+    <testcase name="errors contains index 1" time="0.019" classname="IngestMixedInvalidRawList"/>
+  </testsuite>
+  <testsuite name="Ingest — wrapper {events: [...]}" id="672393d0-ac8b-4545-b055-ab94400f311e" timestamp="2025-12-24T18:28:06.386Z" tests="3" failures="0" errors="0" time="0.115">
+    <testcase name="status is 200" time="0.115" classname="IngestWrapperEvents"/>
+    <testcase name="inserted is 2" time="0.115" classname="IngestWrapperEvents"/>
+    <testcase name="rejected is 0" time="0.115" classname="IngestWrapperEvents"/>
+  </testsuite>
+  <testsuite name="Ingest — strict=true (mixed invalid)" id="621915d8-ac26-4cc8-9808-4ec2c59ce993" timestamp="2025-12-24T18:28:06.386Z" tests="3" failures="0" errors="0" time="0.048">
+    <testcase name="status is 400" time="0.048" classname="IngestStrictTrueMixedInvalid"/>
+    <testcase name="inserted is 0" time="0.048" classname="IngestStrictTrueMixedInvalid"/>
+    <testcase name="rejected > 0" time="0.048" classname="IngestStrictTrueMixedInvalid"/>
+  </testsuite>
+</testsuites>

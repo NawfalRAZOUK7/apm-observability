@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests-20251224182845" tests="2" file="observability/tests/test_ingest_mixed_non_strict.py" time="0.012" timestamp="2025-12-24T18:28:46" failures="2" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests" name="test_mixed_payload_inserts_valid_rejects_invalid_returns_200" time="0.008" timestamp="2025-12-24T18:28:46" file="observability/tests/test_ingest_mixed_non_strict.py" line="14">
+		<failure type="DatabaseOperationForbidden" message="Database queries to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests.databases to ensure proper test isolation and silence this failure."><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_mixed_non_strict.py", line 15, in test_mixed_payload_inserts_valid_rejects_invalid_returns_200
+    before = ApiRequest.objects.count()
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/query.py", line 606, in count
+    return self.query.get_count(using=self.db)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/query.py", line 644, in get_count
+    return obj.get_aggregation(using, {"__count": Count("*")})["__count"]
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/query.py", line 626, in get_aggregation
+    result = compiler.execute_sql(SINGLE)
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/compiler.py", line 1621, in execute_sql
+    cursor = self.connection.cursor()
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/test/testcases.py", line 201, in __call__
+    raise DatabaseOperationForbidden(self.message)
+django.test.testcases.DatabaseOperationForbidden: Database queries to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests.databases to ensure proper test isolation and silence this failure.
+]]></failure>
+	</testcase>
+	<testcase classname="observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests" name="test_mixed_payload_respects_max_errors_cap" time="0.004" timestamp="2025-12-24T18:28:46" file="observability/tests/test_ingest_mixed_non_strict.py" line="45">
+		<failure type="DatabaseOperationForbidden" message="Database queries to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests.databases to ensure proper test isolation and silence this failure."><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_ingest_mixed_non_strict.py", line 46, in test_mixed_payload_respects_max_errors_cap
+    before = ApiRequest.objects.count()
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/query.py", line 606, in count
+    return self.query.get_count(using=self.db)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/query.py", line 644, in get_count
+    return obj.get_aggregation(using, {"__count": Count("*")})["__count"]
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/query.py", line 626, in get_aggregation
+    result = compiler.execute_sql(SINGLE)
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/sql/compiler.py", line 1621, in execute_sql
+    cursor = self.connection.cursor()
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/test/testcases.py", line 201, in __call__
+    raise DatabaseOperationForbidden(self.message)
+django.test.testcases.DatabaseOperationForbidden: Database queries to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_ingest_mixed_non_strict.BulkIngestMixedNonStrictTests.databases to ensure proper test isolation and silence this failure.
+]]></failure>
+	</testcase>
+</testsuite>

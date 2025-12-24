@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_daily.DailyEndpointTests-20251224182845" tests="1" file="observability/tests/test_daily.py" time="0.012" timestamp="2025-12-24T18:28:45" failures="1" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_daily.DailyEndpointTests" name="test_daily_endpoint_returns_daily_buckets_and_totals" time="0.012" timestamp="2025-12-24T18:28:45" file="observability/tests/test_daily.py" line="164">
+		<failure type="DatabaseOperationForbidden" message="Database threaded connections to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_daily.DailyEndpointTests.databases to ensure proper test isolation and silence this failure."><![CDATA[Traceback (most recent call last):
+  File "/Users/nawfalrazouk/apm-observability/observability/tests/test_daily.py", line 153, in setUp
+    ApiRequest.objects.bulk_create(rows)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/models/query.py", line 805, in bulk_create
+    with transaction.atomic(using=self.db, savepoint=False):
+         ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/transaction.py", line 198, in __enter__
+    if not connection.get_autocommit():
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/db/backends/base/base.py", line 454, in get_autocommit
+    self.ensure_connection()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/test/testcases.py", line 309, in patched_ensure_connection
+    return _DatabaseFailure(self.ensure_connection, message)()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/nawfalrazouk/apm-observability/.venv/lib/python3.14/site-packages/django/test/testcases.py", line 201, in __call__
+    raise DatabaseOperationForbidden(self.message)
+django.test.testcases.DatabaseOperationForbidden: Database threaded connections to 'writer' are not allowed in this test. Add 'writer' to observability.tests.test_daily.DailyEndpointTests.databases to ensure proper test isolation and silence this failure.
+]]></failure>
+	</testcase>
+</testsuite>

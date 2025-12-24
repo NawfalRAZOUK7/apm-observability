@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 5 (KPIs + Top Endpoints)" tests="5" time="0.704">
+  <testsuite name="KPIs — default" id="f485a6b8-3c5e-4643-b397-7e784e732d68" timestamp="2025-12-24T17:40:29.110Z" tests="2" failures="0" errors="0" time="0.318">
+    <testcase name="Status is 200" time="0.318" classname="KpIsDefault"/>
+    <testcase name="Has KPI keys" time="0.318" classname="KpIsDefault"/>
+  </testsuite>
+  <testsuite name="KPIs — filtered by service" id="3f6bc034-9cbb-487a-b46f-94d541dc9c94" timestamp="2025-12-24T17:40:29.110Z" tests="2" failures="0" errors="0" time="0.164">
+    <testcase name="Status is 200" time="0.164" classname="KpIsFilteredByService"/>
+    <testcase name="Has source" time="0.164" classname="KpIsFilteredByService"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by hits (desc)" id="1c3b4cea-07cd-4ab7-97cd-604b968e9b5a" timestamp="2025-12-24T17:40:29.110Z" tests="2" failures="0" errors="0" time="0.091">
+    <testcase name="Status is 200" time="0.091" classname="TopEndpointsByHitsDesc"/>
+    <testcase name="Has source + results array" time="0.091" classname="TopEndpointsByHitsDesc"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by error_rate (desc)" id="bd650107-0578-42aa-aac9-9cffd44a902a" timestamp="2025-12-24T17:40:29.110Z" tests="2" failures="0" errors="0" time="0.064">
+    <testcase name="Status is 200" time="0.064" classname="TopEndpointsByErrorRateDesc"/>
+    <testcase name="Has source + results array" time="0.064" classname="TopEndpointsByErrorRateDesc"/>
+  </testsuite>
+  <testsuite name="Semantic Search — errors (q=timeout)" id="c0f48c30-3852-4049-8caf-ac3b861dc56b" timestamp="2025-12-24T17:40:29.110Z" tests="2" failures="2" errors="0" time="0.067">
+    <testcase name="Status is 200" time="0.067" classname="SemanticSearchErrorsQTimeout">
+      <failure type="AssertionFailure" message="expected response to have status code 200 but got 503">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: f3b1d1b8-8c8f-4b7a-a2a1-7e8a9d7c5a51.]]>
+        <![CDATA[Collection name: APM Observability — Step 5 (KPIs + Top Endpoints).]]>
+        <![CDATA[Request name: Semantic Search — errors (q=timeout).]]>
+        <![CDATA[Test description: Status is 200.]]>
+        <![CDATA[Error message: expected response to have status code 200 but got 503.]]>
+        <![CDATA[Stacktrace: AssertionError: expected response to have status code 200 but got 503
+   at Object.eval sandbox-script.js:1:5).]]>
+      </failure>
+    </testcase>
+    <testcase name="Has results array" time="0.067" classname="SemanticSearchErrorsQTimeout">
+      <failure type="AssertionFailure" message="expected { Object (detail) } to have property 'results'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: f3b1d1b8-8c8f-4b7a-a2a1-7e8a9d7c5a51.]]>
+        <![CDATA[Collection name: APM Observability — Step 5 (KPIs + Top Endpoints).]]>
+        <![CDATA[Request name: Semantic Search — errors (q=timeout).]]>
+        <![CDATA[Test description: Has results array.]]>
+        <![CDATA[Error message: expected { Object (detail) } to have property 'results'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected { Object (detail) } to have property 'results'
+   at Object.eval sandbox-script.js:2:5).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>
