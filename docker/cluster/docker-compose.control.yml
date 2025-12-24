@@ -79,6 +79,51 @@ services:
     restart: unless-stopped
     entrypoint: ["/usr/local/bin/pgbackrest-cron.sh"]
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_PROMETHEUS_HOST_PORT:-9090}:9090"
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_GRAFANA_HOST_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_reader}
+      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}
+      DATA_NODE_IP: ${DATA_NODE_IP}
+      CLUSTER_DATA_DB_HOST_PORT: ${CLUSTER_DATA_DB_HOST_PORT:-5432}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_NODE_EXPORTER_HOST_PORT:-9100}:9100"
+    volumes:
+      - /:/host:ro
+    command:
+      - "--path.rootfs=/host"
+    restart: unless-stopped
+
 volumes:
   minio_data:
   pgbackrest_spool:
+  grafana_data:
+  prometheus_data:

@@ -1,6 +1,7 @@
 Django
 djangorestframework
 django-filter
+django-prometheus
 psycopg[binary]
 python-dotenv
 Faker

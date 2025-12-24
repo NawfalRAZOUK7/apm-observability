@@ -68,6 +68,18 @@ services:
       timeout: 3s
       retries: 30
 
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: >-
+        postgresql://${POSTGRES_READONLY_USER:-apm_reader}:${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}@db:5432/${POSTGRES_DB:-apm}?sslmode=${DB_SSLMODE:-disable}
+    ports:
+      - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_PG_EXPORTER_HOST_PORT:-9187}:9187"
+    restart: unless-stopped
+
   db-init:
     image: ${TIMESCALE_IMAGE:-timescale/timescaledb:latest-pg16}
     depends_on:
