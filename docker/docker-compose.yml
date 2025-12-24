@@ -31,7 +31,11 @@ services:
       - ./initdb:/docker-entrypoint-initdb.d:ro
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -113,10 +117,25 @@ services:
     networks:
       - app_network
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: apm_grafana
+    ports:
+      - "33000:3000"
+    depends_on:
+      - db
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app_network
+
 volumes:
   db_data:
   certbot_webroot:
   certbot_config:
+  grafana_data:
 
 networks:
   app_network:
