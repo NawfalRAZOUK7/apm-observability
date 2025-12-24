@@ -1,0 +1,38 @@
+
+PLAY [Base setup (Docker + repo + env)] ****************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [apm-node]
+
+PLAY [Data node stack] *********************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [apm-node]
+
+PLAY [Control node stack] ******************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [apm-node]
+
+PLAY [App node stack] **********************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [apm-node]
+
+PLAY [Validation (optional)] ***************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [apm-node]
+
+TASK [validate : Build compose env file list] **********************************
+ok: [apm-node]
+
+TASK [validate : Validate DB routing from app node] ****************************
+changed: [apm-node]
+
+TASK [validate : Validate pgBackRest from control node] ************************
+changed: [apm-node]
+
+PLAY RECAP *********************************************************************
+apm-node                   : ok=8    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
