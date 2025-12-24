@@ -8,6 +8,9 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -21,7 +24,6 @@ env:
   DRF_PAGE_SIZE: "50"
   DB_SSLMODE: "disable"
   DB_CONN_MAX_AGE: "0"
-  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
 jobs:
   preflight:
@@ -137,6 +139,19 @@ jobs:
         run: |
           set -euxo pipefail
           black --check .
+
+  actionlint:
+    name: Workflow Lint (actionlint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: actionlint
+        uses: rhysd/actionlint@v1
 
   test-sqlite:
     name: Tests (SQLite)
@@ -352,11 +367,6 @@ jobs:
         run: |
           set -euxo pipefail
           pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
-
-      - name: Ensure timescaledb extension
-        run: |
-          set -euxo pipefail
-          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
 
       - name: Run demo SQL script
         run: |
