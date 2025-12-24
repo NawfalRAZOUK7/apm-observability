@@ -60,6 +60,20 @@ docker compose -p apm-app \
 
 Update credentials in `docker/cluster/.env.cluster`.
 
+## Dashboards (pre-provisioned)
+
+- **APM Infra Overview** (node-exporter basics: CPU, memory, load, disk)
+- **APM Prometheus Targets** (scrape health + durations)
+
+If the dashboards do not appear, restart Grafana on the CONTROL node:
+```
+docker compose -p apm-control \
+  --env-file docker/.env.ports \
+  --env-file docker/.env.ports.localdev \
+  --env-file docker/cluster/.env.cluster \
+  -f docker/cluster/docker-compose.control.yml restart grafana
+```
+
 ## Notes
 
 - `/metrics` is exempted from SSL redirect in Django to allow Prometheus scraping on LAN HTTP.
