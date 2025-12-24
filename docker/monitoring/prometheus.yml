@@ -11,9 +11,12 @@ scrape_configs:
       - targets: ["localhost:9090"]
 
   - job_name: "django"
+    scheme: https
     metrics_path: /metrics
+    tls_config:
+      insecure_skip_verify: true
     static_configs:
-      - targets: ["192.168.0.127:28000"]
+      - targets: ["192.168.0.127:18443"]
 
   - job_name: "postgres_exporter"
     static_configs:

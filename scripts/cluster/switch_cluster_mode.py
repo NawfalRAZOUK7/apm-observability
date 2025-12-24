@@ -117,9 +117,11 @@ def _update_prometheus_targets(
     app_ip: str,
     data_ip: str,
     control_ip: str,
-    app_port: int = 28000,
+    app_port: int = 18443,
     data_port: int = 9187,
     control_port: int = 9100,
+    app_scheme: str = "https",
+    app_insecure_skip_verify: bool = True,
 ) -> None:
     if not path.exists():
         raise FileNotFoundError(f"Prometheus config not found: {path}")
@@ -143,9 +145,55 @@ def _update_prometheus_targets(
                 lines[idx] = f'{indent}targets: ["{target}"]'
                 return
 
+    def ensure_django_tls() -> None:
+        in_job = False
+        job_indent = ""
+        has_scheme = False
+        has_tls = False
+        has_tls_setting = False
+        for idx, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith("- job_name:"):
+                in_job = "django" in stripped
+                job_indent = line.split("- job_name:")[0]
+                has_scheme = False
+                has_tls = False
+                has_tls_setting = False
+                continue
+            if not in_job:
+                continue
+            if stripped.startswith("- job_name:"):
+                in_job = False
+                continue
+            if stripped.startswith("scheme:"):
+                lines[idx] = f"{job_indent}  scheme: {app_scheme}"
+                has_scheme = True
+            if stripped.startswith("tls_config:"):
+                lines[idx] = f"{job_indent}  tls_config:"
+                has_tls = True
+            if stripped.startswith("insecure_skip_verify:"):
+                value = "true" if app_insecure_skip_verify else "false"
+                lines[idx] = f"{job_indent}    insecure_skip_verify: {value}"
+                has_tls_setting = True
+            if stripped.startswith("static_configs:"):
+                insert_lines: List[str] = []
+                if not has_scheme:
+                    insert_lines.append(f"{job_indent}  scheme: {app_scheme}")
+                if app_scheme == "https":
+                    if not has_tls:
+                        insert_lines.append(f"{job_indent}  tls_config:")
+                        if app_insecure_skip_verify:
+                            insert_lines.append(f"{job_indent}    insecure_skip_verify: true")
+                    elif has_tls and not has_tls_setting and app_insecure_skip_verify:
+                        insert_lines.append(f"{job_indent}    insecure_skip_verify: true")
+                if insert_lines:
+                    lines[idx:idx] = insert_lines
+                break
+
     replace_target("django", f"{app_ip}:{app_port}")
     replace_target("postgres_exporter", f"{data_ip}:{data_port}")
     replace_target("node_exporter", f"{control_ip}:{control_port}")
+    ensure_django_tls()
 
     path.write_text("\n".join(lines) + "\n")
 
@@ -204,6 +252,7 @@ def main() -> int:
     parser.add_argument("--primary-port", type=int, default=None)
     parser.add_argument("--primary-host", default=None)
     parser.add_argument("--ip", default=None, help="Single host IP (DATA/CONTROL/APP).")
+    parser.add_argument("--app-https-port", type=int, default=None)
     parser.add_argument("--replica-count", type=int, default=2)
     parser.add_argument("--replica-base-port", type=int, default=25433)
     parser.add_argument("--replica", action="append", default=[])
@@ -253,6 +302,12 @@ def main() -> int:
             print("Unable to determine IP; pass --ip.", file=sys.stderr)
             return 1
         data_ip = control_ip = app_ip = ip
+        app_https_port = (
+            args.app_https_port
+            or _cfg_get(config, "single", "app_https_port")
+            or _cfg_get(config, "monitoring", "app_https_port")
+            or 18443
+        )
         base_port = args.replica_base_port or _cfg_get(config, "single", "replica_base_port", default=25433)
         replica_list = args.replica or _cfg_get(config, "single", "replicas", default=[])
         replica_count = args.replica_count or _cfg_get(config, "single", "replica_count", default=2)
@@ -269,6 +324,12 @@ def main() -> int:
         data_ip = args.data_ip or _cfg_get(config, "multi", "data_ip") or env.get("DATA_NODE_IP") or ""
         control_ip = args.control_ip or _cfg_get(config, "multi", "control_ip") or env.get("CONTROL_NODE_IP") or ""
         app_ip = args.app_ip or _cfg_get(config, "multi", "app_ip") or env.get("APP_NODE_IP") or ""
+        app_https_port = (
+            args.app_https_port
+            or _cfg_get(config, "multi", "app_https_port")
+            or _cfg_get(config, "monitoring", "app_https_port")
+            or 443
+        )
         missing = [name for name, value in [("data-ip", data_ip), ("control-ip", control_ip), ("app-ip", app_ip)] if not value]
         if missing:
             print(f"Missing required IPs for multi mode: {', '.join(missing)}", file=sys.stderr)
@@ -337,7 +398,15 @@ def main() -> int:
     print(f"Updated {env_path}")
 
     if update_prom:
-        _update_prometheus_targets(prom_path, app_ip=app_ip, data_ip=data_ip, control_ip=control_ip)
+        _update_prometheus_targets(
+            prom_path,
+            app_ip=app_ip,
+            data_ip=data_ip,
+            control_ip=control_ip,
+            app_port=int(app_https_port),
+            app_scheme="https",
+            app_insecure_skip_verify=True,
+        )
         print(f"Updated {prom_path}")
 
     return 0

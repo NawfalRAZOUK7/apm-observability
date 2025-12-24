@@ -66,6 +66,7 @@ bash scripts/dev/validate.sh
 Notes:
 - The script backs up the previous env file automatically.
 - Pass `--no-prometheus` to skip Prometheus target updates.
+- Prometheus scrapes Django via HTTPS (Nginx). Set `single.app_https_port` / `multi.app_https_port` to match your HTTPS port.
 
 ## Connection roles
 - App backend -> DB primary: writes, migrations, admin operations.
