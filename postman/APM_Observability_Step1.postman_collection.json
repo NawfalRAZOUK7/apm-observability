@@ -22,11 +22,22 @@
       ],
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/api/requests/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ]
         },
         "body": {
           "mode": "raw",
@@ -50,11 +61,22 @@
       ],
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/api/requests/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ]
         },
         "body": {
           "mode": "raw",
@@ -78,11 +100,22 @@
       ],
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/api/requests/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ]
         },
         "body": {
           "mode": "raw",
@@ -114,8 +147,14 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ]
         }
       }
     },
@@ -138,9 +177,20 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/?service=auth",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""],
-          "query": [{ "key": "service", "value": "auth" }]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "auth"
+            }
+          ]
         }
       }
     },
@@ -163,9 +213,20 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/?status_code=500",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""],
-          "query": [{ "key": "status_code", "value": "500" }]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ],
+          "query": [
+            {
+              "key": "status_code",
+              "value": "500"
+            }
+          ]
         }
       }
     },
@@ -191,11 +252,23 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/?latency_min=120&latency_max=220",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ],
           "query": [
-            { "key": "latency_min", "value": "120" },
-            { "key": "latency_max", "value": "220" }
+            {
+              "key": "latency_min",
+              "value": "120"
+            },
+            {
+              "key": "latency_max",
+              "value": "220"
+            }
           ]
         }
       }
@@ -225,11 +298,23 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/?time_after=2025-12-14T01:11:00Z&time_before=2025-12-14T01:13:00Z",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ],
           "query": [
-            { "key": "time_after", "value": "2025-12-14T01:11:00Z" },
-            { "key": "time_before", "value": "2025-12-14T01:13:00Z" }
+            {
+              "key": "time_after",
+              "value": "2025-12-14T01:11:00Z"
+            },
+            {
+              "key": "time_before",
+              "value": "2025-12-14T01:13:00Z"
+            }
           ]
         }
       }
@@ -264,9 +349,20 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/?ordering=-time,latency_ms",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", ""],
-          "query": [{ "key": "ordering", "value": "-time,latency_ms" }]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            ""
+          ],
+          "query": [
+            {
+              "key": "ordering",
+              "value": "-time,latency_ms"
+            }
+          ]
         }
       }
     },
@@ -286,8 +382,15 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/{{id_b}}/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "{{id_b}}", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{id_b}}",
+            ""
+          ]
         }
       }
     },
@@ -307,13 +410,28 @@
       ],
       "request": {
         "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": {
           "raw": "{{base_url}}/api/requests/{{id_b}}/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "{{id_b}}", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{id_b}}",
+            ""
+          ]
         },
-        "body": { "mode": "raw", "raw": "{\n  \"latency_ms\": 111\n}" }
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latency_ms\": 111\n}"
+        }
       }
     },
     {
@@ -332,8 +450,15 @@
         "method": "DELETE",
         "url": {
           "raw": "{{base_url}}/api/requests/{{id_a}}/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "{{id_a}}", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{id_a}}",
+            ""
+          ]
         }
       }
     },
@@ -353,8 +478,15 @@
         "method": "DELETE",
         "url": {
           "raw": "{{base_url}}/api/requests/{{id_b}}/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "{{id_b}}", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{id_b}}",
+            ""
+          ]
         }
       }
     },
@@ -374,10 +506,34 @@
         "method": "DELETE",
         "url": {
           "raw": "{{base_url}}/api/requests/{{id_c}}/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "{{id_c}}", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "{{id_c}}",
+            ""
+          ]
         }
       }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://{{app_host}}:{{app_https_port}}",
+      "type": "string"
+    },
+    {
+      "key": "app_host",
+      "value": "127.0.0.1",
+      "type": "string"
+    },
+    {
+      "key": "app_https_port",
+      "value": "8443",
+      "type": "string"
     }
   ]
 }

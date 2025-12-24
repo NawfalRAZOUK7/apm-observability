@@ -1,12 +1,12 @@
 {
   "info": {
     "_postman_id": "b9f2c2e8-2f2d-4f59-9c7b-6c4f5c6a0004",
-    "name": "APM Observability — Step 4 (Daily)",
+    "name": "APM Observability \u2014 Step 4 (Daily)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Daily — last 7 days",
+      "name": "Daily \u2014 last 7 days",
       "request": {
         "method": "GET",
         "header": [],
@@ -22,7 +22,10 @@
             ""
           ],
           "query": [
-            { "key": "limit", "value": "50" }
+            {
+              "key": "limit",
+              "value": "50"
+            }
           ]
         }
       },
@@ -78,7 +81,7 @@
       ]
     },
     {
-      "name": "Daily — filtered by service/endpoint",
+      "name": "Daily \u2014 filtered by service/endpoint",
       "request": {
         "method": "GET",
         "header": [],
@@ -94,9 +97,18 @@
             ""
           ],
           "query": [
-            { "key": "service", "value": "{{service}}" },
-            { "key": "endpoint", "value": "{{endpoint}}" },
-            { "key": "limit", "value": "50" }
+            {
+              "key": "service",
+              "value": "{{service}}"
+            },
+            {
+              "key": "endpoint",
+              "value": "{{endpoint}}"
+            },
+            {
+              "key": "limit",
+              "value": "50"
+            }
           ]
         }
       },
@@ -134,15 +146,28 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://127.0.0.1:8000"
+      "value": "https://{{app_host}}:{{app_https_port}}",
+      "type": "string"
     },
     {
       "key": "service",
-      "value": "api"
+      "value": "api",
+      "type": "string"
     },
     {
       "key": "endpoint",
-      "value": "/health"
+      "value": "/health",
+      "type": "string"
+    },
+    {
+      "key": "app_host",
+      "value": "127.0.0.1",
+      "type": "string"
+    },
+    {
+      "key": "app_https_port",
+      "value": "8443",
+      "type": "string"
     }
   ]
 }

@@ -1,12 +1,12 @@
 {
   "info": {
     "_postman_id": "6b8c9c6d-7f3f-4b1c-9e2a-2a1e1b9d0002",
-    "name": "APM Observability — Step 2 (Ingest)",
+    "name": "APM Observability \u2014 Step 2 (Ingest)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Ingest — valid (raw list)",
+      "name": "Ingest \u2014 valid (raw list)",
       "request": {
         "method": "POST",
         "header": [
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "name": "Ingest — mixed invalid (raw list)",
+      "name": "Ingest \u2014 mixed invalid (raw list)",
       "request": {
         "method": "POST",
         "header": [
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "name": "Ingest — wrapper {events: [...]}",
+      "name": "Ingest \u2014 wrapper {events: [...]}",
       "request": {
         "method": "POST",
         "header": [
@@ -158,7 +158,7 @@
       ]
     },
     {
-      "name": "Ingest — strict=true (mixed invalid)",
+      "name": "Ingest \u2014 strict=true (mixed invalid)",
       "request": {
         "method": "POST",
         "header": [
@@ -211,6 +211,23 @@
           }
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://{{app_host}}:{{app_https_port}}",
+      "type": "string"
+    },
+    {
+      "key": "app_host",
+      "value": "127.0.0.1",
+      "type": "string"
+    },
+    {
+      "key": "app_https_port",
+      "value": "8443",
+      "type": "string"
     }
   ]
 }

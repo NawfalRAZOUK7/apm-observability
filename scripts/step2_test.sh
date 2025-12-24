@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-https://localhost:8443}"
+STACK="${STACK:-main}"
+APP_HOST="${APP_HOST:-127.0.0.1}"
+
+if [[ "$STACK" == "cluster" ]]; then
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-18443}"
+    POSTMAN_ENV_DEFAULT="postman/APM_Observability.cluster.postman_environment.json"
+else
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-8443}"
+    POSTMAN_ENV_DEFAULT="postman/APM_Observability.main.postman_environment.json"
+fi
+
+POSTMAN_ENV="${POSTMAN_ENV:-$POSTMAN_ENV_DEFAULT}"
+BASE_URL="${BASE_URL:-https://${APP_HOST}:${APP_HTTPS_PORT}}"
 REPORT_DIR="${REPORT_DIR:-reports}"
 SSL_VERIFY="${SSL_VERIFY:-false}"
 
@@ -38,7 +50,10 @@ mkdir -p "$REPORT_DIR"
 # Requires:
 #   npm install -g newman newman-reporter-htmlextra
 newman run postman/APM_Observability_Step2.postman_collection.json \
-  -e postman/APM_Observability.local.postman_environment.json \
+  -e "$POSTMAN_ENV" \
+  --env-var "base_url=$BASE_URL" \
+  --env-var "app_host=$APP_HOST" \
+  --env-var "app_https_port=$APP_HTTPS_PORT" \
   $NEWMAN_SSL_FLAGS \
   --reporters cli,json,junit,htmlextra \
   --reporter-json-export "$REPORT_DIR/step2-report.json" \

@@ -1,12 +1,12 @@
 {
   "info": {
     "_postman_id": "f2cfe8a6-9d5f-4c7b-9a8c-4f6c7a0d3c33",
-    "name": "APM Observability — Step 3 (Timescale Hourly)",
+    "name": "APM Observability \u2014 Step 3 (Timescale Hourly)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Seed — ingest sample (strict=true)",
+      "name": "Seed \u2014 ingest sample (strict=true)",
       "event": [
         {
           "listen": "prerequest",
@@ -28,7 +28,9 @@
               "",
               "// Default base_url if user didn't set it elsewhere",
               "if (!pm.collectionVariables.get('base_url')) {",
-              "  pm.collectionVariables.set('base_url', 'http://127.0.0.1:8000');",
+              "  const host = pm.collectionVariables.get('app_host') || '127.0.0.1';",
+              "  const port = pm.collectionVariables.get('app_https_port') || '8443';",
+              "  pm.collectionVariables.set('base_url', `https://${host}:${port}`);",
               "}"
             ]
           }
@@ -63,14 +65,27 @@
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "url": {
           "raw": "{{base_url}}/api/requests/ingest/?strict=true",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "ingest", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "ingest",
+            ""
+          ],
           "query": [
-            { "key": "strict", "value": "true" }
+            {
+              "key": "strict",
+              "value": "true"
+            }
           ]
         },
         "body": {
@@ -80,7 +95,7 @@
       }
     },
     {
-      "name": "Hourly — billing /x (last 4h)",
+      "name": "Hourly \u2014 billing /x (last 4h)",
       "event": [
         {
           "listen": "test",
@@ -139,20 +154,42 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/hourly/?start={{start}}&end={{end}}&service=billing&endpoint=/x&limit=1000",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "hourly", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "hourly",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "{{start}}" },
-            { "key": "end", "value": "{{end}}" },
-            { "key": "service", "value": "billing" },
-            { "key": "endpoint", "value": "/x" },
-            { "key": "limit", "value": "1000" }
+            {
+              "key": "start",
+              "value": "{{start}}"
+            },
+            {
+              "key": "end",
+              "value": "{{end}}"
+            },
+            {
+              "key": "service",
+              "value": "billing"
+            },
+            {
+              "key": "endpoint",
+              "value": "/x"
+            },
+            {
+              "key": "limit",
+              "value": "1000"
+            }
           ]
         }
       }
     },
     {
-      "name": "Hourly — all services (last 4h)",
+      "name": "Hourly \u2014 all services (last 4h)",
       "event": [
         {
           "listen": "test",
@@ -181,12 +218,28 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/requests/hourly/?start={{start}}&end={{end}}&limit=1000",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "hourly", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "hourly",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "{{start}}" },
-            { "key": "end", "value": "{{end}}" },
-            { "key": "limit", "value": "1000" }
+            {
+              "key": "start",
+              "value": "{{start}}"
+            },
+            {
+              "key": "end",
+              "value": "{{end}}"
+            },
+            {
+              "key": "limit",
+              "value": "1000"
+            }
           ]
         }
       }
@@ -194,11 +247,45 @@
   ],
   "event": [],
   "variable": [
-    { "key": "base_url", "value": "http://127.0.0.1:8000" },
-    { "key": "start", "value": "" },
-    { "key": "end", "value": "" },
-    { "key": "t1", "value": "" },
-    { "key": "t2", "value": "" },
-    { "key": "t3", "value": "" }
+    {
+      "key": "base_url",
+      "value": "https://{{app_host}}:{{app_https_port}}",
+      "type": "string"
+    },
+    {
+      "key": "start",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "end",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "t1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "t2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "t3",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "app_host",
+      "value": "127.0.0.1",
+      "type": "string"
+    },
+    {
+      "key": "app_https_port",
+      "value": "8443",
+      "type": "string"
+    }
   ]
 }

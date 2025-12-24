@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-https://127.0.0.1:8443}"
+STACK="${STACK:-main}"
+APP_HOST="${APP_HOST:-127.0.0.1}"
+
+if [[ "$STACK" == "cluster" ]]; then
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-18443}"
+    POSTMAN_ENV_DEFAULT="postman/APM_Observability.cluster.postman_environment.json"
+    DB_PORT_DEFAULT="25432"
+else
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-8443}"
+    POSTMAN_ENV_DEFAULT="postman/APM_Observability.main.postman_environment.json"
+    DB_PORT_DEFAULT="5432"
+fi
+
+POSTMAN_ENV="${POSTMAN_ENV:-$POSTMAN_ENV_DEFAULT}"
+BASE_URL="${BASE_URL:-https://${APP_HOST}:${APP_HTTPS_PORT}}"
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-$DB_PORT_DEFAULT}"
+DB_NAME="${DB_NAME:-apm}"
+DB_USER="${DB_USER:-apm}"
+DB_PASSWORD="${DB_PASSWORD:-apm}"
 REPORT_DIR="${REPORT_DIR:-reports}"
 SSL_VERIFY="${SSL_VERIFY:-false}"
 
@@ -22,7 +41,8 @@ fi
 # Optional: if you use docker for TimescaleDB
 # docker compose -f docker/docker-compose.yml up -d
 
-python manage.py migrate --noinput
+POSTGRES_HOST="$DB_HOST" POSTGRES_PORT="$DB_PORT" POSTGRES_DB="$DB_NAME" POSTGRES_USER="$DB_USER" POSTGRES_PASSWORD="$DB_PASSWORD" \
+  python manage.py migrate --noinput
 
 mkdir -p "$REPORT_DIR"
 
@@ -30,7 +50,10 @@ mkdir -p "$REPORT_DIR"
 # Requires:
 #   npm install -g newman newman-reporter-htmlextra
 newman run postman/APM_Observability_Step3.postman_collection.json \
-  -e postman/APM_Observability.local.postman_environment.json \
+  -e "$POSTMAN_ENV" \
+  --env-var "base_url=$BASE_URL" \
+  --env-var "app_host=$APP_HOST" \
+  --env-var "app_https_port=$APP_HTTPS_PORT" \
   $NEWMAN_SSL_FLAGS \
   --reporters cli,json,junit,htmlextra \
   --reporter-json-export "$REPORT_DIR/step3-report.json" \

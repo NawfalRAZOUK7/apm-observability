@@ -1,20 +1,27 @@
 {
   "info": {
     "_postman_id": "f3b1d1b8-8c8f-4b7a-a2a1-7e8a9d7c5a51",
-    "name": "APM Observability — Step 5 (KPIs + Top Endpoints)",
+    "name": "APM Observability \u2014 Step 5 (KPIs + Top Endpoints)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "Step 5 manual tests for /api/requests/kpis/ and /api/requests/top-endpoints/. Set collection variable base_url then run."
   },
   "item": [
     {
-      "name": "KPIs — default",
+      "name": "KPIs \u2014 default",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/api/requests/kpis/",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "kpis", ""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "kpis",
+            ""
+          ]
         }
       },
       "event": [
@@ -42,16 +49,26 @@
       ]
     },
     {
-      "name": "KPIs — filtered by service",
+      "name": "KPIs \u2014 filtered by service",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/api/requests/kpis/?service=svc-a",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "kpis", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "kpis",
+            ""
+          ],
           "query": [
-            { "key": "service", "value": "svc-a" }
+            {
+              "key": "service",
+              "value": "svc-a"
+            }
           ]
         }
       },
@@ -74,18 +91,34 @@
       ]
     },
     {
-      "name": "Top Endpoints — by hits (desc)",
+      "name": "Top Endpoints \u2014 by hits (desc)",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/api/requests/top-endpoints/?limit=10&sort_by=hits&direction=desc",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "top-endpoints", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "top-endpoints",
+            ""
+          ],
           "query": [
-            { "key": "limit", "value": "10" },
-            { "key": "sort_by", "value": "hits" },
-            { "key": "direction", "value": "desc" }
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "sort_by",
+              "value": "hits"
+            },
+            {
+              "key": "direction",
+              "value": "desc"
+            }
           ]
         }
       },
@@ -110,18 +143,34 @@
       ]
     },
     {
-      "name": "Top Endpoints — by error_rate (desc)",
+      "name": "Top Endpoints \u2014 by error_rate (desc)",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/api/requests/top-endpoints/?limit=10&sort_by=error_rate&direction=desc",
-          "host": ["{{base_url}}"],
-          "path": ["api", "requests", "top-endpoints", ""],
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "top-endpoints",
+            ""
+          ],
           "query": [
-            { "key": "limit", "value": "10" },
-            { "key": "sort_by", "value": "error_rate" },
-            { "key": "direction", "value": "desc" }
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "sort_by",
+              "value": "error_rate"
+            },
+            {
+              "key": "direction",
+              "value": "desc"
+            }
           ]
         }
       },
@@ -144,12 +193,79 @@
           }
         }
       ]
+    },
+    {
+      "name": "Semantic Search \u2014 errors (q=timeout)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/requests/semantic-search/?q={{semantic_query}}&limit={{semantic_limit}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "requests",
+            "semantic-search",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "{{semantic_query}}"
+            },
+            {
+              "key": "limit",
+              "value": "{{semantic_limit}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const j = pm.response.json();",
+              "pm.test('Has results array', function () {",
+              "  pm.expect(j).to.have.property('results');",
+              "  pm.expect(j.results).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ],
   "variable": [
     {
       "key": "base_url",
-      "value": "http://127.0.0.1:8000",
+      "value": "https://{{app_host}}:{{app_https_port}}",
+      "type": "string"
+    },
+    {
+      "key": "app_host",
+      "value": "127.0.0.1",
+      "type": "string"
+    },
+    {
+      "key": "app_https_port",
+      "value": "8443",
+      "type": "string"
+    },
+    {
+      "key": "semantic_query",
+      "value": "timeout",
+      "type": "string"
+    },
+    {
+      "key": "semantic_limit",
+      "value": "10",
       "type": "string"
     }
   ]

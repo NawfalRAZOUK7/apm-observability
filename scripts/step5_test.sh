@@ -12,10 +12,29 @@ if [[ -f ".env" ]]; then
   set +a
 fi
 
-PORT="${PORT:-8443}"
-BASE_URL="https://127.0.0.1:${PORT}"
+STACK="${STACK:-main}"
+APP_HOST="${APP_HOST:-127.0.0.1}"
+
+if [[ "$STACK" == "cluster" ]]; then
+  APP_HTTPS_PORT="${APP_HTTPS_PORT:-18443}"
+  POSTMAN_ENV_DEFAULT="postman/APM_Observability.cluster.postman_environment.json"
+  DB_PORT_DEFAULT="25432"
+else
+  APP_HTTPS_PORT="${APP_HTTPS_PORT:-8443}"
+  POSTMAN_ENV_DEFAULT="postman/APM_Observability.main.postman_environment.json"
+  DB_PORT_DEFAULT="5432"
+fi
+
+POSTMAN_ENV="${POSTMAN_ENV:-$POSTMAN_ENV_DEFAULT}"
+BASE_URL="${BASE_URL:-https://${APP_HOST}:${APP_HTTPS_PORT}}"
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-$DB_PORT_DEFAULT}"
+DB_NAME="${DB_NAME:-apm}"
+DB_USER="${DB_USER:-apm}"
+DB_PASSWORD="${DB_PASSWORD:-apm}"
 REPORT_DIR="${REPORT_DIR:-reports}"
 SSL_VERIFY="${SSL_VERIFY:-false}"
+LOG_FILE="${LOG_FILE:-}"
 
 # Set curl SSL flags based on SSL_VERIFY
 if [[ "$SSL_VERIFY" == "false" ]]; then
@@ -36,8 +55,10 @@ fi
 
 fail() {
   echo "❌ $*"
-  echo "---- Last 120 lines of server log ($LOG_FILE) ----"
-  tail -n 120 "$LOG_FILE" || true
+  if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
+    echo "---- Last 120 lines of server log ($LOG_FILE) ----"
+    tail -n 120 "$LOG_FILE" || true
+  fi
   exit 1
 }
 
@@ -62,7 +83,8 @@ echo "BASE_URL=$BASE_URL"
 echo "REPORT_DIR=$REPORT_DIR"
 echo ""
 
-python manage.py migrate --noinput
+POSTGRES_HOST="$DB_HOST" POSTGRES_PORT="$DB_PORT" POSTGRES_DB="$DB_NAME" POSTGRES_USER="$DB_USER" POSTGRES_PASSWORD="$DB_PASSWORD" \
+  python manage.py migrate --noinput
 
 # ----------------------------
 # Seed data spanning multiple days/services/endpoints via ingest
@@ -181,7 +203,7 @@ echo ""
 # Optional: Newman run (if installed + collection exists)
 # ----------------------------
 STEP5_COLLECTION="postman/APM_Observability_Step5.postman_collection.json"
-STEP5_ENV="postman/APM_Observability.local.postman_environment.json"
+STEP5_ENV="${STEP5_ENV:-$POSTMAN_ENV}"
 
 if have_cmd newman && [[ -f "$STEP5_COLLECTION" ]]; then
   echo "---- Running Newman: Step 5 collection ----"
@@ -189,6 +211,8 @@ if have_cmd newman && [[ -f "$STEP5_COLLECTION" ]]; then
   NEWMAN_ARGS=(
     run "$STEP5_COLLECTION"
     --env-var "base_url=$BASE_URL"
+    --env-var "app_host=$APP_HOST"
+    --env-var "app_https_port=$APP_HTTPS_PORT"
     $NEWMAN_SSL_FLAGS
     --reporters cli,json,junit,htmlextra
     --reporter-json-export "$REPORT_DIR/step5-report.json"
