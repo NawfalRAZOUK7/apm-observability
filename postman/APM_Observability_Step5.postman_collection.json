@@ -228,14 +228,21 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Status is 200', function () {",
-              "  pm.response.to.have.status(200);",
+              "pm.test('Status is 200 or 503', function () {",
+              "  pm.expect([200, 503]).to.include(pm.response.code);",
               "});",
-              "const j = pm.response.json();",
-              "pm.test('Has results array', function () {",
-              "  pm.expect(j).to.have.property('results');",
-              "  pm.expect(j.results).to.be.an('array');",
-              "});"
+              "if (pm.response.code === 200) {",
+              "  const j = pm.response.json();",
+              "  pm.test('Has results array', function () {",
+              "    pm.expect(j).to.have.property('results');",
+              "    pm.expect(j.results).to.be.an('array');",
+              "  });",
+              "} else {",
+              "  pm.test('Semantic search unavailable (expected when embeddings are disabled)', function () {",
+              "    const j = pm.response.json();",
+              "    pm.expect(j).to.have.property('detail');",
+              "  });",
+              "}"
             ]
           }
         }

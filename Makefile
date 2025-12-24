@@ -5,7 +5,7 @@ SHELL := /bin/bash
 ROOT := $(CURDIR)
 
 # Main stack (docker/docker-compose.yml)
-COMPOSE := docker compose -f docker/docker-compose.yml
+COMPOSE := docker compose --env-file docker/.env.ports --env-file docker/.env.ports.localdev -f docker/docker-compose.yml
 
 # Cluster stack envs + compose files
 ENV_PORTS := docker/.env.ports

@@ -4,14 +4,24 @@ set -euo pipefail
 STACK="${STACK:-main}"
 APP_HOST="${APP_HOST:-127.0.0.1}"
 
+# Load port registry for consistent host ports (main/cluster).
+for env_file in docker/.env.ports docker/.env.ports.localdev; do
+    if [[ -f "$env_file" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$env_file"
+        set +a
+    fi
+done
+
 if [[ "$STACK" == "cluster" ]]; then
-    APP_HTTPS_PORT="${APP_HTTPS_PORT:-18443}"
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-${CLUSTER_APP_NGINX_HTTPS_HOST_PORT:-18443}}"
     POSTMAN_ENV_DEFAULT="postman/APM_Observability.cluster.postman_environment.json"
-    DB_PORT_DEFAULT="25432"
+    DB_PORT_DEFAULT="${CLUSTER_DATA_DB_HOST_PORT:-5432}"
 else
-    APP_HTTPS_PORT="${APP_HTTPS_PORT:-8443}"
+    APP_HTTPS_PORT="${APP_HTTPS_PORT:-${MAIN_NGINX_HTTPS_HOST_PORT:-8443}}"
     POSTMAN_ENV_DEFAULT="postman/APM_Observability.main.postman_environment.json"
-    DB_PORT_DEFAULT="5432"
+    DB_PORT_DEFAULT="${MAIN_DB_HOST_PORT:-5432}"
 fi
 
 POSTMAN_ENV="${POSTMAN_ENV:-$POSTMAN_ENV_DEFAULT}"

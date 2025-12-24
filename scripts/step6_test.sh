@@ -4,10 +4,12 @@ set -euo pipefail
 REPORT_DIR="${REPORT_DIR:-reports}"
 PY="${PYTHON:-python}"
 JUNIT_DIR="${JUNIT_DIR:-${REPORT_DIR}/step6-junit}"
+DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-apm_platform.ci_settings}"
 
 mkdir -p "$REPORT_DIR"
 mkdir -p "$JUNIT_DIR"
 LOG="$REPORT_DIR/step6_tests.log"
+export DJANGO_SETTINGS_MODULE
 
 # Optional: if you use docker for TimescaleDB
 # docker compose -f docker/docker-compose.yml up -d
