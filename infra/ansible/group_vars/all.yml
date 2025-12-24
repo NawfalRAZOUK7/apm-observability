@@ -1,7 +1,6 @@
 install_docker: true
 docker_users: []
 
-repo_path: /opt/apm-observability
 cluster_env_overwrite: false
 compose_build: true
 
