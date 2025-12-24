@@ -416,14 +416,6 @@ jobs:
           docker buildx version
           docker buildx ls
 
-      - name: Cache Docker layers (buildx)
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Prepare CI settings module
         run: |
           set -euxo pipefail
@@ -465,17 +457,9 @@ jobs:
         run: |
           set -euxo pipefail
           docker buildx bake -f docker-compose.yml web \
-            --set '*.cache-from=type=local,src=/tmp/.buildx-cache' \
-            --set '*.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max' \
+            --set '*.cache-from=type=gha' \
+            --set '*.cache-to=type=gha,mode=max' \
             --set '*.output=type=docker'
-
-      - name: Move buildx cache
-        if: always()
-        run: |
-          if [ -d /tmp/.buildx-cache-new ]; then
-            rm -rf /tmp/.buildx-cache
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-          fi
 
       - name: Start DB only
         run: |
