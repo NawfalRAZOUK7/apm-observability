@@ -72,6 +72,22 @@ ansible-playbook -i infra/ansible/inventory/hosts.ini infra/ansible/site.yml \
   --tags validate -e run_validation=true
 ```
 
+### Validation success indicators
+
+- `check_cluster_dbs` reports a primary (writable) plus replicas (read-only).
+- `pgbackrest --stanza=apm info` returns repository status without errors.
+- Playbook exits with `failed=0`.
+
+### Validation log script
+
+Use the script below to capture a timestamped validation log:
+
+```
+scripts/ansible/validate.sh
+```
+
+If you use SSH keys, set `ANSIBLE_PRIVATE_KEY` before running the script.
+
 ## Moving to multiple machines later
 
 - Add **real IPs** for DATA / CONTROL / APP in the inventory.
