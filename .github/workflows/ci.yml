@@ -417,7 +417,7 @@ jobs:
           docker buildx ls
 
       - name: Cache Docker layers (buildx)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
