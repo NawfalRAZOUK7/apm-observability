@@ -1,5 +1,6 @@
 install_docker: true
 docker_users: []
+docker_bin: docker
 
 cluster_env_overwrite: false
 compose_build: true

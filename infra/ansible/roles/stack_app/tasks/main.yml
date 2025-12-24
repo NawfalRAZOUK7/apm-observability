@@ -4,7 +4,7 @@
 
 - name: Bring up app stack
   ansible.builtin.shell: >
-    docker compose -p {{ compose_project_app }}
+    {{ docker_bin }} compose -p {{ compose_project_app }}
     {% for env_file in compose_env_files %} --env-file {{ env_file }}{% endfor %}
     -f {{ app_compose_file }} up -d{% if compose_build %} --build{% endif %}
   args:
