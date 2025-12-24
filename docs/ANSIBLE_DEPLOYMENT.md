@@ -86,7 +86,7 @@ Use the script below to capture a timestamped validation log:
 scripts/ansible/validate.sh
 ```
 
-If you use SSH keys, set `ANSIBLE_PRIVATE_KEY` before running the script.
+If you use SSH keys, set `ANSIBLE_PRIVATE_KEY_FILE` before running the script.
 
 ## Moving to multiple machines later
 
