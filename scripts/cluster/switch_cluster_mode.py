@@ -210,6 +210,7 @@ def main() -> int:
     parser.add_argument("--data-ip", default=None)
     parser.add_argument("--control-ip", default=None)
     parser.add_argument("--app-ip", default=None)
+    parser.add_argument("--allow-single-ip-in-multi", action="store_true")
 
     args = parser.parse_args(argv)
 
@@ -271,6 +272,15 @@ def main() -> int:
         missing = [name for name, value in [("data-ip", data_ip), ("control-ip", control_ip), ("app-ip", app_ip)] if not value]
         if missing:
             print(f"Missing required IPs for multi mode: {', '.join(missing)}", file=sys.stderr)
+            return 1
+        allow_single = args.allow_single_ip_in_multi or _cfg_get(config, "multi", "allow_single_ip", default=False)
+        if len({data_ip, control_ip, app_ip}) < 2 and not allow_single:
+            print(
+                "Multi mode requires at least two distinct node IPs. "
+                "Use --allow-single-ip-in-multi or set multi.allow_single_ip: true "
+                "for single-host dev.",
+                file=sys.stderr,
+            )
             return 1
         primary_port = args.primary_port or _cfg_get(config, "multi", "primary_port")
         if primary_port is None:

@@ -45,6 +45,9 @@ python scripts/cluster/switch_cluster_mode.py multi \
   --primary-port 5432
 ```
 
+Multi-mode requires at least two distinct node IPs. For single-host testing, add:
+`--allow-single-ip-in-multi` or set `multi.allow_single_ip: true` in the config.
+
 Dry-run (show planned values without writing):
 ```
 python scripts/cluster/switch_cluster_mode.py single --dry-run
