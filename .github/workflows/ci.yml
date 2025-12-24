@@ -461,12 +461,13 @@ jobs:
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci config --services
 
       - name: Build image (web) with cache
+        working-directory: docker
         run: |
           set -euxo pipefail
-          docker buildx bake -f docker/docker-compose.yml web \
-            --set *.cache-from=type=local,src=/tmp/.buildx-cache \
-            --set *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
-            --set *.output=type=docker
+          docker buildx bake -f docker-compose.yml web \
+            --set '*.cache-from=type=local,src=/tmp/.buildx-cache' \
+            --set '*.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max' \
+            --set '*.output=type=docker'
 
       - name: Move buildx cache
         if: always()
