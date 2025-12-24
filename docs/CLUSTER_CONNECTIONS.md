@@ -8,6 +8,44 @@
 - The validation in this repo is done on a single-machine LAN setup (all nodes share one host).
 - If you move to separate machines, update `docker/cluster/.env.cluster` with real node IPs and re-run the checks.
 
+## Switch single <-> multi (advanced script)
+Use the cluster switcher to keep the repo consistent when moving between
+single-host and multi-node setups. It updates:
+- `docker/cluster/.env.cluster`
+- `docker/monitoring/prometheus.yml` targets
+
+Single machine (auto-detect IP, 2 local replicas on ports 25433/25434):
+```
+python scripts/cluster/switch_cluster_mode.py single
+```
+
+Single machine (explicit IP + custom replica base port):
+```
+python scripts/cluster/switch_cluster_mode.py single \
+  --ip 192.168.0.127 \
+  --replica-base-port 25433
+```
+
+Multi-node (explicit node IPs + replica hosts):
+```
+python scripts/cluster/switch_cluster_mode.py multi \
+  --data-ip 192.168.0.10 \
+  --control-ip 192.168.0.11 \
+  --app-ip 192.168.0.12 \
+  --replica 192.168.0.13:5432 \
+  --replica 192.168.0.14:5432 \
+  --primary-port 5432
+```
+
+Dry-run (show planned values without writing):
+```
+python scripts/cluster/switch_cluster_mode.py single --dry-run
+```
+
+Notes:
+- The script backs up the previous env file automatically.
+- Pass `--no-prometheus` to skip Prometheus target updates.
+
 ## Connection roles
 - App backend -> DB primary: writes, migrations, admin operations.
 - App backend -> DB replicas: read-only queries (Django router).
