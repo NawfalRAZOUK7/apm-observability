@@ -7,6 +7,7 @@ python-dotenv
 Faker
 unittest-xml-reporting
 pgvector
+PyYAML
 ruff
 black
 whitenoise
