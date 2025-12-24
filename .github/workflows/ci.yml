@@ -408,6 +408,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Docker diagnostics
+        run: |
+          set -euxo pipefail
+          docker version
+          docker compose version
+          docker buildx version
+          docker buildx ls
+
       - name: Cache Docker layers (buildx)
         uses: actions/cache@v4
         with:
@@ -446,6 +454,11 @@ jobs:
             echo "GUNICORN_WORKERS=1"
             echo "GUNICORN_TIMEOUT=60"
           } >> .env.docker.ci
+
+      - name: Compose config (debug)
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci config --services
 
       - name: Build image (web) with cache
         run: |
