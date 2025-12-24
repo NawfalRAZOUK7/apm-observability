@@ -1,0 +1,25 @@
+mode: single
+env_file: docker/cluster/.env.cluster
+template: docker/cluster/.env.cluster.example
+prometheus: docker/monitoring/prometheus.yml
+update_prometheus: true
+backup_env: true
+
+single:
+  ip: 192.168.0.127
+  primary_port: 25432
+  replica_base_port: 25433
+  replica_count: 2
+  replicas:
+    - 192.168.0.127:25433
+    - 192.168.0.127:25434
+
+multi:
+  data_ip: 192.168.0.10
+  control_ip: 192.168.0.11
+  app_ip: 192.168.0.12
+  primary_host: 192.168.0.10:5432
+  primary_port: 5432
+  replicas:
+    - 192.168.0.13:5432
+    - 192.168.0.14:5432

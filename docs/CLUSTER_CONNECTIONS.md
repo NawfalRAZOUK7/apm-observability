@@ -19,6 +19,14 @@ Single machine (auto-detect IP, 2 local replicas on ports 25433/25434):
 python scripts/cluster/switch_cluster_mode.py single
 ```
 
+Config file (YAML/JSON):
+```
+python scripts/cluster/switch_cluster_mode.py --config configs/cluster/cluster.example.yml
+```
+
+Notes:
+- YAML parsing requires `pip install pyyaml`. JSON configs work without extra deps.
+
 Single machine (explicit IP + custom replica base port):
 ```
 python scripts/cluster/switch_cluster_mode.py single \

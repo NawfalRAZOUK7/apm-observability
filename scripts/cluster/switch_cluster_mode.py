@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import re
 import subprocess
@@ -31,6 +32,40 @@ def _parse_env(lines: Iterable[str]) -> dict[str, str]:
         key, value = match.groups()
         env[key] = value
     return env
+
+
+def _resolve_path(root: Path, path_str: str) -> Path:
+    path = Path(path_str)
+    if not path.is_absolute():
+        return (root / path).resolve()
+    return path
+
+
+def _load_config(path: Path) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+    suffix = path.suffix.lower()
+    if suffix in {".json"}:
+        return json.loads(path.read_text()) or {}
+    if suffix in {".yml", ".yaml"}:
+        try:
+            import yaml  # type: ignore
+        except ImportError as exc:
+            raise RuntimeError(
+                "PyYAML is required for YAML configs. "
+                "Install with: pip install pyyaml"
+            ) from exc
+        return yaml.safe_load(path.read_text()) or {}
+    raise ValueError(f"Unsupported config format: {path}")
+
+
+def _cfg_get(cfg: dict, *keys: str, default=None):
+    cur = cfg
+    for key in keys:
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return cur
 
 
 def _upsert_env(lines: List[str], key: str, value: str) -> None:
@@ -151,38 +186,55 @@ def main() -> int:
     default_template = root / "docker" / "cluster" / ".env.cluster.example"
     default_prom = root / "docker" / "monitoring" / "prometheus.yml"
 
+    argv = sys.argv[1:]
+    if argv and argv[0] in {"single", "multi"}:
+        argv = ["--mode", argv[0]] + argv[1:]
+
     parser = argparse.ArgumentParser(
         description="Switch cluster env between single-machine and multi-node modes.",
     )
-    sub = parser.add_subparsers(dest="mode", required=True)
+    parser.add_argument("--mode", choices=["single", "multi"])
+    parser.add_argument("--config", default=None, help="Path to YAML/JSON config file.")
+    parser.add_argument("--env-file", default=str(default_env))
+    parser.add_argument("--template", default=str(default_template))
+    parser.add_argument("--prometheus", default=str(default_prom))
+    parser.add_argument("--no-prometheus", action="store_true")
+    parser.add_argument("--no-backup", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--primary-port", type=int, default=None)
+    parser.add_argument("--primary-host", default=None)
+    parser.add_argument("--ip", default=None, help="Single host IP (DATA/CONTROL/APP).")
+    parser.add_argument("--replica-count", type=int, default=2)
+    parser.add_argument("--replica-base-port", type=int, default=25433)
+    parser.add_argument("--replica", action="append", default=[])
+    parser.add_argument("--data-ip", default=None)
+    parser.add_argument("--control-ip", default=None)
+    parser.add_argument("--app-ip", default=None)
 
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--env-file", default=str(default_env))
-    common.add_argument("--template", default=str(default_template))
-    common.add_argument("--prometheus", default=str(default_prom))
-    common.add_argument("--no-prometheus", action="store_true")
-    common.add_argument("--no-backup", action="store_true")
-    common.add_argument("--dry-run", action="store_true")
-    common.add_argument("--primary-port", type=int, default=None)
-    common.add_argument("--primary-host", default=None)
+    args = parser.parse_args(argv)
 
-    single = sub.add_parser("single", parents=[common], help="Single-machine LAN mode.")
-    single.add_argument("--ip", default=None, help="Single host IP (DATA/CONTROL/APP).")
-    single.add_argument("--replica-count", type=int, default=2)
-    single.add_argument("--replica-base-port", type=int, default=25433)
-    single.add_argument("--replica", action="append", default=[])
+    config: dict = {}
+    if args.config:
+        config_path = _resolve_path(root, args.config)
+        config = _load_config(config_path)
+    else:
+        config_path = None
 
-    multi = sub.add_parser("multi", parents=[common], help="Multi-node LAN mode.")
-    multi.add_argument("--data-ip", default=None)
-    multi.add_argument("--control-ip", default=None)
-    multi.add_argument("--app-ip", default=None)
-    multi.add_argument("--replica", action="append", default=[])
+    mode = args.mode or _cfg_get(config, "mode")
+    if mode not in {"single", "multi"}:
+        print("Missing or invalid mode. Use --mode or set mode in config.", file=sys.stderr)
+        return 1
 
-    args = parser.parse_args()
+    env_path = _resolve_path(root, args.env_file or _cfg_get(config, "env_file", default=str(default_env)))
+    template_path = _resolve_path(root, args.template or _cfg_get(config, "template", default=str(default_template)))
+    prom_path = _resolve_path(root, args.prometheus or _cfg_get(config, "prometheus", default=str(default_prom)))
 
-    env_path = Path(args.env_file)
-    template_path = Path(args.template)
-    prom_path = Path(args.prometheus)
+    update_prom = not args.no_prometheus
+    if _cfg_get(config, "update_prometheus", default=True) is False:
+        update_prom = False
+    backup_env = not args.no_backup
+    if _cfg_get(config, "backup_env", default=True) is False:
+        backup_env = False
 
     if env_path.exists():
         lines = _read_env_lines(env_path)
@@ -194,36 +246,48 @@ def main() -> int:
 
     env = _parse_env(lines)
 
-    if args.mode == "single":
-        ip = args.ip or env.get("DATA_NODE_IP") or _detect_local_ip()
+    if mode == "single":
+        ip = args.ip or _cfg_get(config, "single", "ip") or env.get("DATA_NODE_IP") or _detect_local_ip()
         if not ip:
             print("Unable to determine IP; pass --ip.", file=sys.stderr)
             return 1
         data_ip = control_ip = app_ip = ip
-        base_port = args.replica_base_port
-        replicas = _build_replicas(args.replica, base_port, args.replica_count)
+        base_port = args.replica_base_port or _cfg_get(config, "single", "replica_base_port", default=25433)
+        replica_list = args.replica or _cfg_get(config, "single", "replicas", default=[])
+        replica_count = args.replica_count or _cfg_get(config, "single", "replica_count", default=2)
+        replicas = _build_replicas(replica_list, base_port, replica_count)
         replicas = [(ip if host == "" else host, port) for host, port in replicas]
-        primary_port = args.primary_port
+        primary_port = args.primary_port or _cfg_get(config, "single", "primary_port")
         if primary_port is None:
             if "CLUSTER_DB_PRIMARY_HOST" in env:
                 _, primary_port = _parse_host_port(env["CLUSTER_DB_PRIMARY_HOST"], 25432)
             else:
                 primary_port = 25432
-        primary_host = args.primary_host or f"{ip}:{primary_port}"
+        primary_host = args.primary_host or _cfg_get(config, "single", "primary_host") or f"{ip}:{primary_port}"
     else:
-        data_ip, control_ip, app_ip = _resolve_ips(args, env)
+        data_ip = args.data_ip or _cfg_get(config, "multi", "data_ip") or env.get("DATA_NODE_IP") or ""
+        control_ip = args.control_ip or _cfg_get(config, "multi", "control_ip") or env.get("CONTROL_NODE_IP") or ""
+        app_ip = args.app_ip or _cfg_get(config, "multi", "app_ip") or env.get("APP_NODE_IP") or ""
         missing = [name for name, value in [("data-ip", data_ip), ("control-ip", control_ip), ("app-ip", app_ip)] if not value]
         if missing:
             print(f"Missing required IPs for multi mode: {', '.join(missing)}", file=sys.stderr)
             return 1
-        primary_port = args.primary_port
+        primary_port = args.primary_port or _cfg_get(config, "multi", "primary_port")
         if primary_port is None:
             if "CLUSTER_DB_PRIMARY_HOST" in env:
                 _, primary_port = _parse_host_port(env["CLUSTER_DB_PRIMARY_HOST"], 5432)
             else:
                 primary_port = 5432
-        primary_host = args.primary_host or f"{data_ip}:{primary_port}"
-        replica_args = args.replica or ([] if "CLUSTER_DB_REPLICA_HOSTS" not in env else env["CLUSTER_DB_REPLICA_HOSTS"].split(","))
+        primary_host = (
+            args.primary_host
+            or _cfg_get(config, "multi", "primary_host")
+            or f"{data_ip}:{primary_port}"
+        )
+        replica_args = (
+            args.replica
+            or _cfg_get(config, "multi", "replicas", default=[])
+            or ([] if "CLUSTER_DB_REPLICA_HOSTS" not in env else env["CLUSTER_DB_REPLICA_HOSTS"].split(","))
+        )
         replicas = []
         for value in replica_args:
             value = value.strip()
@@ -243,7 +307,7 @@ def main() -> int:
         "CLUSTER_DB_HOSTS": cluster_hosts,
     }
 
-    if args.mode == "single":
+    if mode == "single":
         updates["CLUSTER_DATA_DB_REPLICA1_HOST_PORT"] = str(args.replica_base_port)
         updates["CLUSTER_DATA_DB_REPLICA2_HOST_PORT"] = str(args.replica_base_port + 1)
 
@@ -255,14 +319,14 @@ def main() -> int:
             print(f"{key}={value}")
         return 0
 
-    if env_path.exists() and not args.no_backup:
+    if env_path.exists() and backup_env:
         backup = _backup(env_path)
         print(f"Backup: {backup}")
 
     env_path.write_text("\n".join(lines) + "\n")
     print(f"Updated {env_path}")
 
-    if not args.no_prometheus:
+    if update_prom:
         _update_prometheus_targets(prom_path, app_ip=app_ip, data_ip=data_ip, control_ip=control_ip)
         print(f"Updated {prom_path}")
 
