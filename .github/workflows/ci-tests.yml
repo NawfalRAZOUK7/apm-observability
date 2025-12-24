@@ -1,0 +1,252 @@
+name: CI Tests
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DJANGO_DEBUG: "0"
+  DJANGO_SECRET_KEY: "ci-not-secret"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+  DJANGO_TIME_ZONE: "UTC"
+  DRF_PAGE_SIZE: "50"
+  DB_SSLMODE: "disable"
+  DB_CONN_MAX_AGE: "0"
+
+jobs:
+  test-sqlite:
+    name: Tests (SQLite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      FORCE_SQLITE: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+
+      - name: Apply migrations (SQLite)
+        run: |
+          set -euxo pipefail
+          python manage.py migrate --noinput --verbosity 2
+
+      - name: Run tests (SQLite)
+        run: |
+          set -euxo pipefail
+          python manage.py test -v 2 2>&1 | tee test-sqlite.log
+
+      - name: Upload logs (SQLite) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite-logs
+          path: |
+            test-sqlite.log
+
+  test-timescale:
+    name: Tests (TimescaleDB pg16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      db:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_DB: apm
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apm -d apm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_TEST_DB: apm_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+
+      - name: Install postgres client tools (for diagnostics)
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for DB + print DB diagnostics
+        run: |
+          set -euxo pipefail
+          pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "select version();"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "show shared_preload_libraries;"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+
+      - name: Apply migrations (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py migrate --noinput --verbosity 2 2>&1 | tee migrate-timescale.log
+
+      - name: Show migrations plan (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py showmigrations --plan 2>&1 | tee showmigrations-timescale.log
+
+      - name: Run tests (Timescale)
+        run: |
+          set -euxo pipefail
+          python manage.py test -v 2 2>&1 | tee test-timescale.log
+
+      - name: Upload logs (Timescale) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: timescale-logs
+          path: |
+            migrate-timescale.log
+            showmigrations-timescale.log
+            test-timescale.log
+
+  demo-sql:
+    name: Demo SQL (Timescale script)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      db:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_DB: apm
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apm -d apm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm_app
+      POSTGRES_PASSWORD: apm_app_pass
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install postgres client tools
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Bootstrap roles and extension (superuser)
+        env:
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        run: |
+          set -euxo pipefail
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -f docker/initdb/001_roles.sql
+
+      - name: Wait for DB ready
+        run: |
+          set -euxo pipefail
+          pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
+
+      - name: Run demo SQL script
+        run: |
+          set -euxo pipefail
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -f scripts/db_quick_demo.sql
+
+      - name: Upload demo SQL output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-sql-logs
+          path: |
+            scripts/db_quick_demo.sql

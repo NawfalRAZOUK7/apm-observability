@@ -1,0 +1,60 @@
+name: CI Security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: ci-security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DJANGO_DEBUG: "0"
+  DJANGO_SECRET_KEY: "ci-not-secret"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+  DJANGO_TIME_ZONE: "UTC"
+  DRF_PAGE_SIZE: "50"
+  DB_SSLMODE: "disable"
+  DB_CONN_MAX_AGE: "0"
+
+jobs:
+  pip-audit:
+    name: Dependency Audit (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Run pip-audit (non-blocking)
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          pip-audit -r requirements.txt
