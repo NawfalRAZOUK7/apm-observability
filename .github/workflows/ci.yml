@@ -452,12 +452,10 @@ jobs:
           set -euxo pipefail
           docker compose -f docker/docker-compose.yml --env-file .env.docker.ci config --services
 
-      - name: Build image (web) with cache
-        working-directory: docker
+      - name: Build image (web)
         run: |
           set -euxo pipefail
-          docker buildx bake -f docker-compose.yml web \
-            --set '*.output=type=docker'
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci build web
 
       - name: Start DB only
         run: |
