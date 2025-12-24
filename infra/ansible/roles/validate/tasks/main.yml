@@ -1,0 +1,21 @@
+- name: Build compose env file list
+  ansible.builtin.set_fact:
+    compose_env_files: "{{ compose_env_files_base + compose_env_files_extra }}"
+
+- name: Validate DB routing from app node
+  ansible.builtin.shell: >
+    docker compose -p {{ compose_project_app }}
+    {% for env_file in compose_env_files %} --env-file {{ env_file }}{% endfor %}
+    -f {{ app_compose_file }} exec -T web python manage.py check_cluster_dbs
+  args:
+    chdir: "{{ repo_path }}"
+  when: run_validation | bool and 'app' in group_names
+
+- name: Validate pgBackRest from control node
+  ansible.builtin.shell: >
+    docker compose -p {{ compose_project_control }}
+    {% for env_file in compose_env_files %} --env-file {{ env_file }}{% endfor %}
+    -f {{ control_compose_file }} exec -T pgbackrest pgbackrest --stanza=apm info
+  args:
+    chdir: "{{ repo_path }}"
+  when: run_validation | bool and 'control' in group_names

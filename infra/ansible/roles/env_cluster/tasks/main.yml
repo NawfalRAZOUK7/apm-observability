@@ -1,0 +1,22 @@
+- name: Ensure cluster env directory exists
+  ansible.builtin.file:
+    path: "{{ cluster_env_file | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Check cluster env file
+  ansible.builtin.stat:
+    path: "{{ cluster_env_file }}"
+  register: cluster_env_stat
+
+- name: Render cluster env file
+  ansible.builtin.template:
+    src: env.cluster.j2
+    dest: "{{ cluster_env_file }}"
+    mode: "0600"
+  when: cluster_env_overwrite or not cluster_env_stat.stat.exists
+
+- name: Skip cluster env render (file exists)
+  ansible.builtin.debug:
+    msg: "cluster env already exists at {{ cluster_env_file }} (set cluster_env_overwrite=true to overwrite)"
+  when: cluster_env_stat.stat.exists and not cluster_env_overwrite

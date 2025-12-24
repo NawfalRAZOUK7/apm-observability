@@ -1,0 +1,5 @@
+# Data node overrides (optional)
+# data_node_ip: 192.168.0.10
+# data_db_host_port: 25432
+# replica1_host_port: 25433
+# replica2_host_port: 25434

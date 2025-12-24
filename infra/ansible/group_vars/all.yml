@@ -1,0 +1,62 @@
+install_docker: true
+docker_users: []
+
+repo_path: /opt/apm-observability
+cluster_env_overwrite: false
+compose_build: true
+
+env_ports_file: "{{ repo_path }}/docker/.env.ports"
+env_ports_local_file: "{{ repo_path }}/docker/.env.ports.localdev"
+cluster_env_file: "{{ repo_path }}/docker/cluster/.env.cluster"
+
+compose_env_files_base:
+  - "{{ env_ports_file }}"
+  - "{{ env_ports_local_file }}"
+  - "{{ cluster_env_file }}"
+compose_env_files_extra: []
+
+compose_project_data: apm-data
+compose_project_control: apm-control
+compose_project_app: apm-app
+
+data_compose_file: "{{ repo_path }}/docker/cluster/docker-compose.data.yml"
+control_compose_file: "{{ repo_path }}/docker/cluster/docker-compose.control.yml"
+app_compose_file: "{{ repo_path }}/docker/cluster/docker-compose.app.yml"
+
+# Node IPs (defaults from inventory groups)
+data_node_ip: "{{ hostvars[groups['data'][0]].ansible_host | default('127.0.0.1') }}"
+control_node_ip: "{{ hostvars[groups['control'][0]].ansible_host | default('127.0.0.1') }}"
+app_node_ip: "{{ hostvars[groups['app'][0]].ansible_host | default('127.0.0.1') }}"
+
+data_bind_ip: "0.0.0.0"
+control_bind_ip: "0.0.0.0"
+app_bind_ip: "0.0.0.0"
+
+# DB credentials
+postgres_db: apm
+postgres_user: apm
+postgres_password: apm
+postgres_app_user: apm_writer
+postgres_app_password: apm_writer_pass
+postgres_readonly_user: apm_reader
+postgres_readonly_password: apm_reader_pass
+
+# Cluster routing
+data_db_host_port: 25432
+replica1_host_port: 25433
+replica2_host_port: 25434
+
+cluster_db_primary_host: "{{ data_node_ip }}:{{ data_db_host_port }}"
+cluster_db_replica_hosts_list: []
+cluster_db_hosts_list: "{{ [cluster_db_primary_host] + cluster_db_replica_hosts_list }}"
+
+# MinIO / pgBackRest
+minio_root_user: apm_backup
+minio_root_password: apm_backup_secret
+minio_bucket: pgbackrest
+minio_bucket_cold: pgbackrest-cold
+pgbackrest_cipher_pass: CHANGE_ME
+
+timescale_image: timescale/timescaledb:latest-pg16
+
+run_validation: false
