@@ -53,6 +53,16 @@ Dry-run (show planned values without writing):
 python scripts/cluster/switch_cluster_mode.py single --dry-run
 ```
 
+## Quick start helpers (Makefile + scripts)
+- `make bootstrap` runs a full single-host bring-up using `configs/cluster/cluster.yml` if present.
+- `make validate` runs DB routing + pgBackRest checks + health probe.
+
+Or run scripts directly:
+```
+bash scripts/dev/bootstrap.sh
+bash scripts/dev/validate.sh
+```
+
 Notes:
 - The script backs up the previous env file automatically.
 - Pass `--no-prometheus` to skip Prometheus target updates.
