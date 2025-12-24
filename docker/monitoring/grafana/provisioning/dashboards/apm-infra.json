@@ -150,7 +150,7 @@
       },
       "targets": [
         {
-          "expr": "100 * (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})",
+          "expr": "100 * min by (instance) (node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\"})",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
