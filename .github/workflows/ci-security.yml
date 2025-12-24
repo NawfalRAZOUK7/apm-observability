@@ -54,7 +54,6 @@ jobs:
           pip install pip-audit
 
       - name: Run pip-audit (non-blocking)
-        continue-on-error: true
         run: |
           set -euxo pipefail
           pip-audit -r requirements.txt
