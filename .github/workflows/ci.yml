@@ -457,8 +457,6 @@ jobs:
         run: |
           set -euxo pipefail
           docker buildx bake -f docker-compose.yml web \
-            --set '*.cache-from=type=gha' \
-            --set '*.cache-to=type=gha,mode=max' \
             --set '*.output=type=docker'
 
       - name: Start DB only
