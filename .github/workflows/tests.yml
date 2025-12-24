@@ -387,12 +387,25 @@ jobs:
     timeout-minutes: 25
     needs: preflight
 
+    env:
+      COMPOSE_PROJECT_NAME: apm-ci
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+
+      - name: Cache Docker layers (buildx)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Prepare CI settings module
         run: |
@@ -425,10 +438,21 @@ jobs:
             echo "GUNICORN_TIMEOUT=60"
           } >> .env.docker.ci
 
-      - name: Build image (web)
+      - name: Build image (web) with cache
         run: |
           set -euxo pipefail
-          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci build web
+          docker buildx bake -f docker/docker-compose.yml web \
+            --set *.cache-from=type=local,src=/tmp/.buildx-cache \
+            --set *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --set *.output=type=docker
+
+      - name: Move buildx cache
+        if: always()
+        run: |
+          if [ -d /tmp/.buildx-cache-new ]; then
+            rm -rf /tmp/.buildx-cache
+            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          fi
 
       - name: Start DB only
         run: |
