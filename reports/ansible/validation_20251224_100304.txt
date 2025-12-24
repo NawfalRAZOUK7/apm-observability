@@ -1,0 +1,10 @@
+
+PLAY [Base setup (Docker + repo + env)] ****************************************
+
+TASK [Gathering Facts] *********************************************************
+[ERROR]: Task failed: Failed to authenticate: Failed to add configured private key into ssh-agent: Cannot utilize private_key with SSH_AGENT disabled
+fatal: [apm-node]: UNREACHABLE! => {"changed": false, "msg": "Task failed: Failed to authenticate: Failed to add configured private key into ssh-agent: Cannot utilize private_key with SSH_AGENT disabled", "unreachable": true}
+
+PLAY RECAP *********************************************************************
+apm-node                   : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+
