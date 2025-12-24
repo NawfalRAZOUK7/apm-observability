@@ -57,6 +57,7 @@ help:
 	@echo ""
 	@echo "Scripts:"
 	@echo "  make bootstrap | validate"
+	@echo "  make steps-all [STACK=main|cluster]"
 
 # --- Backup/Restore SSH key setup ---
 .PHONY: setup-backup-ssh
@@ -192,3 +193,7 @@ bootstrap:
 
 validate:
 	bash scripts/dev/validate.sh
+
+.PHONY: steps-all
+steps-all:
+	bash scripts/run_all_tests.sh
