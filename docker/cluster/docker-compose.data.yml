@@ -133,7 +133,7 @@ services:
     volumes:
       - data_db_replica:/var/lib/postgresql/data
       - ./replica/replica-entrypoint.sh:/replica-entrypoint.sh:ro
-    command: ["/bin/sh", "/replica-entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/replica-entrypoint.sh"]
     ports:
       - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_REPLICA1_HOST_PORT:-25433}:5432"
     restart: unless-stopped
@@ -164,7 +164,7 @@ services:
     volumes:
       - data_db_replica2:/var/lib/postgresql/data
       - ./replica/replica-entrypoint.sh:/replica-entrypoint.sh:ro
-    command: ["/bin/sh", "/replica-entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/replica-entrypoint.sh"]
     ports:
       - "${DATA_BIND_IP:-0.0.0.0}:${CLUSTER_DATA_DB_REPLICA2_HOST_PORT:-25434}:5432"
     restart: unless-stopped
