@@ -88,6 +88,9 @@ scripts/ansible/validate.sh
 
 If you use SSH keys, set `ANSIBLE_PRIVATE_KEY_FILE` before running the script.
 
+Evidence example:
+`reports/ansible/validation_20251224_100538.txt`
+
 ## Moving to multiple machines later
 
 - Add **real IPs** for DATA / CONTROL / APP in the inventory.
