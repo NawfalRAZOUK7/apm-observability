@@ -64,6 +64,7 @@ Update credentials in `docker/cluster/.env.cluster`.
 
 - **APM Infra Overview** (node-exporter basics: CPU, memory, load, disk)
 - **APM Prometheus Targets** (scrape health + durations)
+- **APM Timescale SQL** (API requests: hits, error rate, latency, top endpoints)
 
 If the dashboards do not appear, restart Grafana on the CONTROL node:
 ```
