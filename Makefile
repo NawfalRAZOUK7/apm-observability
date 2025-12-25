@@ -167,13 +167,13 @@ check-dbs:
 .PHONY: grafana prometheus targets
 
 grafana:
-	@echo "Grafana: http://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):3000"
+	@echo "Grafana: https://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):3000"
 
 prometheus:
-	@echo "Prometheus: http://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):9090"
+	@echo "Prometheus: https://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):9090"
 
 targets:
-	@echo "Prometheus targets: http://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):9090/targets"
+	@echo "Prometheus targets: https://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):9090/targets"
 
 # --- Backup (cluster) ---
 .PHONY: pgbackrest-info pgbackrest-check pgbackrest-full pgbackrest-full-repo2

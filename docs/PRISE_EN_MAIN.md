@@ -30,13 +30,16 @@ docker compose -f docker/docker-compose.yml down -v --remove-orphans
 # Supprimer les volumes restants du projet (si besoin).
 # Cela supprime aussi la base "main stack" (volume db_data).
 docker volume ls -q | grep '^apm' | xargs -r docker volume rm
+```
 
-# Supprimer les fichiers locaux generes (optionnel)
+Optionnel (ne pas faire si tu veux garder les fichiers locaux):
+```
+# Supprimer les fichiers locaux generes
 rm -f docker/cluster/.env.cluster
 rm -f configs/cluster/cluster.yml
 # Optionnel: rm -f .env.gemini
 
-# Nettoyer les artefacts locaux Python / logs (optionnel)
+# Nettoyer les artefacts locaux Python / logs
 rm -rf .venv staticfiles media
 find . -name '__pycache__' -type d -prune -exec rm -rf {} +
 find . -name '*.log' -type f -delete
@@ -44,7 +47,7 @@ find . -name '*.log' -type f -delete
 
 ## 2) Configurer le cluster (single machine par defaut)
 ```
-cp configs/cluster/cluster.example.yml configs/cluster/cluster.yml
+cp -n configs/cluster/cluster.example.yml configs/cluster/cluster.yml
 ```
 Ouvrir `configs/cluster/cluster.yml` et ajuster les IP/ports si besoin.
 
@@ -65,6 +68,7 @@ make up-control
 make up-app
 ```
 Le conteneur web lance deja les migrations au demarrage.
+Si `make up-data` echoue au tout premier lancement, attendre 30-60s et relancer la meme commande.
 
 ## 5) Seed (donnees de demo)
 ```
@@ -95,7 +99,7 @@ make validate
 Attendu:
 - DB primary et replicas OK.
 - pgBackRest "status: ok" avec repo1 et repo2.
-- Health endpoint HTTP 200.
+- Health endpoint HTTPS 200.
 
 ## 9) Tests API (optionnel)
 ```
@@ -109,6 +113,9 @@ make grafana
 make prometheus
 make targets
 ```
+Astuce: ces commandes affichent `host.docker.internal` pour les containers.
+Dans le navigateur, utiliser l'IP LAN de la machine (ex: 192.168.x.x) en HTTPS.
+Note: certificat local auto-signe => accepter l'avertissement du navigateur.
 
 ## 11) Arret des services (optionnel)
 ```
