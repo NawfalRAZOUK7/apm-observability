@@ -21,9 +21,22 @@ Lien projet:
 - MinIO init: `docker/minio/init.sh`
 - Control stack: `docker/cluster/docker-compose.control.yml`
 
+Planification (pgbackrest-cron.sh):
+- Incr (repo1) chaque heure
+- Diff (repo1) chaque jour a 01:00
+- Full (repo1) chaque dimanche 01:05
+- Full (repo2) premier dimanche du mois 02:00
+
+Retention / chiffrement:
+- repo1-retention-full=2, repo1-retention-diff=7 (hot)
+- repo2-retention-full=12 (cold)
+- repo1/2-cipher-type=aes-256-cbc (pass dans PGBACKREST_REPO*_CIPHER_PASS)
+- archive-check=n et archive-mode-check=n (cold sans WAL)
+
 Commandes:
 ```
 make pgbackrest-info
+make pgbackrest-check
 make pgbackrest-full
 make pgbackrest-full-repo2
 ```
@@ -43,6 +56,19 @@ Lien projet:
 - Drills: `scripts/drills/00_baseline.sh`, `01_primary_restore.sh`,
   `02_failover_replica.sh`, `03_minio_outage.sh`
 - Tests: `scripts/step6_test.sh`
+
+Scenario recommande (pas a pas):
+1) Baseline:
+   - `bash scripts/drills/00_baseline.sh`
+2) Trafic continu (optionnel, via API):
+   - `python manage.py seed_apirequests --count 2000 --via-api --insecure --batch-size 200`
+3) Panne primaire + failover:
+   - `CONFIRM=YES bash scripts/drills/02_failover_replica.sh`
+4) Verification:
+   - `python manage.py check_cluster_dbs`
+   - `SELECT application_name, client_addr, state, sync_state FROM pg_stat_replication;`
+5) Restore primaire (si besoin):
+   - `CONFIRM=YES bash scripts/drills/01_primary_restore.sh`
 
 ## 3.5 Optimisation par indexes
 Indexes utilises:

@@ -25,9 +25,29 @@ Depuis le conteneur:
 docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm
 ```
 
+Exemple avec host/port (cluster, local):
+```
+psql "host=127.0.0.1 port=25432 dbname=apm user=apm password=apm"
+```
+
+Exemple avec TLS (si DB SSL active):
+```
+psql "host=127.0.0.1 port=25432 dbname=apm user=apm sslmode=require sslrootcert=docker/certs/public.crt"
+```
+
+Depuis Python (psycopg):
+```
+import psycopg
+
+conn = psycopg.connect(
+    "postgresql://apm:apm@127.0.0.1:25432/apm?sslmode=disable"
+)
+```
+
 Depuis Django (app):
 - Variables `POSTGRES_*` dans `.env.docker` ou `docker/cluster/.env.cluster`.
-- Connexion gered par Django settings: `apm_platform/settings.py`.
+- Connexion geree par Django settings: `apm_platform/settings.py`.
+- Pour cluster, `CLUSTER_DB_PRIMARY_HOST` / `CLUSTER_DB_REPLICA_HOSTS` pilotent le routage.
 
 ## 2.3 Interaction avec la base
 Creation de tables et migrations:
@@ -49,6 +69,33 @@ Lien projet:
 - Models: `observability/models.py`
 - Migrations: `observability/migrations/`
 - Seed: `observability/management/commands/seed_apirequests.py`
+
+Exemples SQL (creation/insert/join):
+```
+-- 1) Inserer une ligne (table principale)
+INSERT INTO observability_apirequest
+  (time, service, endpoint, method, status_code, latency_ms, trace_id, user_ref, tags)
+VALUES
+  (NOW(), 'api', '/health', 'GET', 200, 12, 'trace-1', 'user-1', '{}'::jsonb);
+
+-- 2) Lire les dernieres requetes
+SELECT time, service, endpoint, status_code
+FROM observability_apirequest
+ORDER BY time DESC
+LIMIT 5;
+
+-- 3) Jointure 3 relations (table + embeddings + CAGG hourly)
+SELECT a.service, a.endpoint, h.bucket, h.hits, e.model
+FROM observability_apirequest a
+LEFT JOIN observability_apirequestembedding e ON e.request_id = a.id
+LEFT JOIN apirequest_hourly h
+  ON h.service = a.service
+ AND h.endpoint = a.endpoint
+ AND h.bucket = time_bucket('1 hour', a.time)
+WHERE a.status_code >= 500
+ORDER BY a.time DESC
+LIMIT 20;
+```
 
 ## 2.4 Particularites fonctionnelles
 Fonctionnalites principales exploitees:

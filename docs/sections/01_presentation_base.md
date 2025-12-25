@@ -30,6 +30,14 @@ Lien projet:
 - SQL analytiques: `observability/analytics/sql.py`
 - Dashboards: `docker/monitoring/grafana/provisioning/dashboards/`
 
+Exemples d'utilisateurs (liste publique via case studies Timescale/Tiger Data):
+- CERN (science research)
+- Toyota (automotive)
+- Speedcast (telecom)
+- Replicated (SaaS)
+- Evergen (energy)
+Source: https://www.tigerdata.com/case-studies
+
 ## 1.4 Architecture interne (fichiers, processus)
 PostgreSQL utilise un modele multi-processus avec:
 - postmaster + backend par connexion.
@@ -44,6 +52,12 @@ TimescaleDB ajoute:
 Lien projet:
 - WAL/backup: `docker/backup/pgbackrest-server.conf`, `docker/backup/pgbackrest-client.conf`
 - Replication: `docker/cluster/docker-compose.data.yml`, `docker/cluster/replica/`
+
+Sources officielles:
+- PostgreSQL Architecture: https://www.postgresql.org/docs/current/architecture.html
+- PostgreSQL WAL: https://www.postgresql.org/docs/current/wal-intro.html
+- Timescale Hypertables: https://docs.timescale.com/use-timescale/latest/hypertables/
+- Timescale Continuous Aggregates: https://docs.timescale.com/use-timescale/latest/continuous-aggregates/
 
 ## 1.5 Particularites de la base
 Particularites PostgreSQL/TimescaleDB:
@@ -70,11 +84,22 @@ Choix projet:
 ## 1.7 On-premise vs cloud (cout/perf)
 On-premise (LAN local):
 - Controle total, cout materiel interne.
-- Plus de maintenance (backup, monitoring, upgrades).
+- Performance stable si stockage local (SSD) et latence faible.
+- Maintenance lourde (backup, patching, monitoring).
 
 Cloud (AWS RDS/Aurora/Timescale Cloud):
-- Scalabilite/HA geres, cout operationnel.
-- Dependance fournisseur, cout variable.
+- Scalabilite/HA geres, operations automatisees.
+- Cout variable (compute, storage, I/O, egress).
+- Latence reseau plus elevee si app/DB separes.
+
+Comparaison rapide:
+- Cout: on-prem capex vs cloud opex (facturation a l'usage).
+- Performance: on-prem faible latence; cloud depend du type d'instance/stockage.
+- Maintenance: on-prem manuel; cloud geres (backups, upgrades).
+
+Sources tarifs:
+- AWS RDS PostgreSQL pricing: https://aws.amazon.com/rds/postgresql/pricing/
+- Timescale Cloud pricing: https://www.timescale.com/pricing
 
 Lien projet:
 - Local/cluster: `docker/cluster/docker-compose.*.yml`
