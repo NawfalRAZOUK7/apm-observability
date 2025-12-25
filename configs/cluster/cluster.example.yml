@@ -7,13 +7,13 @@ backup_env: true
 
 single:
   ip: 192.168.0.127
+  container_ip: host.docker.internal
+  host_gateway: host-gateway
   app_https_port: 18443
   primary_port: 25432
   replica_base_port: 25433
   replica_count: 2
-  replicas:
-    - 192.168.0.127:25433
-    - 192.168.0.127:25434
+  replicas: []
 
 multi:
   data_ip: 192.168.0.10

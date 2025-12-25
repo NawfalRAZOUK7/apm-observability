@@ -20,6 +20,8 @@ set -eu
 #   MINIO_ALIAS               (default: myminio)
 #   MINIO_ENABLE_VERSIONING   (default: 1)
 #   MINIO_INSECURE            (default: 0)  # 1 disables TLS verify for mc only
+#   MINIO_INIT_WAIT_SECONDS   (default: 120)
+#   MINIO_INIT_WAIT_INTERVAL  (default: 2)
 # ============================================================================
 
 : "${MINIO_ENDPOINT:=https://minio:9000}"
@@ -28,6 +30,8 @@ set -eu
 : "${MINIO_ALIAS:=myminio}"
 : "${MINIO_ENABLE_VERSIONING:=1}"
 : "${MINIO_INSECURE:=0}"
+: "${MINIO_INIT_WAIT_SECONDS:=120}"
+: "${MINIO_INIT_WAIT_INTERVAL:=2}"
 
 if [ -z "${MINIO_ROOT_USER:-}" ] || [ -z "${MINIO_ROOT_PASSWORD:-}" ]; then
   echo "ERROR: MINIO_ROOT_USER and MINIO_ROOT_PASSWORD are required" >&2
@@ -40,18 +44,23 @@ if [ "$MINIO_INSECURE" = "1" ]; then
   echo "WARN: MINIO_INSECURE=1 (TLS verification disabled for mc)." >&2
 fi
 
-echo "minio-init: waiting for MinIO at ${MINIO_ENDPOINT} ..."
+max_attempts=$((MINIO_INIT_WAIT_SECONDS / MINIO_INIT_WAIT_INTERVAL))
+if [ "$max_attempts" -lt 1 ]; then
+  max_attempts=1
+fi
+
+echo "minio-init: waiting for MinIO at ${MINIO_ENDPOINT} (timeout ${MINIO_INIT_WAIT_SECONDS}s) ..."
 i=1
-while [ "$i" -le 60 ]; do
+while [ "$i" -le "$max_attempts" ]; do
   if mc $MC_INSECURE_FLAG alias set "$MINIO_ALIAS" "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" --api S3v4 >/dev/null 2>&1; then
     break
   fi
-  sleep 1
+  sleep "$MINIO_INIT_WAIT_INTERVAL"
   i=$((i + 1))
 done
 
-if [ "$i" -gt 60 ]; then
-  echo "ERROR: MinIO not reachable after 60s" >&2
+if [ "$i" -gt "$max_attempts" ]; then
+  echo "ERROR: MinIO not reachable after ${MINIO_INIT_WAIT_SECONDS}s" >&2
   exit 1
 fi
 

@@ -17,6 +17,19 @@ APP_CMD=(docker compose -p apm-app --env-file "$ENV_PORTS" --env-file "$ENV_PORT
 DATA_CMD=(docker compose -p apm-data --env-file "$ENV_PORTS" --env-file "$ENV_PORTS_LOCAL" --env-file "$ENV_CLUSTER" -f "$DATA_COMPOSE")
 CONTROL_CMD=(docker compose -p apm-control --env-file "$ENV_PORTS" --env-file "$ENV_PORTS_LOCAL" --env-file "$ENV_CLUSTER" -f "$CONTROL_COMPOSE")
 
+wait_for_health() {
+  echo "Waiting for app health..."
+  for i in $(seq 1 60); do
+    if curl -kfs https://localhost:18443/api/health/ >/dev/null 2>&1; then
+      echo "App is healthy."
+      return 0
+    fi
+    sleep 1
+  done
+  echo "ERROR: app health check timed out." >&2
+  return 1
+}
+
 if [[ -f "$CONFIG_PATH" ]]; then
   python scripts/cluster/switch_cluster_mode.py --config "$CONFIG_PATH"
 fi
@@ -25,7 +38,7 @@ fi
 "${CONTROL_CMD[@]}" up -d --build
 "${APP_CMD[@]}" up -d --build
 
-"${APP_CMD[@]}" exec web python manage.py migrate --noinput
+wait_for_health
 "${APP_CMD[@]}" exec web python manage.py seed_apirequests --count 1000 --days 1
 
 curl -kI https://localhost:18443/api/health/ | head -n 5

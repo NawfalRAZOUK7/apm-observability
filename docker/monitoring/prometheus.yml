@@ -16,12 +16,12 @@ scrape_configs:
     tls_config:
       insecure_skip_verify: true
     static_configs:
-      - targets: ["192.168.0.127:18443"]
+      - targets: ["host.docker.internal:18443"]
 
   - job_name: "postgres_exporter"
     static_configs:
-      - targets: ["192.168.0.127:9187"]
+      - targets: ["host.docker.internal:9187"]
 
   - job_name: "node_exporter"
     static_configs:
-      - targets: ["192.168.0.127:9100"]
+      - targets: ["host.docker.internal:9100"]

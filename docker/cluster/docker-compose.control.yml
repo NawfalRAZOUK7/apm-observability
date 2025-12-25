@@ -17,13 +17,23 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-apm_backup_secret}
       - MINIO_SERVER_URL=https://minio:9000
       - MINIO_BROWSER=on
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsSk https://localhost:9000/minio/health/ready || curl -fsS http://localhost:9000/minio/health/ready",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     restart: unless-stopped
 
   minio-init:
     image: minio/mc:latest
     depends_on:
       minio:
-        condition: service_started
+        condition: service_healthy
     environment:
       MINIO_ENDPOINT: https://minio:9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-apm_backup}
@@ -33,6 +43,8 @@ services:
       MINIO_ALIAS: myminio
       MINIO_ENABLE_VERSIONING: "1"
       MINIO_INSECURE: "1"
+      MINIO_INIT_WAIT_SECONDS: "120"
+      MINIO_INIT_WAIT_INTERVAL: "2"
     volumes:
       - ../minio/init.sh:/init.sh:ro
     restart: "no"
@@ -55,7 +67,7 @@ services:
       - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
     # Garde ton nom: pgbackrest-server résout vers l'IP du DATA node
     extra_hosts:
-      - "pgbackrest-server:${DATA_NODE_IP}"
+      - "pgbackrest-server:${DATA_NODE_HOST_GATEWAY}"
     restart: "no"
     command: ["sleep", "infinity"]
 
@@ -75,7 +87,7 @@ services:
       - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
       - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
     extra_hosts:
-      - "pgbackrest-server:${DATA_NODE_IP}"
+      - "pgbackrest-server:${DATA_NODE_HOST_GATEWAY}"
     restart: unless-stopped
     entrypoint: ["/usr/local/bin/pgbackrest-cron.sh"]
 

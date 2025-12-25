@@ -252,6 +252,11 @@ def main() -> int:
     parser.add_argument("--primary-port", type=int, default=None)
     parser.add_argument("--primary-host", default=None)
     parser.add_argument("--ip", default=None, help="Single host IP (DATA/CONTROL/APP).")
+    parser.add_argument(
+        "--container-ip",
+        default=None,
+        help="Single host IP/hostname used from containers (defaults to --ip).",
+    )
     parser.add_argument("--app-https-port", type=int, default=None)
     parser.add_argument("--replica-count", type=int, default=2)
     parser.add_argument("--replica-base-port", type=int, default=25433)
@@ -297,11 +302,17 @@ def main() -> int:
     env = _parse_env(lines)
 
     if mode == "single":
-        ip = args.ip or _cfg_get(config, "single", "ip") or env.get("DATA_NODE_IP") or _detect_local_ip()
-        if not ip:
+        public_ip = args.ip or _cfg_get(config, "single", "ip") or env.get("DATA_NODE_IP") or _detect_local_ip()
+        if not public_ip:
             print("Unable to determine IP; pass --ip.", file=sys.stderr)
             return 1
-        data_ip = control_ip = app_ip = ip
+        container_ip = (
+            args.container_ip
+            or _cfg_get(config, "single", "container_ip")
+            or _cfg_get(config, "single", "container_host")
+            or public_ip
+        )
+        data_ip = control_ip = app_ip = container_ip
         app_https_port = (
             args.app_https_port
             or _cfg_get(config, "single", "app_https_port")
@@ -312,14 +323,20 @@ def main() -> int:
         replica_list = args.replica or _cfg_get(config, "single", "replicas", default=[])
         replica_count = args.replica_count or _cfg_get(config, "single", "replica_count", default=2)
         replicas = _build_replicas(replica_list, base_port, replica_count)
-        replicas = [(ip if host == "" else host, port) for host, port in replicas]
+        replicas = [(container_ip if host == "" else host, port) for host, port in replicas]
         primary_port = args.primary_port or _cfg_get(config, "single", "primary_port")
         if primary_port is None:
             if "CLUSTER_DB_PRIMARY_HOST" in env:
                 _, primary_port = _parse_host_port(env["CLUSTER_DB_PRIMARY_HOST"], 25432)
             else:
                 primary_port = 25432
-        primary_host = args.primary_host or _cfg_get(config, "single", "primary_host") or f"{ip}:{primary_port}"
+        primary_host = (
+            args.primary_host
+            or _cfg_get(config, "single", "primary_host")
+            or f"{container_ip}:{primary_port}"
+        )
+        data_host_gateway = _cfg_get(config, "single", "host_gateway") or "host-gateway"
+        control_host_gateway = data_host_gateway
     else:
         data_ip = args.data_ip or _cfg_get(config, "multi", "data_ip") or env.get("DATA_NODE_IP") or ""
         control_ip = args.control_ip or _cfg_get(config, "multi", "control_ip") or env.get("CONTROL_NODE_IP") or ""
@@ -365,6 +382,8 @@ def main() -> int:
             if not value:
                 continue
             replicas.append(_parse_host_port(value, 5432))
+        data_host_gateway = data_ip
+        control_host_gateway = control_ip
 
     replica_hosts = _format_hosts(replicas)
     cluster_hosts = ",".join(filter(None, [primary_host, replica_hosts])).strip(",")
@@ -373,14 +392,16 @@ def main() -> int:
         "DATA_NODE_IP": data_ip,
         "CONTROL_NODE_IP": control_ip,
         "APP_NODE_IP": app_ip,
+        "DATA_NODE_HOST_GATEWAY": data_host_gateway,
+        "CONTROL_NODE_HOST_GATEWAY": control_host_gateway,
         "CLUSTER_DB_PRIMARY_HOST": primary_host,
         "CLUSTER_DB_REPLICA_HOSTS": replica_hosts,
         "CLUSTER_DB_HOSTS": cluster_hosts,
     }
 
     if mode == "single":
-        updates["CLUSTER_DATA_DB_REPLICA1_HOST_PORT"] = str(args.replica_base_port)
-        updates["CLUSTER_DATA_DB_REPLICA2_HOST_PORT"] = str(args.replica_base_port + 1)
+        updates["CLUSTER_DATA_DB_REPLICA1_HOST_PORT"] = str(base_port)
+        updates["CLUSTER_DATA_DB_REPLICA2_HOST_PORT"] = str(base_port + 1)
 
     for key, value in updates.items():
         _upsert_env(lines, key, value)

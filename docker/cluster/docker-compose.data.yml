@@ -43,7 +43,7 @@ services:
       - ../certs/pgbackrest:/certs/pgbackrest:ro
       - ../certs/public.crt:/certs/public.crt:ro
     extra_hosts:
-      - "minio:${CONTROL_NODE_IP}"
+      - "minio:${CONTROL_NODE_HOST_GATEWAY}"
     command:
       - "postgres"
       - "-c"

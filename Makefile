@@ -53,7 +53,7 @@ help:
 	@echo "  make grafana | prometheus | targets"
 	@echo ""
 	@echo "Backup (cluster):"
-	@echo "  make pgbackrest-info | pgbackrest-check | pgbackrest-full"
+	@echo "  make pgbackrest-info | pgbackrest-check | pgbackrest-full | pgbackrest-full-repo2"
 	@echo ""
 	@echo "Scripts:"
 	@echo "  make bootstrap | validate"
@@ -176,7 +176,7 @@ targets:
 	@echo "Prometheus targets: http://$$(grep '^CONTROL_NODE_IP=' $(ENV_CLUSTER) | cut -d= -f2):9090/targets"
 
 # --- Backup (cluster) ---
-.PHONY: pgbackrest-info pgbackrest-check pgbackrest-full
+.PHONY: pgbackrest-info pgbackrest-check pgbackrest-full pgbackrest-full-repo2
 pgbackrest-info:
 	$(CONTROL_CMD) exec pgbackrest pgbackrest --stanza=apm info
 
@@ -185,6 +185,9 @@ pgbackrest-check:
 
 pgbackrest-full:
 	$(CONTROL_CMD) exec pgbackrest pgbackrest --stanza=apm --type=full backup
+
+pgbackrest-full-repo2:
+	$(CONTROL_CMD) exec pgbackrest pgbackrest --stanza=apm --repo=2 --type=full backup
 
 # --- Scripts ---
 .PHONY: bootstrap validate
