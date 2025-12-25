@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 3 (Timescale Hourly)" tests="3" time="0.285">
+  <testsuite name="Seed — ingest sample (strict=true)" id="30bb1e60-54cb-4711-b5a6-a0505366fad9" timestamp="2025-12-25T13:41:17.296Z" tests="4" failures="0" errors="0" time="0.147">
+    <testcase name="Status is 200" time="0.147" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Has inserted/rejected fields" time="0.147" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Inserted >= 1" time="0.147" classname="SeedIngestSampleStrictTrue"/>
+    <testcase name="Errors is an array" time="0.147" classname="SeedIngestSampleStrictTrue"/>
+  </testsuite>
+  <testsuite name="Hourly — billing /x (last 4h)" id="a1a40bf6-762c-4ac4-afc4-73756610fc19" timestamp="2025-12-25T13:41:17.296Z" tests="6" failures="0" errors="0" time="0.099">
+    <testcase name="Status is 200 (or 501 if SQLite)" time="0.099" classname="HourlyBillingXLast4H"/>
+    <testcase name="Response is an array" time="0.099" classname="HourlyBillingXLast4H"/>
+    <testcase name="At least 1 row" time="0.099" classname="HourlyBillingXLast4H"/>
+    <testcase name="Row has required fields" time="0.099" classname="HourlyBillingXLast4H"/>
+    <testcase name="Types look correct" time="0.099" classname="HourlyBillingXLast4H"/>
+    <testcase name="bucket is UTC-like (ends with Z)" time="0.099" classname="HourlyBillingXLast4H"/>
+  </testsuite>
+  <testsuite name="Hourly — all services (last 4h)" id="197db2d3-731e-48da-b9fa-2350a99668a0" timestamp="2025-12-25T13:41:17.296Z" tests="3" failures="0" errors="0" time="0.039">
+    <testcase name="Status is 200 (or 501 if SQLite)" time="0.039" classname="HourlyAllServicesLast4H"/>
+    <testcase name="Response is an array" time="0.039" classname="HourlyAllServicesLast4H"/>
+    <testcase name="At least 1 row" time="0.039" classname="HourlyAllServicesLast4H"/>
+  </testsuite>
+</testsuites>
