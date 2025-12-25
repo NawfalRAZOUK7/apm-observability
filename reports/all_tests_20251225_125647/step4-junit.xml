@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 4 (Daily)" tests="2" time="0.489">
+  <testsuite name="Daily — last 7 days" id="4423184d-a53a-4ffb-b86d-917b33cfb807" timestamp="2025-12-25T12:57:01.240Z" tests="4" failures="0" errors="0" time="0.437">
+    <testcase name="Status code is 200" time="0.437" classname="DailyLast7Days"/>
+    <testcase name="Response is an array" time="0.437" classname="DailyLast7Days"/>
+    <testcase name="If array has items, keys exist" time="0.437" classname="DailyLast7Days"/>
+    <testcase name="Types look correct when present" time="0.437" classname="DailyLast7Days"/>
+  </testsuite>
+  <testsuite name="Daily — filtered by service/endpoint" id="7b4448b3-3acc-4899-870b-c62267374923" timestamp="2025-12-25T12:57:01.240Z" tests="3" failures="0" errors="0" time="0.052">
+    <testcase name="Status code is 200" time="0.052" classname="DailyFilteredByServiceEndpoint"/>
+    <testcase name="Response is an array" time="0.052" classname="DailyFilteredByServiceEndpoint"/>
+    <testcase name="If array has items, it matches filter" time="0.052" classname="DailyFilteredByServiceEndpoint"/>
+  </testsuite>
+</testsuites>
