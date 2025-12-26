@@ -10,4 +10,6 @@ extend-exclude = [
   "migrations",
   "reports",
 ]
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

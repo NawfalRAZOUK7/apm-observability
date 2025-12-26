@@ -4,13 +4,11 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import os
 import re
 import subprocess
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
-
 
 ENV_LINE_RE = re.compile(r"^([A-Z0-9_]+)=(.*)$")
 
@@ -19,7 +17,7 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _read_env_lines(path: Path) -> List[str]:
+def _read_env_lines(path: Path) -> list[str]:
     return path.read_text().splitlines()
 
 
@@ -52,8 +50,7 @@ def _load_config(path: Path) -> dict:
             import yaml  # type: ignore
         except ImportError as exc:
             raise RuntimeError(
-                "PyYAML is required for YAML configs. "
-                "Install with: pip install pyyaml"
+                "PyYAML is required for YAML configs. " "Install with: pip install pyyaml"
             ) from exc
         return yaml.safe_load(path.read_text()) or {}
     raise ValueError(f"Unsupported config format: {path}")
@@ -68,7 +65,7 @@ def _cfg_get(cfg: dict, *keys: str, default=None):
     return cur
 
 
-def _upsert_env(lines: List[str], key: str, value: str) -> None:
+def _upsert_env(lines: list[str], key: str, value: str) -> None:
     updated = False
     for idx, line in enumerate(lines):
         match = ENV_LINE_RE.match(line.strip())
@@ -81,7 +78,7 @@ def _upsert_env(lines: List[str], key: str, value: str) -> None:
         lines.append(f"{key}={value}")
 
 
-def _detect_local_ip() -> Optional[str]:
+def _detect_local_ip() -> str | None:
     commands = [
         ["ipconfig", "getifaddr", "en0"],
         ["ipconfig", "getifaddr", "en1"],
@@ -101,14 +98,14 @@ def _detect_local_ip() -> Optional[str]:
     return None
 
 
-def _parse_host_port(value: str, default_port: int) -> Tuple[str, int]:
+def _parse_host_port(value: str, default_port: int) -> tuple[str, int]:
     if ":" in value:
         host, port_str = value.rsplit(":", 1)
         return host, int(port_str)
     return value, default_port
 
 
-def _format_hosts(hosts: List[Tuple[str, int]]) -> str:
+def _format_hosts(hosts: list[tuple[str, int]]) -> str:
     return ",".join(f"{host}:{port}" for host, port in hosts)
 
 
@@ -176,7 +173,7 @@ def _update_prometheus_targets(
                 lines[idx] = f"{job_indent}    insecure_skip_verify: {value}"
                 has_tls_setting = True
             if stripped.startswith("static_configs:"):
-                insert_lines: List[str] = []
+                insert_lines: list[str] = []
                 if not has_scheme:
                     insert_lines.append(f"{job_indent}  scheme: {app_scheme}")
                 if app_scheme == "https":
@@ -206,12 +203,12 @@ def _backup(path: Path) -> Path:
 
 
 def _build_replicas(
-    replica_args: List[str],
+    replica_args: list[str],
     base_port: int,
     count: int,
-) -> List[Tuple[str, int]]:
+) -> list[tuple[str, int]]:
     if replica_args:
-        replicas: List[Tuple[str, int]] = []
+        replicas: list[tuple[str, int]] = []
         for value in replica_args:
             replicas.append(_parse_host_port(value, base_port))
         return replicas
@@ -221,7 +218,7 @@ def _build_replicas(
     return replicas
 
 
-def _resolve_ips(args: argparse.Namespace, env: dict[str, str]) -> Tuple[str, str, str]:
+def _resolve_ips(args: argparse.Namespace, env: dict[str, str]) -> tuple[str, str, str]:
     data_ip = args.data_ip or env.get("DATA_NODE_IP")
     control_ip = args.control_ip or env.get("CONTROL_NODE_IP")
     app_ip = args.app_ip or env.get("APP_NODE_IP")
@@ -280,9 +277,18 @@ def main() -> int:
         print("Missing or invalid mode. Use --mode or set mode in config.", file=sys.stderr)
         return 1
 
-    env_path = _resolve_path(root, args.env_file or _cfg_get(config, "env_file", default=str(default_env)))
-    template_path = _resolve_path(root, args.template or _cfg_get(config, "template", default=str(default_template)))
-    prom_path = _resolve_path(root, args.prometheus or _cfg_get(config, "prometheus", default=str(default_prom)))
+    env_path = _resolve_path(
+        root,
+        args.env_file or _cfg_get(config, "env_file", default=str(default_env)),
+    )
+    template_path = _resolve_path(
+        root,
+        args.template or _cfg_get(config, "template", default=str(default_template)),
+    )
+    prom_path = _resolve_path(
+        root,
+        args.prometheus or _cfg_get(config, "prometheus", default=str(default_prom)),
+    )
 
     update_prom = not args.no_prometheus
     if _cfg_get(config, "update_prometheus", default=True) is False:
@@ -302,7 +308,12 @@ def main() -> int:
     env = _parse_env(lines)
 
     if mode == "single":
-        public_ip = args.ip or _cfg_get(config, "single", "ip") or env.get("DATA_NODE_IP") or _detect_local_ip()
+        public_ip = (
+            args.ip
+            or _cfg_get(config, "single", "ip")
+            or env.get("DATA_NODE_IP")
+            or _detect_local_ip()
+        )
         if not public_ip:
             print("Unable to determine IP; pass --ip.", file=sys.stderr)
             return 1
@@ -319,7 +330,12 @@ def main() -> int:
             or _cfg_get(config, "monitoring", "app_https_port")
             or 18443
         )
-        base_port = args.replica_base_port or _cfg_get(config, "single", "replica_base_port", default=25433)
+        base_port = args.replica_base_port or _cfg_get(
+            config,
+            "single",
+            "replica_base_port",
+            default=25433,
+        )
         replica_list = args.replica or _cfg_get(config, "single", "replicas", default=[])
         replica_count = args.replica_count or _cfg_get(config, "single", "replica_count", default=2)
         replicas = _build_replicas(replica_list, base_port, replica_count)
@@ -338,8 +354,15 @@ def main() -> int:
         data_host_gateway = _cfg_get(config, "single", "host_gateway") or "host-gateway"
         control_host_gateway = data_host_gateway
     else:
-        data_ip = args.data_ip or _cfg_get(config, "multi", "data_ip") or env.get("DATA_NODE_IP") or ""
-        control_ip = args.control_ip or _cfg_get(config, "multi", "control_ip") or env.get("CONTROL_NODE_IP") or ""
+        data_ip = (
+            args.data_ip or _cfg_get(config, "multi", "data_ip") or env.get("DATA_NODE_IP") or ""
+        )
+        control_ip = (
+            args.control_ip
+            or _cfg_get(config, "multi", "control_ip")
+            or env.get("CONTROL_NODE_IP")
+            or ""
+        )
         app_ip = args.app_ip or _cfg_get(config, "multi", "app_ip") or env.get("APP_NODE_IP") or ""
         app_https_port = (
             args.app_https_port
@@ -347,11 +370,24 @@ def main() -> int:
             or _cfg_get(config, "monitoring", "app_https_port")
             or 443
         )
-        missing = [name for name, value in [("data-ip", data_ip), ("control-ip", control_ip), ("app-ip", app_ip)] if not value]
+        missing = [
+            name
+            for name, value in [
+                ("data-ip", data_ip),
+                ("control-ip", control_ip),
+                ("app-ip", app_ip),
+            ]
+            if not value
+        ]
         if missing:
             print(f"Missing required IPs for multi mode: {', '.join(missing)}", file=sys.stderr)
             return 1
-        allow_single = args.allow_single_ip_in_multi or _cfg_get(config, "multi", "allow_single_ip", default=False)
+        allow_single = args.allow_single_ip_in_multi or _cfg_get(
+            config,
+            "multi",
+            "allow_single_ip",
+            default=False,
+        )
         if len({data_ip, control_ip, app_ip}) < 2 and not allow_single:
             print(
                 "Multi mode requires at least two distinct node IPs. "
@@ -374,7 +410,11 @@ def main() -> int:
         replica_args = (
             args.replica
             or _cfg_get(config, "multi", "replicas", default=[])
-            or ([] if "CLUSTER_DB_REPLICA_HOSTS" not in env else env["CLUSTER_DB_REPLICA_HOSTS"].split(","))
+            or (
+                []
+                if "CLUSTER_DB_REPLICA_HOSTS" not in env
+                else env["CLUSTER_DB_REPLICA_HOSTS"].split(",")
+            )
         )
         replicas = []
         for value in replica_args:
