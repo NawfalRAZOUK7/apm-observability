@@ -1,0 +1,11 @@
+@startuml
+title Sequence - Bulk Ingest
+actor "Client" as Client
+participant "API /api/requests/ingest" as API
+database "TimescaleDB" as DB
+
+Client -> API : POST events (strict=false)
+API -> API : validate rows
+API -> DB : bulk insert
+API --> Client : {inserted, rejected, errors}
+@enduml

@@ -1,0 +1,20 @@
+\babel@toc {french}{}\relax 
+\contentsline {figure}{\numberline {1}{\ignorespaces Page d'accueil du site de TimescaleDB}}{5}{figure.1}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Architecture globale (stack principale)}}{8}{figure.2}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Flux d’ingestion et d’analyse des données}}{9}{figure.3}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Séquence d’ingestion en mode bulk}}{12}{figure.4}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Django Admin - liste des ApiRequest}}{13}{figure.5}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Cas d’usage principaux de la plateforme}}{14}{figure.6}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Diagramme de classes (modèle de données)}}{15}{figure.7}%
+\contentsline {figure}{\numberline {8}{\ignorespaces Topologie du cluster}}{16}{figure.8}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Flux de sauvegarde pgBackRest vers MinIO}}{17}{figure.9}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Bucket hot \texttt {pgbackrest}}}{18}{figure.10}%
+\contentsline {figure}{\numberline {11}{\ignorespaces Bucket cold \texttt {pgbackrest-cold}}}{18}{figure.11}%
+\contentsline {figure}{\numberline {12}{\ignorespaces Rapport Newman - Step 1 (CRUD + filtres)}}{20}{figure.12}%
+\contentsline {figure}{\numberline {13}{\ignorespaces Rapport Newman - Step 5 (KPIs / analytics)}}{21}{figure.13}%
+\contentsline {figure}{\numberline {14}{\ignorespaces Datasources Grafana (TimescaleDB et Prometheus)}}{23}{figure.14}%
+\contentsline {figure}{\numberline {15}{\ignorespaces Structure logique du dashboard Grafana}}{24}{figure.15}%
+\contentsline {figure}{\numberline {16}{\ignorespaces Dashboard Grafana (capture d'écran)}}{25}{figure.16}%
+\contentsline {figure}{\numberline {17}{\ignorespaces Dashboard APM Infra Overview}}{25}{figure.17}%
+\contentsline {figure}{\numberline {18}{\ignorespaces Dashboard APM Prometheus Targets}}{26}{figure.18}%
+\contentsline {figure}{\numberline {19}{\ignorespaces Prometheus /targets (état des cibles)}}{26}{figure.19}%

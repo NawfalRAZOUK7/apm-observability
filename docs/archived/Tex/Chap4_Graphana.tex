@@ -1,0 +1,27 @@
+\section{Supervision avec Grafana}
+
+\subsection{Présentation de Grafana}
+Grafana est une plateforme open-source de visualisation et de surveillance de données. Elle permet de créer des tableaux de bord interactifs et personnalisables, facilitant le suivi en temps réel des métriques provenant de diverses sources. Son interface intuitive rend l’analyse des données accessible, même pour des utilisateurs non techniques.
+
+\subsection{Intégration avec TimescaleDB}
+Grafana s’intègre facilement avec TimescaleDB, une base de données optimisée pour les séries temporelles. Cette intégration permet de récupérer et d’afficher efficacement des données historiques et en temps réel, offrant ainsi une visibilité complète sur les tendances et les anomalies.
+
+\subsection{Dashboard de monitoring}
+Le tableau de bord ci-dessous montre la supervision d’un système avec Grafana et TimescaleDB.
+
+Métriques affichées :
+\begin{itemize}
+    \item Nombre de requêtes par heure (hits/hour)
+    \item Latence moyenne par service
+    \item Taux d’erreur par endpoint
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/grafana_dashboard.png}
+    \caption{Dashboard Grafana de supervision}
+\end{figure}
+
+\subsection*{Conclusion}
+Pour la majorité des cas d’usage modernes, une solution cloud offre le meilleur compromis entre coût, performance et simplicité d’exploitation, tandis que l’on-premise reste réservé aux contraintes spécifiques (sécurité, conformité, souveraineté des données).
+

@@ -1,0 +1,81 @@
+\section{Mise en œuvre et expérimentation}
+
+\subsection{Démarrage et connexion}
+
+\subsubsection*{Lancement d'une instance TimescaleDB}
+Le projet fournit un environnement Docker prêt à l’emploi pour lancer une instance TimescaleDB. Il suffit de copier le fichier d’exemple `.env` et de démarrer les services via Docker Compose :
+
+\begin{verbatim}
+cp .env.example .env
+docker compose -f docker/docker-compose.yml up --build
+\end{verbatim}
+
+Cette commande initialise à la fois le conteneur TimescaleDB et le backend Django.
+
+\subsubsection*{Connexion à la base de données}
+Une fois le conteneur en fonctionnement, la connexion peut se faire directement depuis Docker :
+
+\begin{verbatim}
+docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm
+\end{verbatim}
+
+Il est également possible de se connecter depuis l’hôte si le port est exposé :
+
+\begin{verbatim}
+psql -h localhost -p 5432 -U apm -d apm
+\end{verbatim}
+
+\subsection{Prise en main}
+
+\subsubsection*{Création des tables}
+Les modèles Django sont déjà définis. La commande de migration crée automatiquement les tables nécessaires, incluant les hypertables de TimescaleDB :
+
+\begin{verbatim}
+python manage.py migrate
+\end{verbatim}
+
+\subsubsection*{Insertion et manipulation des données}
+Les données peuvent être insérées via l’API REST :
+
+\begin{verbatim}
+curl -X POST [http://127.0.0.1:8000/api/requests/](http://127.0.0.1:8000/api/requests/) 
+-H "Content-Type: application/json" 
+-d '{
+"time": "2025-12-14T12:00:00Z",
+"service": "billing",
+"endpoint": "/health",
+"method": "GET",
+"status_code": 200,
+"latency_ms": 42
+}'
+\end{verbatim}
+
+Les requêtes peuvent ensuite être consultées avec :
+
+\begin{verbatim}
+curl [http://127.0.0.1:8000/api/requests/](http://127.0.0.1:8000/api/requests/)
+\end{verbatim}
+
+\subsubsection*{Fonctionnalités spécifiques de TimescaleDB}
+Le projet utilise les particularités de TimescaleDB pour :
+
+\begin{itemize}
+    \item Créer des hypertables pour le partitionnement automatique.
+    \item Mettre en place des agrégats continus (hourly/daily) pour accélérer les requêtes analytiques.
+    \item Assurer un fallback sur PostgreSQL standard si TimescaleDB n’est pas disponible.
+\end{itemize}
+
+\subsection{Déploiement en cluster}
+
+\subsubsection*{Architecture générale}
+Le cluster repose sur plusieurs nœuds TimescaleDB orchestrés via Docker Compose, avec un backend Django commun pour l’API et l’ingestion des données.
+
+\subsubsection*{Cluster TimescaleDB avec Docker Compose}
+Chaque nœud est défini dans le fichier `docker-compose.yml`. Les conteneurs communiquent entre eux et partagent les configurations de réplication.
+
+\subsubsection*{Communication entre les nœuds}
+Les nœuds utilisent les ports internes Docker pour échanger les données et maintenir la cohérence des hypertables. Les services Django et TimescaleDB se connectent via des noms de service Docker.
+
+\subsubsection*{Sécurisation des accès}
+L’accès aux conteneurs se fait uniquement via les variables d’environnement définies dans `.env`. Les scripts de backup/restauration gèrent automatiquement les clés SSH pour sécuriser les opérations sans intervention manuelle.
+

@@ -1,0 +1,26 @@
+@startuml
+title Architecture Globale (Main Stack)
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Client APM" as Client
+
+rectangle "Main Stack" {
+  [Nginx] as Nginx
+  [Django API] as API
+  database "TimescaleDB" as DB
+  [Grafana] as Grafana
+}
+
+rectangle "Observability" {
+  [Prometheus] as Prom
+  [Node Exporter] as NodeExp
+}
+
+Client --> Nginx : HTTPS
+Nginx --> API : HTTP 8000
+API --> DB : SQL (PostgreSQL/TimescaleDB)
+Grafana --> DB : SQL
+Prom --> NodeExp : scrape
+Grafana --> Prom : metrics
+@enduml

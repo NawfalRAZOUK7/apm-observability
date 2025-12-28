@@ -1,0 +1,29 @@
+\section{Application pratique}
+
+\subsection{Sauvegardes et restauration}
+
+\subsubsection*{Backups hot et cold}
+Les scripts de sauvegarde supportent les backups à chaud et à froid. Toutes les opérations sont automatisées et idempotentes.
+
+\subsubsection*{Stockage compatible S3}
+Les backups peuvent être exportés vers un stockage compatible S3, facilitant la conservation et la restauration des données.
+
+\subsection{Données de test}
+
+\subsubsection*{Seeding de la base avec Faker}
+Pour les tests et démonstrations, la base peut être peuplée avec des données factices générées via la librairie Faker.
+
+\subsection{Tolérance aux pannes}
+
+\subsubsection*{Simulation de pannes}
+Des tests de tolérance sont possibles en simulant l’arrêt de nœuds Docker pour vérifier la résilience du cluster.
+
+\subsubsection*{Procédures de recovery}
+La restauration automatique depuis les backups permet de remettre rapidement le système en état de fonctionnement.
+
+\subsection{Optimisation}
+
+\subsubsection*{Index et performances}
+L’utilisation des hypertables, des agrégats continus et d’index spécifiques permet d’optimiser les performances des requêtes analytiques, notamment pour les KPI et les tableaux de bord.
+
+

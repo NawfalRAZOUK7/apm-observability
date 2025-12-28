@@ -1,0 +1,214 @@
+\section{Commandes et sorties}
+
+\subsection*{Initialisation (cluster)}
+\begin{verbatim}
+make up-all
+\end{verbatim}
+\textbf{Sortie (extrait)} :
+\begin{verbatim}
+[+] Running 3/3
+ OK Network apm-data_default   Created
+ OK Container apm-data-db-1    Started
+ OK Container apm-app-web-1    Started
+...
+\end{verbatim}
+
+\subsection*{Seed de donnees}
+\begin{verbatim}
+make seed
+\end{verbatim}
+\textbf{Sortie (extrait)} :
+\begin{verbatim}
+Seeded via ORM: inserted=1000
+\end{verbatim}
+
+\subsection*{Backups pgBackRest}
+\begin{verbatim}
+make pgbackrest-full
+\end{verbatim}
+\textbf{Sortie (extrait)} :
+\begin{verbatim}
+P00   INFO: backup start
+P00   INFO: backup stop
+P00   INFO: backup complete
+\end{verbatim}
+
+\subsection*{Healthcheck API}
+\begin{verbatim}
+curl -kI https://localhost:8443/api/health/ | head -n 5
+\end{verbatim}
+\textbf{Sortie (extrait)} :
+\begin{verbatim}
+HTTP/2 200
+content-type: application/json
+...
+\end{verbatim}
+
+\section{Structure du projet (extrait)}
+\begin{verbatim}
+docs/
+  report_latex/
+    main.tex
+    intro.tex
+    Chap1_Base.tex
+    Chap2_Mise.tex
+    Chap3_Pratique.tex
+    Chap4_Graphana.tex
+    conclusion.tex
+    annexes.tex
+    references.bib
+    images/
+docker/
+  cluster/
+  monitoring/
+observability/
+\end{verbatim}
+
+\section{Exemples de requetes SQL}
+\begin{verbatim}
+-- Hits par heure
+SELECT bucket AS time, hits
+FROM apirequest_hourly
+WHERE $__timeFilter(bucket)
+ORDER BY bucket;
+
+-- Taux d'erreur (%)
+SELECT
+  bucket AS time,
+  100.0 * errors / NULLIF(hits, 0) AS error_rate
+FROM apirequest_hourly
+WHERE $__timeFilter(bucket)
+ORDER BY bucket;
+\end{verbatim}
+
+\section{Extraits de configuration}
+\subsection*{Grafana datasource (cluster)}
+\begin{verbatim}
+type: postgres
+url: ${DATA_NODE_IP}:${CLUSTER_DATA_DB_HOST_PORT}
+database: ${POSTGRES_DB}
+user: ${POSTGRES_READONLY_USER}
+sslmode: ${DB_SSLMODE}
+\end{verbatim}
+
+\subsection*{pgBackRest (client)}
+\begin{verbatim}
+repo1-type=s3
+repo1-s3-endpoint=https://minio:9000
+repo1-s3-bucket=pgbackrest
+repo2-s3-bucket=pgbackrest-cold
+\end{verbatim}
+
+\section{Extraits de code et resultats}
+\subsection*{Ingestion API (Django)}
+\begin{lstlisting}[language=Python]
+def _parse_ingest_payload(self, data: Any) -> list[Any]:
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        if "events" not in data:
+            raise ValidationError(
+                {"detail": "Expected a list payload or an object with an 'events' list."}
+            )
+        events = data.get("events")
+        if not isinstance(events, list):
+            raise ValidationError({"events": "Must be a list of event objects."})
+        return events
+    raise ValidationError({"detail": "Expected JSON list or object payload."})
+
+@action(detail=False, methods=["post"], url_path="ingest")
+def ingest(self, request, *args, **kwargs):
+    strict = self._get_bool_qp(request, "strict", default=False)
+    events = self._parse_ingest_payload(request.data)
+    # ...
+    if strict and invalid_found:
+        return Response(
+            {"detail": "Strict mode enabled: payload contains invalid items.",
+             "inserted": 0, "rejected": len(events), "errors": errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    instances = [ApiRequest(**row) for row in validated_rows]
+    if instances:
+        with transaction.atomic():
+            ApiRequest.objects.bulk_create(instances, batch_size=batch_size)
+\end{lstlisting}
+
+\subsection*{Migration TimescaleDB (hypertable)}
+\begin{lstlisting}[language=Python]
+def forwards(apps, schema_editor):
+    statements = [
+        """
+        DO $$
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS timescaledb;
+        END $$;
+        """,
+        """
+        DO $$
+        BEGIN
+            PERFORM create_hypertable(
+                'observability_apirequest',
+                'time',
+                if_not_exists => TRUE,
+                migrate_data => TRUE,
+                create_default_indexes => FALSE,
+                chunk_time_interval => INTERVAL '1 day'
+            );
+        END $$;
+        """,
+    ]
+    with schema_editor.connection.cursor() as cursor:
+        for sql in statements:
+            cursor.execute(sql)
+\end{lstlisting}
+
+\subsection*{Extrait JUnit (Step 1)}
+\begin{lstlisting}[language=XML]
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability - Step 1 (CRUD + Filters)" tests="14" time="3.394">
+  <testsuite name="00 - Create sample A (older time, 500)" tests="1" failures="0" errors="0">
+    <testcase name="Status 201" time="0.252"/>
+  </testsuite>
+  <testsuite name="10 - GET list (default ordering -time)" tests="3" failures="0" errors="0">
+    <testcase name="Status 200" time="0.053"/>
+    <testcase name="Has array" time="0.053"/>
+    <testcase name="Ordered by -time (non-increasing)" time="0.053"/>
+  </testsuite>
+</testsuites>
+\end{lstlisting}
+
+\subsection*{Resultat KPI (JSON)}
+\begin{lstlisting}[language=Java]
+{
+  "hits": 7,
+  "errors": 1,
+  "error_rate": 0.14285714285714285,
+  "avg_latency_ms": 151.14285714285714,
+  "p95_latency_ms": 446.99999999999994,
+  "max_latency_ms": 540,
+  "source": "hourly"
+}
+\end{lstlisting}
+
+\subsection*{Top endpoints (JSON)}
+\begin{lstlisting}[language=Java]
+{
+  "source": "hourly",
+  "results": [
+    {"service": "api", "endpoint": "/health", "hits": 2, "errors": 0, "error_rate": 0.0, "avg_latency_ms": 15.0, "p95_latency_ms": null, "max_latency_ms": 15},
+    {"service": "billing", "endpoint": "/x", "hits": 2, "errors": 1, "error_rate": 0.5, "avg_latency_ms": 330.0, "p95_latency_ms": null, "max_latency_ms": 540},
+    {"service": "api", "endpoint": "/orders", "hits": 1, "errors": 0, "error_rate": 0.0, "avg_latency_ms": 105.0, "p95_latency_ms": null, "max_latency_ms": 105},
+    {"service": "auth", "endpoint": "/login", "hits": 1, "errors": 0, "error_rate": 0.0, "avg_latency_ms": 230.0, "p95_latency_ms": null, "max_latency_ms": 230},
+    {"service": "web", "endpoint": "/home", "hits": 1, "errors": 0, "error_rate": 0.0, "avg_latency_ms": 33.0, "p95_latency_ms": null, "max_latency_ms": 33}
+  ]
+}
+\end{lstlisting}
+
+\section{Autres recommandations}
+\begin{itemize}
+    \item Ajouter une liste d'acronymes (APM, CAGG, WAL, MVCC).
+    \item Documenter les prerequis exacts (versions Docker/Python/Node).
+    \item Ajouter des captions avec sources pour les figures.
+    \item Normaliser la terminologie (FR/EN) dans tout le document.
+    \item Ajouter un court paragraphe de limites et risques.
+\end{itemize}

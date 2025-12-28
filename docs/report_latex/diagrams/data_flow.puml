@@ -1,0 +1,17 @@
+@startuml
+title Data Flow - Ingestion to Dashboards
+start
+:Client sends request(s);
+if (Bulk ingest?) then (yes)
+  :POST /api/requests/ingest/;
+else (no)
+  :POST /api/requests/;
+endif
+:Validate payload;
+:Write ApiRequest rows;
+:Hypertable stores time-series data;
+:Continuous aggregates (hourly/daily);
+:Analytics endpoints /hourly /daily /kpis /top-endpoints;
+:Grafana queries TimescaleDB;
+stop
+@enduml

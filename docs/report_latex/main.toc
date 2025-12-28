@@ -1,0 +1,35 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {I}Introduction}{4}{section.1}%
+\contentsline {section}{\numberline {II}Présentation de la base}{5}{section.2}%
+\contentsline {subsection}{\numberline {II.1}Use Case de la base}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {II.2}Architecture interne de la base}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {II.3}Particularités de la base de données}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {II.4}Comparaison avec Oracle Database}{6}{subsection.2.4}%
+\contentsline {subsection}{\numberline {II.5}Comparaison On-Premise et Cloud}{6}{subsection.2.5}%
+\contentsline {section}{\numberline {III}Mise en œuvre et expérimentation}{8}{section.3}%
+\contentsline {subsection}{\numberline {III.1}Architecture globale}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {III.2}Flux de données}{9}{subsection.3.2}%
+\contentsline {subsection}{\numberline {III.3}Démarrage et connexion}{10}{subsection.3.3}%
+\contentsline {subsection}{\numberline {III.4}Prise en main}{10}{subsection.3.4}%
+\contentsline {subsection}{\numberline {III.5}Cas d’usage et modèle de données}{14}{subsection.3.5}%
+\contentsline {subsection}{\numberline {III.6}Déploiement en cluster}{16}{subsection.3.6}%
+\contentsline {section}{\numberline {IV}Application pratique}{17}{section.4}%
+\contentsline {subsection}{\numberline {IV.1}Sauvegardes et restauration}{17}{subsection.4.1}%
+\contentsline {subsection}{\numberline {IV.2}Données de test}{19}{subsection.4.2}%
+\contentsline {subsection}{\numberline {IV.3}Tolérance aux pannes}{19}{subsection.4.3}%
+\contentsline {subsection}{\numberline {IV.4}Optimisation}{19}{subsection.4.4}%
+\contentsline {subsection}{\numberline {IV.5}Tests et validation}{20}{subsection.4.5}%
+\contentsline {section}{\numberline {V}Supervision avec Grafana}{22}{section.5}%
+\contentsline {subsection}{\numberline {V.1}Présentation de Grafana}{22}{subsection.5.1}%
+\contentsline {subsection}{\numberline {V.2}Intégration avec TimescaleDB}{22}{subsection.5.2}%
+\contentsline {subsection}{\numberline {V.3}Configuration de la datasource TimescaleDB}{22}{subsection.5.3}%
+\contentsline {subsection}{\numberline {V.4}Exemples de requêtes SQL (panels)}{23}{subsection.5.4}%
+\contentsline {subsection}{\numberline {V.5}Dashboard de monitoring}{24}{subsection.5.5}%
+\contentsline {subsection}{\numberline {V.6}Infrastructure et targets (Prometheus)}{25}{subsection.5.6}%
+\contentsline {section}{\numberline {VI}Conclusion et perspectives}{27}{section.6}%
+\contentsline {section}{\numberline {A}Commandes et sorties}{28}{appendix.A}%
+\contentsline {section}{\numberline {B}Structure du projet (extrait)}{28}{appendix.B}%
+\contentsline {section}{\numberline {C}Exemples de requetes SQL}{29}{appendix.C}%
+\contentsline {section}{\numberline {D}Extraits de configuration}{29}{appendix.D}%
+\contentsline {section}{\numberline {E}Extraits de code et resultats}{29}{appendix.E}%
+\contentsline {section}{\numberline {F}Autres recommandations}{32}{appendix.F}%

@@ -1,0 +1,15 @@
+\section{Conclusion et perspectives}
+
+Ce travail a permis de mettre en place une plateforme d’observabilité APM cohérente, couvrant l’ingestion, le stockage, l’analyse et la visualisation des données. L’usage de TimescaleDB pour les séries temporelles, associé à des vues continues pour les KPI, apporte un socle performant et maintenable. La supervision via Prometheus et Grafana fournit une vision claire de la disponibilité, de la latence et du taux d’erreur, tandis que l’intégration des sauvegardes pgBackRest avec MinIO améliore la résilience globale. Les jeux de tests Postman/Newman et les scripts de déploiement documentés rendent la solution reproductible.
+
+Sur le plan d’architecture, nous avons validé une configuration en mode cluster adaptée aux besoins de supervision et de charge. Ce choix facilite l’évolutivité, la séparation des responsabilités et la montée en puissance future. Dans un contexte de production, le cloud reste souvent le meilleur compromis en termes de coût, d’élasticité et d’exploitation, tandis que l’on-premise répond surtout aux exigences fortes de souveraineté et de conformité.
+
+\subsection*{Perspectives}
+Plusieurs axes peuvent enrichir la plateforme :
+\begin{itemize}
+    \item mise en place d’alertes avancées et d’objectifs SLO/SLA ;
+    \item ajout de traces distribuées (OpenTelemetry) pour compléter métriques et logs ;
+    \item optimisation des coûts via politiques de rétention, compression et archivage ;
+    \item industrialisation CI/CD pour automatiser tests, migrations et déploiements ;
+    \item durcissement sécurité (RBAC, rotation des secrets, auditabilité).
+\end{itemize}
