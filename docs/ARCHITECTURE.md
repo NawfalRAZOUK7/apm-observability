@@ -17,6 +17,16 @@ Local or generated artifacts are called out, but not enumerated file-by-file:
   node-exporter, and a TLS proxy for Grafana/Prometheus.
 - Main stack (single-node): `docker/docker-compose.yml` for local dev.
 
+## Architecture visuals
+Architecture overview:
+![Architecture overview](images/architecture.png)
+
+Data flow (ingestion to analytics):
+![Data flow](images/data-flow.png)
+
+Cluster topology:
+![Cluster topology](images/cluster-topology.png)
+
 ## Repository Layout
 
 ### Root (top level)

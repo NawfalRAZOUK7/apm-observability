@@ -14,6 +14,19 @@ and a multi-node cluster layout (DATA / CONTROL / APP).
 - Ansible-based deployment automation.
 - CI pipeline for lint, tests, and Docker compose smoke.
 
+## Screenshots
+Architecture overview:
+![Architecture overview](docs/images/architecture.png)
+
+Data flow (ingestion to analytics):
+![Data flow](docs/images/data-flow.png)
+
+Cluster topology:
+![Cluster topology](docs/images/cluster-topology.png)
+
+Grafana dashboard:
+![Grafana dashboard](docs/images/grafana-dashboard.png)
+
 ## Quick Start (single-machine cluster)
 This is the recommended local mode that mirrors the multi-node design.
 

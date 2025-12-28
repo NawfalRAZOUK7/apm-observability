@@ -80,3 +80,19 @@ Lien projet:
 - Index definitions: `observability/models.py`
 - Migrations: `observability/migrations/0005_step5_indexes.py`,
   `observability/migrations/0007_task7_indexes.py`
+
+## 3.6 Captures (backups et tests)
+Flux de sauvegarde pgBackRest vers MinIO:
+![Backup flow](../images/backup-flow.png)
+
+MinIO - bucket hot (pgbackrest):
+![MinIO hot](../images/minio-pgbackrest-hot.png)
+
+MinIO - bucket cold (pgbackrest-cold):
+![MinIO cold](../images/minio-pgbackrest-cold.png)
+
+Rapport de tests (Step 1):
+![Tests step1](../images/tests-step1-report.png)
+
+Rapport de tests (Step 5):
+![Tests step5](../images/tests-step5-report.png)

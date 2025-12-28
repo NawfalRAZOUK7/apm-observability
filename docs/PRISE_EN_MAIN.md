@@ -117,6 +117,16 @@ Astuce: ces commandes affichent `host.docker.internal` pour les containers.
 Dans le navigateur, utiliser l'IP LAN de la machine (ex: 192.168.x.x) en HTTPS.
 Note: certificat local auto-signe => accepter l'avertissement du navigateur.
 
+## Captures de validation (UI)
+Admin Django (liste des requetes):
+![Admin Django - ApiRequest](images/django-admin-apirequest.png)
+
+Grafana datasources (TimescaleDB + Prometheus):
+![Grafana datasources](images/grafana-datasources.png)
+
+Dashboard Grafana (APM):
+![Grafana dashboard](images/grafana-dashboard.png)
+
 ## 11) Arret des services (optionnel)
 ```
 make down-all

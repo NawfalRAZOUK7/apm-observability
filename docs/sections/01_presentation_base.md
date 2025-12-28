@@ -15,6 +15,9 @@ PostgreSQL est une base relationnelle open-source. TimescaleDB ajoute des
 capacites time-series (hypertables, continuous aggregates) ideales pour les
 metriques APM et les requetes temporelles a grande echelle.
 
+Capture (site officiel TimescaleDB):
+![TimescaleDB](../images/timescaledb-home.png)
+
 Dans notre projet:
 - Les requetes APM sont stockees dans `observability.models.ApiRequest`.
 - Le temps est la cle de partition (hypertable) pour les volumes importants.

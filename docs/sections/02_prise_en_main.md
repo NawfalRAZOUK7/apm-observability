@@ -138,3 +138,10 @@ bash scripts/step2_test.sh
 Variables reseau:
 - `CLUSTER_DB_PRIMARY_HOST`, `CLUSTER_DB_REPLICA_HOSTS`, `CLUSTER_DB_HOSTS`
 - IPs des nodes dans `docker/cluster/.env.cluster`
+
+## 2.7 Validation via interfaces
+Admin Django (liste des requetes):
+![Admin Django - ApiRequest](../images/django-admin-apirequest.png)
+
+Grafana datasources (TimescaleDB + Prometheus):
+![Grafana datasources](../images/grafana-datasources.png)

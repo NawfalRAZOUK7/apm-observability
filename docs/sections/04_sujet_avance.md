@@ -38,3 +38,13 @@ Lien projet:
 - Control stack: `docker/cluster/docker-compose.control.yml`
 - TLS proxy monitoring: `docker/monitoring/nginx/conf.d/monitoring.conf`
 - Make targets: `make grafana`, `make prometheus`, `make targets`
+
+## 4.4 Captures (monitoring)
+Grafana - infra overview:
+![Grafana infra](../images/grafana-infra.png)
+
+Grafana - Prometheus targets dashboard:
+![Grafana targets](../images/grafana-targets.png)
+
+Prometheus /targets:
+![Prometheus targets](../images/prometheus-targets.png)
