@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_top_endpoints.TopEndpointsEndpointTests-20251229011827" tests="6" file="observability/tests/test_top_endpoints.py" time="3.218" timestamp="2025-12-29T01:18:38" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_params_validation_bad_sort_returns_400" time="0.240" timestamp="2025-12-29T01:18:34" file="observability/tests/test_top_endpoints.py" line="133"/>
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_sort_by_avg_latency_desc_orders_slowest_first" time="0.411" timestamp="2025-12-29T01:18:35" file="observability/tests/test_top_endpoints.py" line="186"/>
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_sort_by_error_rate_desc_orders_highest_first" time="1.363" timestamp="2025-12-29T01:18:36" file="observability/tests/test_top_endpoints.py" line="175"/>
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_sort_by_hits_asc_orders_smallest_first" time="0.304" timestamp="2025-12-29T01:18:37" file="observability/tests/test_top_endpoints.py" line="165"/>
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_sort_by_hits_desc_orders_biggest_first" time="0.388" timestamp="2025-12-29T01:18:37" file="observability/tests/test_top_endpoints.py" line="137"/>
+	<testcase classname="observability.tests.test_top_endpoints.TopEndpointsEndpointTests" name="test_with_p95_true_includes_p95_field" time="0.512" timestamp="2025-12-29T01:18:38" file="observability/tests/test_top_endpoints.py" line="198"/>
+</testsuite>

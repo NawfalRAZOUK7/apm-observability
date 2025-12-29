@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability — Step 5 (KPIs + Top Endpoints)" tests="5" time="0.598">
+  <testsuite name="KPIs — default" id="03db5282-8569-48f5-ae5f-b53d2bf63181" timestamp="2025-12-29T00:34:52.693Z" tests="2" failures="0" errors="0" time="0.204">
+    <testcase name="Status is 200" time="0.204" classname="KpIsDefault"/>
+    <testcase name="Has KPI keys" time="0.204" classname="KpIsDefault"/>
+  </testsuite>
+  <testsuite name="KPIs — filtered by service" id="f023a329-66cb-4aa4-aff3-d40c73bbadc5" timestamp="2025-12-29T00:34:52.693Z" tests="2" failures="0" errors="0" time="0.063">
+    <testcase name="Status is 200" time="0.063" classname="KpIsFilteredByService"/>
+    <testcase name="Has source" time="0.063" classname="KpIsFilteredByService"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by hits (desc)" id="e46ed3c1-7f39-4433-9c87-808a02bb7792" timestamp="2025-12-29T00:34:52.693Z" tests="2" failures="0" errors="0" time="0.174">
+    <testcase name="Status is 200" time="0.174" classname="TopEndpointsByHitsDesc"/>
+    <testcase name="Has source + results array" time="0.174" classname="TopEndpointsByHitsDesc"/>
+  </testsuite>
+  <testsuite name="Top Endpoints — by error_rate (desc)" id="95ee933c-a2d7-45b1-a5bc-072598011d4c" timestamp="2025-12-29T00:34:52.693Z" tests="2" failures="0" errors="0" time="0.101">
+    <testcase name="Status is 200" time="0.101" classname="TopEndpointsByErrorRateDesc"/>
+    <testcase name="Has source + results array" time="0.101" classname="TopEndpointsByErrorRateDesc"/>
+  </testsuite>
+  <testsuite name="Semantic Search — errors (q=timeout)" id="292f00fa-fae0-4ddc-8f09-17d59e64dff9" timestamp="2025-12-29T00:34:52.693Z" tests="2" failures="0" errors="0" time="0.056">
+    <testcase name="Status is 200 or 503" time="0.056" classname="SemanticSearchErrorsQTimeout"/>
+    <testcase name="Semantic search unavailable (expected when embeddings are disabled)" time="0.056" classname="SemanticSearchErrorsQTimeout"/>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,1707 @@
+{
+  "collection": {
+    "_": {
+      "postman_id": "6b8c9c6d-7f3f-4b1c-9e2a-2a1e1b9d0002"
+    },
+    "item": [
+      {
+        "id": "b97627a0-952b-4d2d-a249-7ca9d0c7b894",
+        "name": "Ingest — valid (raw list)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:00:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 200,\n    \"latency_ms\": 123,\n    \"trace_id\": \"trace-ok-1\",\n    \"user_ref\": \"user-001\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:01:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 201,\n    \"latency_ms\": 10,\n    \"trace_id\": \"trace-ok-2\",\n    \"user_ref\": \"user-002\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "b81f627f-ec1b-4e41-8223-294144a54864",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('status is 200', function () {",
+                "  pm.response.to.have.status(200);",
+                "});",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('inserted is 2', function () {",
+                "  pm.expect(json.inserted).to.eql(2);",
+                "});",
+                "pm.test('rejected is 0', function () {",
+                "  pm.expect(json.rejected).to.eql(0);",
+                "});"
+              ],
+              "_lastExecutionId": "df9e5bee-36b6-41eb-b812-6eae501a50c1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "ef1cb3ba-de22-4d0b-ba64-f288388c93dd",
+        "name": "Ingest — mixed invalid (raw list)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:02:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-3\",\n    \"user_ref\": \"user-003\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:03:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-1\",\n    \"user_ref\": \"user-004\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "5b140c8b-c83b-4ece-b21e-5bab428d7705",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('status is 200', function () {",
+                "  pm.response.to.have.status(200);",
+                "});",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('inserted is 1', function () {",
+                "  pm.expect(json.inserted).to.eql(1);",
+                "});",
+                "pm.test('rejected is 1', function () {",
+                "  pm.expect(json.rejected).to.eql(1);",
+                "});",
+                "pm.test('errors contains index 1', function () {",
+                "  pm.expect(json.errors).to.be.an('array');",
+                "  pm.expect(json.errors.length).to.be.greaterThan(0);",
+                "  pm.expect(json.errors[0]).to.have.property('index', 1);",
+                "});"
+              ],
+              "_lastExecutionId": "4d381fe1-0bac-404f-be78-d2d34c759b43"
+            }
+          }
+        ]
+      },
+      {
+        "id": "e12c098a-bdd3-4422-95ba-2c445f1bc08b",
+        "name": "Ingest — wrapper {events: [...]}",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"events\": [\n    {\n      \"time\": \"2025-12-14T12:04:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/login\",\n      \"method\": \"POST\",\n      \"status_code\": 200,\n      \"latency_ms\": 80,\n      \"trace_id\": \"trace-w-1\",\n      \"user_ref\": \"user-005\",\n      \"tags\": {\"env\": \"test\"}\n    },\n    {\n      \"time\": \"2025-12-14T12:05:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/logout\",\n      \"method\": \"POST\",\n      \"status_code\": 204,\n      \"latency_ms\": 20,\n      \"trace_id\": \"trace-w-2\",\n      \"user_ref\": \"user-006\",\n      \"tags\": {\"env\": \"test\"}\n    }\n  ]\n}"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "8415fe2a-32c6-40e2-a1f6-a31937f48159",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('status is 200', function () {",
+                "  pm.response.to.have.status(200);",
+                "});",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('inserted is 2', function () {",
+                "  pm.expect(json.inserted).to.eql(2);",
+                "});",
+                "pm.test('rejected is 0', function () {",
+                "  pm.expect(json.rejected).to.eql(0);",
+                "});"
+              ],
+              "_lastExecutionId": "c4530454-6923-48e0-8bc9-fbb32e9dcbc0"
+            }
+          }
+        ]
+      },
+      {
+        "id": "2081c33b-c69f-44fb-b068-3c4aefd75d77",
+        "name": "Ingest — strict=true (mixed invalid)",
+        "request": {
+          "url": {
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "{{base_url}}"
+            ],
+            "query": [
+              {
+                "key": "strict",
+                "value": "true"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:06:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-strict\",\n    \"user_ref\": \"user-010\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:07:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-strict\",\n    \"user_ref\": \"user-011\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": [],
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "id": "e89e550d-0f82-4cde-9bb1-6748515156d2",
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('status is 400', function () {",
+                "  pm.response.to.have.status(400);",
+                "});",
+                "",
+                "const json = pm.response.json();",
+                "pm.test('inserted is 0', function () {",
+                "  pm.expect(json.inserted).to.eql(0);",
+                "});",
+                "pm.test('rejected > 0', function () {",
+                "  pm.expect(json.rejected).to.be.above(0);",
+                "});"
+              ],
+              "_lastExecutionId": "21d07173-cee3-479e-bd70-767e108b9ddf"
+            }
+          }
+        ]
+      }
+    ],
+    "event": [],
+    "variable": [
+      {
+        "type": "string",
+        "value": "https://{{app_host}}:{{app_https_port}}",
+        "key": "base_url"
+      },
+      {
+        "type": "string",
+        "value": "127.0.0.1",
+        "key": "app_host"
+      },
+      {
+        "type": "string",
+        "value": "8443",
+        "key": "app_https_port"
+      }
+    ],
+    "info": {
+      "_postman_id": "6b8c9c6d-7f3f-4b1c-9e2a-2a1e1b9d0002",
+      "name": "APM Observability — Step 2 (Ingest)",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    }
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_using": "Newman"
+    },
+    "id": "16027f52-666e-46eb-8ebf-f985fd09d426",
+    "name": "APM Observability - Main (Local)",
+    "values": [
+      {
+        "type": "any",
+        "value": "https://127.0.0.1:8443",
+        "key": "base_url"
+      },
+      {
+        "type": "any",
+        "value": "127.0.0.1",
+        "key": "app_host"
+      },
+      {
+        "type": "any",
+        "value": "8443",
+        "key": "app_https_port"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_a"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_b"
+      },
+      {
+        "type": "any",
+        "value": "",
+        "key": "id_c"
+      }
+    ]
+  },
+  "globals": {
+    "id": "fd900f03-d18e-4b23-b23c-87ecdeaadb00",
+    "values": []
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 13,
+        "pending": 0,
+        "failed": 0
+      },
+      "testScripts": {
+        "total": 4,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 0,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 550.5,
+      "responseMin": 33,
+      "responseMax": 1050,
+      "responseSd": 441.25757783861343,
+      "dnsAverage": 0,
+      "dnsMin": 0,
+      "dnsMax": 0,
+      "dnsSd": 0,
+      "firstByteAverage": 0,
+      "firstByteMin": 0,
+      "firstByteMax": 0,
+      "firstByteSd": 0,
+      "started": 1766971071402,
+      "completed": 1766971074031
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 4,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "ee0c1fa1-b1c5-4897-86ea-9a1d539d60b6",
+          "httpRequestId": "27171906-7230-48c8-8d70-02bdcfa3d5f2"
+        },
+        "item": {
+          "id": "b97627a0-952b-4d2d-a249-7ca9d0c7b894",
+          "name": "Ingest — valid (raw list)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "ingest",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"time\": \"2025-12-14T12:00:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 200,\n    \"latency_ms\": 123,\n    \"trace_id\": \"trace-ok-1\",\n    \"user_ref\": \"user-001\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:01:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 201,\n    \"latency_ms\": 10,\n    \"trace_id\": \"trace-ok-2\",\n    \"user_ref\": \"user-002\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "b81f627f-ec1b-4e41-8223-294144a54864",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('inserted is 2', function () {",
+                  "  pm.expect(json.inserted).to.eql(2);",
+                  "});",
+                  "pm.test('rejected is 0', function () {",
+                  "  pm.expect(json.rejected).to.eql(0);",
+                  "});"
+                ],
+                "_lastExecutionId": "df9e5bee-36b6-41eb-b812-6eae501a50c1"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "8443",
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "68007553-d528-43e7-9cba-39634147ed37",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8443",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "523",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:00:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 200,\n    \"latency_ms\": 123,\n    \"trace_id\": \"trace-ok-1\",\n    \"user_ref\": \"user-001\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:01:00Z\",\n    \"service\": \"billing\",\n    \"endpoint\": \"/api/v1/invoices\",\n    \"method\": \"GET\",\n    \"status_code\": 201,\n    \"latency_ms\": 10,\n    \"trace_id\": \"trace-ok-2\",\n    \"user_ref\": \"user-002\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": {
+          "id": "3689e916-7c0b-4eff-94cf-58bf595d4e24",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 29 Dec 2025 01:17:52 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "39"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "POST, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              34,
+              58,
+              50,
+              44,
+              34,
+              114,
+              101,
+              106,
+              101,
+              99,
+              116,
+              101,
+              100,
+              34,
+              58,
+              48,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              91,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 921,
+          "responseSize": 39
+        },
+        "id": "b97627a0-952b-4d2d-a249-7ca9d0c7b894",
+        "assertions": [
+          {
+            "assertion": "status is 200",
+            "skipped": false
+          },
+          {
+            "assertion": "inserted is 2",
+            "skipped": false
+          },
+          {
+            "assertion": "rejected is 0",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "1e8c1055-a0f3-450f-958d-a561775e0cce",
+          "length": 4,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0,
+          "httpRequestId": "32016f0f-f6f1-4423-8e3e-a8bfeab4c9c6"
+        },
+        "item": {
+          "id": "ef1cb3ba-de22-4d0b-ba64-f288388c93dd",
+          "name": "Ingest — mixed invalid (raw list)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "ingest",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"time\": \"2025-12-14T12:02:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-3\",\n    \"user_ref\": \"user-003\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:03:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-1\",\n    \"user_ref\": \"user-004\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "5b140c8b-c83b-4ece-b21e-5bab428d7705",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('inserted is 1', function () {",
+                  "  pm.expect(json.inserted).to.eql(1);",
+                  "});",
+                  "pm.test('rejected is 1', function () {",
+                  "  pm.expect(json.rejected).to.eql(1);",
+                  "});",
+                  "pm.test('errors contains index 1', function () {",
+                  "  pm.expect(json.errors).to.be.an('array');",
+                  "  pm.expect(json.errors.length).to.be.greaterThan(0);",
+                  "  pm.expect(json.errors[0]).to.have.property('index', 1);",
+                  "});"
+                ],
+                "_lastExecutionId": "4d381fe1-0bac-404f-be78-d2d34c759b43"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "8443",
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "6038a4a1-4147-4ef8-9b9d-db462ad6c3fd",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8443",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "520",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:02:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-3\",\n    \"user_ref\": \"user-003\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:03:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-1\",\n    \"user_ref\": \"user-004\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": {
+          "id": "8ecddc65-33b2-4310-8fee-c7b50973d842",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 29 Dec 2025 01:17:53 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "131"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "POST, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              34,
+              58,
+              49,
+              44,
+              34,
+              114,
+              101,
+              106,
+              101,
+              99,
+              116,
+              101,
+              100,
+              34,
+              58,
+              49,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              91,
+              123,
+              34,
+              105,
+              110,
+              100,
+              101,
+              120,
+              34,
+              58,
+              49,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              123,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              91,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              32,
+              109,
+              117,
+              115,
+              116,
+              32,
+              98,
+              101,
+              32,
+              97,
+              32,
+              118,
+              97,
+              108,
+              105,
+              100,
+              32,
+              72,
+              84,
+              84,
+              80,
+              32,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              32,
+              40,
+              49,
+              48,
+              48,
+              46,
+              46,
+              53,
+              57,
+              57,
+              41,
+              46,
+              34,
+              93,
+              125,
+              125,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 1050,
+          "responseSize": 131
+        },
+        "id": "ef1cb3ba-de22-4d0b-ba64-f288388c93dd",
+        "assertions": [
+          {
+            "assertion": "status is 200",
+            "skipped": false
+          },
+          {
+            "assertion": "inserted is 1",
+            "skipped": false
+          },
+          {
+            "assertion": "rejected is 1",
+            "skipped": false
+          },
+          {
+            "assertion": "errors contains index 1",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "e8ea60bb-ac03-4490-b909-5ccd31072237",
+          "length": 4,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0,
+          "httpRequestId": "4a88b2de-0613-4b65-9d4f-d049a560505f"
+        },
+        "item": {
+          "id": "e12c098a-bdd3-4422-95ba-2c445f1bc08b",
+          "name": "Ingest — wrapper {events: [...]}",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "ingest",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"time\": \"2025-12-14T12:04:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/login\",\n      \"method\": \"POST\",\n      \"status_code\": 200,\n      \"latency_ms\": 80,\n      \"trace_id\": \"trace-w-1\",\n      \"user_ref\": \"user-005\",\n      \"tags\": {\"env\": \"test\"}\n    },\n    {\n      \"time\": \"2025-12-14T12:05:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/logout\",\n      \"method\": \"POST\",\n      \"status_code\": 204,\n      \"latency_ms\": 20,\n      \"trace_id\": \"trace-w-2\",\n      \"user_ref\": \"user-006\",\n      \"tags\": {\"env\": \"test\"}\n    }\n  ]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "8415fe2a-32c6-40e2-a1f6-a31937f48159",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('inserted is 2', function () {",
+                  "  pm.expect(json.inserted).to.eql(2);",
+                  "});",
+                  "pm.test('rejected is 0', function () {",
+                  "  pm.expect(json.rejected).to.eql(0);",
+                  "});"
+                ],
+                "_lastExecutionId": "c4530454-6923-48e0-8bc9-fbb32e9dcbc0"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "8443",
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "20c7a43e-c7e7-409d-a017-9f2689c1792c",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8443",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "573",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"events\": [\n    {\n      \"time\": \"2025-12-14T12:04:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/login\",\n      \"method\": \"POST\",\n      \"status_code\": 200,\n      \"latency_ms\": 80,\n      \"trace_id\": \"trace-w-1\",\n      \"user_ref\": \"user-005\",\n      \"tags\": {\"env\": \"test\"}\n    },\n    {\n      \"time\": \"2025-12-14T12:05:00Z\",\n      \"service\": \"auth\",\n      \"endpoint\": \"/api/v1/logout\",\n      \"method\": \"POST\",\n      \"status_code\": 204,\n      \"latency_ms\": 20,\n      \"trace_id\": \"trace-w-2\",\n      \"user_ref\": \"user-006\",\n      \"tags\": {\"env\": \"test\"}\n    }\n  ]\n}"
+          }
+        },
+        "response": {
+          "id": "bbd08501-050f-44e2-8565-b98157da140c",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 29 Dec 2025 01:17:53 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "39"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "POST, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              34,
+              58,
+              50,
+              44,
+              34,
+              114,
+              101,
+              106,
+              101,
+              99,
+              116,
+              101,
+              100,
+              34,
+              58,
+              48,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              91,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 198,
+          "responseSize": 39
+        },
+        "id": "e12c098a-bdd3-4422-95ba-2c445f1bc08b",
+        "assertions": [
+          {
+            "assertion": "status is 200",
+            "skipped": false
+          },
+          {
+            "assertion": "inserted is 2",
+            "skipped": false
+          },
+          {
+            "assertion": "rejected is 0",
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "5ff8720e-3d95-4310-a87a-01a5838b204e",
+          "length": 4,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0,
+          "httpRequestId": "5bd99c60-2aeb-4209-8f1f-2ebdbe90c1e6"
+        },
+        "item": {
+          "id": "2081c33b-c69f-44fb-b068-3c4aefd75d77",
+          "name": "Ingest — strict=true (mixed invalid)",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "requests",
+                "ingest",
+                ""
+              ],
+              "host": [
+                "{{base_url}}"
+              ],
+              "query": [
+                {
+                  "key": "strict",
+                  "value": "true"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"time\": \"2025-12-14T12:06:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-strict\",\n    \"user_ref\": \"user-010\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:07:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-strict\",\n    \"user_ref\": \"user-011\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "e89e550d-0f82-4cde-9bb1-6748515156d2",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test('inserted is 0', function () {",
+                  "  pm.expect(json.inserted).to.eql(0);",
+                  "});",
+                  "pm.test('rejected > 0', function () {",
+                  "  pm.expect(json.rejected).to.be.above(0);",
+                  "});"
+                ],
+                "_lastExecutionId": "21d07173-cee3-479e-bd70-767e108b9ddf"
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": {
+            "protocol": "https",
+            "port": "8443",
+            "path": [
+              "api",
+              "requests",
+              "ingest",
+              ""
+            ],
+            "host": [
+              "127",
+              "0",
+              "0",
+              "1"
+            ],
+            "query": [
+              {
+                "key": "strict",
+                "value": "true"
+              }
+            ],
+            "variable": []
+          },
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/7.39.1",
+              "system": true
+            },
+            {
+              "key": "Accept",
+              "value": "*/*",
+              "system": true
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache",
+              "system": true
+            },
+            {
+              "key": "Postman-Token",
+              "value": "5843e07b-2a48-4055-9bcb-827516368419",
+              "system": true
+            },
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8443",
+              "system": true
+            },
+            {
+              "key": "Accept-Encoding",
+              "value": "gzip, deflate, br",
+              "system": true
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive",
+              "system": true
+            },
+            {
+              "key": "Content-Length",
+              "value": "530",
+              "system": true
+            }
+          ],
+          "method": "POST",
+          "body": {
+            "mode": "raw",
+            "raw": "[\n  {\n    \"time\": \"2025-12-14T12:06:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 201,\n    \"latency_ms\": 250,\n    \"trace_id\": \"trace-ok-strict\",\n    \"user_ref\": \"user-010\",\n    \"tags\": {\"env\": \"test\"}\n  },\n  {\n    \"time\": \"2025-12-14T12:07:00Z\",\n    \"service\": \"orders\",\n    \"endpoint\": \"/api/v1/orders\",\n    \"method\": \"POST\",\n    \"status_code\": 700,\n    \"latency_ms\": 50,\n    \"trace_id\": \"trace-bad-strict\",\n    \"user_ref\": \"user-011\",\n    \"tags\": {\"env\": \"test\"}\n  }\n]"
+          }
+        },
+        "response": {
+          "id": "5069155a-e110-44e8-9f1a-89ebf7242e63",
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Server",
+              "value": "nginx"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 29 Dec 2025 01:17:54 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Content-Length",
+              "value": "217"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Allow",
+              "value": "POST, OPTIONS"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "Vary",
+              "value": "Cookie"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            }
+          ],
+          "stream": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              100,
+              101,
+              116,
+              97,
+              105,
+              108,
+              34,
+              58,
+              34,
+              83,
+              116,
+              114,
+              105,
+              99,
+              116,
+              32,
+              109,
+              111,
+              100,
+              101,
+              32,
+              101,
+              110,
+              97,
+              98,
+              108,
+              101,
+              100,
+              58,
+              32,
+              112,
+              97,
+              121,
+              108,
+              111,
+              97,
+              100,
+              32,
+              99,
+              111,
+              110,
+              116,
+              97,
+              105,
+              110,
+              115,
+              32,
+              105,
+              110,
+              118,
+              97,
+              108,
+              105,
+              100,
+              32,
+              105,
+              116,
+              101,
+              109,
+              115,
+              46,
+              32,
+              78,
+              111,
+              116,
+              104,
+              105,
+              110,
+              103,
+              32,
+              119,
+              97,
+              115,
+              32,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              46,
+              34,
+              44,
+              34,
+              105,
+              110,
+              115,
+              101,
+              114,
+              116,
+              101,
+              100,
+              34,
+              58,
+              48,
+              44,
+              34,
+              114,
+              101,
+              106,
+              101,
+              99,
+              116,
+              101,
+              100,
+              34,
+              58,
+              50,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              91,
+              123,
+              34,
+              105,
+              110,
+              100,
+              101,
+              120,
+              34,
+              58,
+              49,
+              44,
+              34,
+              101,
+              114,
+              114,
+              111,
+              114,
+              115,
+              34,
+              58,
+              123,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              34,
+              58,
+              91,
+              34,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              95,
+              99,
+              111,
+              100,
+              101,
+              32,
+              109,
+              117,
+              115,
+              116,
+              32,
+              98,
+              101,
+              32,
+              97,
+              32,
+              118,
+              97,
+              108,
+              105,
+              100,
+              32,
+              72,
+              84,
+              84,
+              80,
+              32,
+              115,
+              116,
+              97,
+              116,
+              117,
+              115,
+              32,
+              40,
+              49,
+              48,
+              48,
+              46,
+              46,
+              53,
+              57,
+              57,
+              41,
+              46,
+              34,
+              93,
+              125,
+              125,
+              93,
+              125
+            ]
+          },
+          "cookie": [],
+          "responseTime": 33,
+          "responseSize": 217
+        },
+        "id": "2081c33b-c69f-44fb-b068-3c4aefd75d77",
+        "assertions": [
+          {
+            "assertion": "status is 400",
+            "skipped": false
+          },
+          {
+            "assertion": "inserted is 0",
+            "skipped": false
+          },
+          {
+            "assertion": "rejected > 0",
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 426
+    },
+    "failures": [],
+    "error": null
+  }
+}

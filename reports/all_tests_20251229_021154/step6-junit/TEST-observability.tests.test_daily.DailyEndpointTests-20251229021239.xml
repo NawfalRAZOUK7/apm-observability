@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_daily.DailyEndpointTests-20251229021239" tests="1" file="observability/tests/test_daily.py" time="1.840" timestamp="2025-12-29T02:12:42" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_daily.DailyEndpointTests" name="test_daily_endpoint_returns_daily_buckets_and_totals" time="1.840" timestamp="2025-12-29T02:12:42" file="observability/tests/test_daily.py" line="164"/>
+</testsuite>

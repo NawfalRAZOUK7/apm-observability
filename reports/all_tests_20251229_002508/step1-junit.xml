@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="APM Observability - Step 1 (CRUD + Filters)" tests="14" time="0.000">
+  <testsuite name="00 - Create sample A (older time, 500)" id="288ec9fc-5d70-4baf-a6ae-a67272bbb86f" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 201" time="0.000" classname="00CreateSampleAOlderTime500">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 00 - Create sample A (older time, 500).]]>
+        <![CDATA[Test description: Status 201.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:1).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="01 - Create sample B (newer time, latency 100)" id="d4ae52c1-64f6-49b5-9175-574556a896ed" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 201" time="0.000" classname="01CreateSampleBNewerTimeLatency100">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 01 - Create sample B (newer time, latency 100).]]>
+        <![CDATA[Test description: Status 201.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:2).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="02 - Create sample C (newer time, latency 200)" id="ab7148e2-17ab-49cf-9f83-3550d2eab87a" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 201" time="0.000" classname="02CreateSampleCNewerTimeLatency200">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 02 - Create sample C (newer time, latency 200).]]>
+        <![CDATA[Test description: Status 201.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:3).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="10 - GET list (default ordering -time)" id="9abb78b7-ca80-4121-940c-ccb43ff0f5c0" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="10GetListDefaultOrderingTime">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 10 - GET list (default ordering -time).]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:4).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="11 - Filter: service=auth" id="c8a20bfe-b9b9-41fb-869a-8956d82d6a96" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="11FilterServiceAuth">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 11 - Filter: service=auth.]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:5).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="12 - Filter: status_code=500" id="37e12f61-57c6-49bf-af25-9868b73bb14e" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="12FilterStatusCode500">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 12 - Filter: status_code=500.]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:6).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="13 - Filter: latency 120..220" id="ec6d6489-c5a6-4731-9322-91683271062e" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="13FilterLatency120220">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 13 - Filter: latency 120..220.]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:7).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="14 - Filter: time range 01:11..01:13" id="7c8542af-89e4-4f83-928f-95217a53e461" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="14FilterTimeRange01110113">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 14 - Filter: time range 01:11..01:13.]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:8).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="15 - Ordering: -time,latency_ms" id="2bd6ea3a-4889-4b37-b437-72d174bc10e6" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="15OrderingTimeLatencyMs">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 15 - Ordering: -time,latency_ms.]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:9).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="20 - GET detail (id_b)" id="c14355a8-b862-4208-bbed-e4a00aaf1ef6" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="1" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="20GetDetailIdB">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 20 - GET detail (id_b).]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:10).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="21 - PATCH update (id_b -> latency_ms=111)" id="76b5922d-8411-49c6-9be9-74d39b91b648" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="2" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+testScriptError: "undefined" is not valid JSON
+---
+]]></system-err>
+    <testcase name="Status 200" time="0.000" classname="21PatchUpdateIdBLatencyMs111">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 21 - PATCH update (id_b -> latency_ms=111).]]>
+        <![CDATA[Test description: Status 200.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:11).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="90 - DELETE sample A" id="1ebb6ea9-ae5a-4cf6-9e70-dab385f2e4cf" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="1" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+]]></system-err>
+    <testcase name="Status 204" time="0.000" classname="90DeleteSampleA">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 90 - DELETE sample A.]]>
+        <![CDATA[Test description: Status 204.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:12).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="91 - DELETE sample B" id="14cdeee5-1703-4e26-af2d-dd5d0bf342d9" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="1" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+]]></system-err>
+    <testcase name="Status 204" time="0.000" classname="91DeleteSampleB">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 91 - DELETE sample B.]]>
+        <![CDATA[Test description: Status 204.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:13).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="92 - DELETE sample C" id="d1a30730-b161-412e-9809-c26a130c32e9" timestamp="2025-12-29T00:25:32.596Z" tests="1" failures="1" errors="1" time="0.000">
+    <system-err><![CDATA[Iteration: 0
+RequestError: Error: connect ECONNREFUSED 127.0.0.1:18444
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+
+---
+]]></system-err>
+    <testcase name="Status 204" time="0.000" classname="92DeleteSampleC">
+      <failure type="AssertionFailure" message="expected PostmanResponse{ …(5) } to have property 'code'">
+        <![CDATA[Failed 1 times.]]>
+        <![CDATA[Collection JSON ID: 0f2c9f3e-2c3a-4c38-bf92-2c4c6b4a5d01.]]>
+        <![CDATA[Collection name: APM Observability - Step 1 (CRUD + Filters).]]>
+        <![CDATA[Request name: 92 - DELETE sample C.]]>
+        <![CDATA[Test description: Status 204.]]>
+        <![CDATA[Error message: expected PostmanResponse{ …(5) } to have property 'code'.]]>
+        <![CDATA[Stacktrace: AssertionError: expected PostmanResponse{ …(5) } to have property 'code'
+   at Object.eval sandbox-script.js:1:14).]]>
+      </failure>
+    </testcase>
+  </testsuite>
+</testsuites>

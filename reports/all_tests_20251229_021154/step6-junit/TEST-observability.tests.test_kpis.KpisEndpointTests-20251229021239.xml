@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="observability.tests.test_kpis.KpisEndpointTests-20251229021239" tests="2" file="observability/tests/test_kpis.py" time="0.675" timestamp="2025-12-29T02:12:49" failures="0" errors="0" skipped="0">
+	<testcase classname="observability.tests.test_kpis.KpisEndpointTests" name="test_kpis_bad_date_param_returns_400" time="0.140" timestamp="2025-12-29T02:12:48" file="observability/tests/test_kpis.py" line="109"/>
+	<testcase classname="observability.tests.test_kpis.KpisEndpointTests" name="test_kpis_shape_and_plausible_values" time="0.534" timestamp="2025-12-29T02:12:49" file="observability/tests/test_kpis.py" line="69"/>
+</testsuite>
