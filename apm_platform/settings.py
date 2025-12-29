@@ -49,9 +49,7 @@ ALLOWED_HOSTS = [
 
 # Comma-separated list of trusted origins for CSRF (include scheme + port).
 CSRF_TRUSTED_ORIGINS = [
-    o.strip()
-    for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
-    if o.strip()
+    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
 
 # Application definition
