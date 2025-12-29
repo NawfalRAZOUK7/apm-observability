@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1766958792.52013 "main.aux" "main.bbl" "main" 1766958818.39233 0
+["bibtex main"] 1766977848.38953 "main.aux" "main.bbl" "main" 1766977876.97637 0
   "./references.bib" 1766958502.97398 721 3f60b82690377cc456e86dd97848726b ""
   "/usr/local/texlive/2025/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1766958816.02796 9193 1c546099c7b637ca04a12258abb1a6c0 "pdflatex"
+  "main.aux" 1766977874.93 9193 1c546099c7b637ca04a12258abb1a6c0 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1766958793.3893 "main.tex" "main.pdf" "main" 1766958818.39491 0
+["pdflatex"] 1766977849.0817 "main.tex" "main.pdf" "main" 1766977876.97727 0
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1254269338 2375 baa924870cfb487815765f9094cf3728 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc" 1254269338 3031 6c4d3515bf7115d8518af1c9ab97ca44 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -213,13 +213,13 @@
   "images/timescaledb.png" 1766919654.25349 281806 fe1babcd5b3104c629d693f86a7a3cdf ""
   "images/use_case.png" 1766917161.46075 11686 1b1626bdfdee84672919dcf36ca83fa7 ""
   "intro.tex" 1766957369.74853 814 b9eeb84015317cb3c95091072f7d3411 ""
-  "main.aux" 1766958816.02796 9193 1c546099c7b637ca04a12258abb1a6c0 "pdflatex"
-  "main.bbl" 1766958793.38341 1444 7ec531841116e9e0bdf7bf8f6265c7db "bibtex main"
-  "main.lof" 1766958816.04401 2100 7c77b297188dccd66641850be25cfe2e "pdflatex"
-  "main.out" 1766958816.03817 6317 12924147c48485ccc62014c0ef2a30ea "pdflatex"
+  "main.aux" 1766977874.93 9193 1c546099c7b637ca04a12258abb1a6c0 "pdflatex"
+  "main.bbl" 1766977849.02982 1444 7ec531841116e9e0bdf7bf8f6265c7db "bibtex main"
+  "main.lof" 1766977874.94072 2100 7c77b297188dccd66641850be25cfe2e "pdflatex"
+  "main.out" 1766977874.93788 6317 12924147c48485ccc62014c0ef2a30ea "pdflatex"
   "main.tex" 1766958558.70411 2206 c96ae80eb44dbda0b889c62cc1c611b4 ""
-  "main.toc" 1766958816.04384 3066 d90a81c90711871675f68906109320b8 "pdflatex"
-  "metadata.tex" 1766958132.50061 495 034427de1a3453009b9c762346e3a94e ""
+  "main.toc" 1766977874.94029 3066 d90a81c90711871675f68906109320b8 "pdflatex"
+  "metadata.tex" 1766977673.40221 495 c6586a49233cc409ae8706741a26fe08 ""
   (generated)
   "main.aux"
   "main.lof"

@@ -65,7 +65,7 @@ GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO apm_reader;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO apm_reader;
 
 -- Default privileges for future objects created by the DB owner (POSTGRES_USER).
--- In your docker-compose.yml, that owner is 'apm'.
+-- In your docker-compose.yml, that owner is 'apm'
 ALTER DEFAULT PRIVILEGES FOR ROLE apm IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO apm_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE apm IN SCHEMA public

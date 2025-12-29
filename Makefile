@@ -17,6 +17,23 @@ APP_COMPOSE := docker/cluster/docker-compose.app.yml
 DATA_COMPOSE := docker/cluster/docker-compose.data.yml
 CONTROL_COMPOSE := docker/cluster/docker-compose.control.yml
 
+# Derived ports for test wrappers (auto-detect open ports).
+TEST_MAIN_HTTPS_PORT_DEFAULT := $(shell bash -c 'set -a; f="$(ENV_PORTS)"; [ -f "$$f" ] && source "$$f"; echo "$${MAIN_NGINX_HTTPS_HOST_PORT:-8443}"')
+TEST_MAIN_HTTPS_PORT_LOCAL := $(shell bash -c 'set -a; for f in $(ENV_PORTS) $(ENV_PORTS_LOCAL); do [ -f "$$f" ] && source "$$f"; done; echo "$${MAIN_NGINX_HTTPS_HOST_PORT:-8443}"')
+TEST_MAIN_HTTPS_PORT := $(shell bash -c 'for p in $(TEST_MAIN_HTTPS_PORT_LOCAL) $(TEST_MAIN_HTTPS_PORT_DEFAULT); do if nc -z -w 1 127.0.0.1 $$p >/dev/null 2>&1; then echo $$p; exit 0; fi; done; echo $(TEST_MAIN_HTTPS_PORT_LOCAL)')
+
+TEST_MAIN_DB_PORT_DEFAULT := $(shell bash -c 'set -a; f="$(ENV_PORTS)"; [ -f "$$f" ] && source "$$f"; echo "$${MAIN_DB_HOST_PORT:-5432}"')
+TEST_MAIN_DB_PORT_LOCAL := $(shell bash -c 'set -a; for f in $(ENV_PORTS) $(ENV_PORTS_LOCAL); do [ -f "$$f" ] && source "$$f"; done; echo "$${MAIN_DB_HOST_PORT:-5432}"')
+TEST_MAIN_DB_PORT := $(shell bash -c 'for p in $(TEST_MAIN_DB_PORT_LOCAL) $(TEST_MAIN_DB_PORT_DEFAULT); do if nc -z -w 1 127.0.0.1 $$p >/dev/null 2>&1; then echo $$p; exit 0; fi; done; echo $(TEST_MAIN_DB_PORT_LOCAL)')
+
+TEST_CLUSTER_HTTPS_PORT_DEFAULT := $(shell bash -c 'set -a; f="$(ENV_PORTS)"; [ -f "$$f" ] && source "$$f"; echo "$${CLUSTER_APP_NGINX_HTTPS_HOST_PORT:-443}"')
+TEST_CLUSTER_HTTPS_PORT_LOCAL := $(shell bash -c 'set -a; for f in $(ENV_PORTS) $(ENV_PORTS_LOCAL); do [ -f "$$f" ] && source "$$f"; done; echo "$${CLUSTER_APP_NGINX_HTTPS_HOST_PORT:-18443}"')
+TEST_CLUSTER_HTTPS_PORT := $(shell bash -c 'for p in $(TEST_CLUSTER_HTTPS_PORT_LOCAL) $(TEST_CLUSTER_HTTPS_PORT_DEFAULT); do if nc -z -w 1 127.0.0.1 $$p >/dev/null 2>&1; then echo $$p; exit 0; fi; done; echo $(TEST_CLUSTER_HTTPS_PORT_LOCAL)')
+
+TEST_CLUSTER_DB_PORT_DEFAULT := $(shell bash -c 'set -a; f="$(ENV_PORTS)"; [ -f "$$f" ] && source "$$f"; echo "$${CLUSTER_DATA_DB_HOST_PORT:-5432}"')
+TEST_CLUSTER_DB_PORT_LOCAL := $(shell bash -c 'set -a; for f in $(ENV_PORTS) $(ENV_PORTS_LOCAL); do [ -f "$$f" ] && source "$$f"; done; echo "$${CLUSTER_DATA_DB_HOST_PORT:-5432}"')
+TEST_CLUSTER_DB_PORT := $(shell bash -c 'for p in $(TEST_CLUSTER_DB_PORT_LOCAL) $(TEST_CLUSTER_DB_PORT_DEFAULT); do if nc -z -w 1 127.0.0.1 $$p >/dev/null 2>&1; then echo $$p; exit 0; fi; done; echo $(TEST_CLUSTER_DB_PORT_LOCAL)')
+
 APP_CMD := docker compose -p apm-app --env-file $(ENV_PORTS) --env-file $(ENV_PORTS_LOCAL) --env-file $(ENV_CLUSTER) -f $(APP_COMPOSE)
 DATA_CMD := docker compose -p apm-data --env-file $(ENV_PORTS) --env-file $(ENV_PORTS_LOCAL) --env-file $(ENV_CLUSTER) -f $(DATA_COMPOSE)
 CONTROL_CMD := docker compose -p apm-control --env-file $(ENV_PORTS) --env-file $(ENV_PORTS_LOCAL) --env-file $(ENV_CLUSTER) -f $(CONTROL_COMPOSE)
@@ -58,6 +75,7 @@ help:
 	@echo "Scripts:"
 	@echo "  make bootstrap | validate"
 	@echo "  make steps-all [STACK=main|cluster]"
+	@echo "  make test-main | test-cluster | test-cluster-primary"
 
 # --- Backup/Restore SSH key setup ---
 .PHONY: setup-backup-ssh
@@ -200,3 +218,16 @@ validate:
 .PHONY: steps-all
 steps-all:
 	bash scripts/run_all_tests.sh
+
+.PHONY: test-main test-cluster
+test-main:
+	STACK=main APP_HTTPS_PORT=$(TEST_MAIN_HTTPS_PORT) DB_PORT=$(TEST_MAIN_DB_PORT) POSTGRES_PORT=$(TEST_MAIN_DB_PORT) bash scripts/run_all_tests.sh
+
+test-cluster:
+	STACK=cluster APP_HTTPS_PORT=$(TEST_CLUSTER_HTTPS_PORT) DB_PORT=$(TEST_CLUSTER_DB_PORT) POSTGRES_PORT=$(TEST_CLUSTER_DB_PORT) bash scripts/run_all_tests.sh
+
+.PHONY: test-cluster-primary
+test-cluster-primary:
+	$(DATA_CMD) up -d db-replica db-replica-2
+	$(APP_CMD) up -d --force-recreate web
+	$(MAKE) test-cluster
