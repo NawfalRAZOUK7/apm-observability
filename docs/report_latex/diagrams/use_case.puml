@@ -1,0 +1,24 @@
+@startuml
+title Use Case - APM Platform
+left to right direction
+
+actor "API Client" as Client
+actor "Analyst" as Analyst
+actor "DevOps" as DevOps
+
+rectangle "APM Platform" {
+  usecase "Ingest request data" as UC1
+  usecase "View dashboards" as UC2
+  usecase "View KPIs" as UC3
+  usecase "Run backups" as UC4
+  usecase "Restore data" as UC5
+  usecase "Seed demo data" as UC6
+}
+
+Client --> UC1
+Analyst --> UC2
+Analyst --> UC3
+DevOps --> UC4
+DevOps --> UC5
+DevOps --> UC6
+@enduml

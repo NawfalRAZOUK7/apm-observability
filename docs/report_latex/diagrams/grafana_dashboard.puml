@@ -1,0 +1,23 @@
+@startuml
+title Grafana Dashboard Overview
+skinparam componentStyle rectangle
+
+component "Grafana" as Grafana
+database "TimescaleDB" as DB
+component "Prometheus" as Prom
+
+package "Dashboards" {
+  [APM Timescale] as DashTimescale
+  [APM Infra] as DashInfra
+  [Targets] as DashTargets
+}
+
+Grafana --> DB : SQL
+Grafana --> Prom : metrics
+Grafana --> DashTimescale
+Grafana --> DashInfra
+Grafana --> DashTargets
+DashTimescale --> DB : queries
+DashInfra --> Prom : metrics
+DashTargets --> Prom : targets
+@enduml

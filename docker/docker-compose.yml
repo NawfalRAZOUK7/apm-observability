@@ -1,0 +1,142 @@
+# ============================================================================
+# docker/docker-compose.yml
+# Main app stack (Django + TimescaleDB + Nginx)
+# ============================================================================
+
+services:
+  db:
+    build:
+      context: ..
+      dockerfile: docker/db/Dockerfile
+    image: apm-db
+
+    env_file:
+      - ../.env.docker
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-apm_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-apm_app_pass}
+      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_readonly}
+      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_readonly_pass}
+
+    ports:
+      - "${MAIN_DB_HOST_PORT:-5432}:5432"
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-apm} -d ${POSTGRES_DB:-apm}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    env_file:
+      - ../.env.docker
+
+    environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_USER: ${POSTGRES_USER:-apm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apm}
+
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-UTC}
+      DRF_PAGE_SIZE: ${DRF_PAGE_SIZE:-50}
+      DB_CONN_MAX_AGE: ${DB_CONN_MAX_AGE:-60}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
+      GUNICORN_BIND: ${GUNICORN_BIND:-0.0.0.0:8000}
+
+    ports:
+      - "${MAIN_WEB_HOST_PORT:-8000}:8000"
+
+    entrypoint: ["bash", "docker/entrypoint.sh"]
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  nginx:
+    image: nginx:alpine
+
+    depends_on:
+      - web
+
+    ports:
+      - "${MAIN_NGINX_HTTP_HOST_PORT:-8080}:80"
+      - "${MAIN_NGINX_HTTPS_HOST_PORT:-8443}:443"
+
+    volumes:
+      - ../docker/certs:/etc/nginx/certs:ro
+      - ../docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_webroot:/var/www/certbot:ro
+
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  certbot:
+    image: certbot/certbot:latest
+    profiles:
+      - production
+    volumes:
+      - ../docker/certs:/etc/nginx/certs:rw
+      - certbot_webroot:/var/www/certbot:rw
+      - certbot_config:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --quiet; sleep 12h & wait $${!}; done;'"
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: apm_grafana
+    ports:
+      - "33000:3000"
+    depends_on:
+      - db
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+  certbot_webroot:
+  certbot_config:
+  grafana_data:
+
+networks:
+  app_network:
+    driver: bridge

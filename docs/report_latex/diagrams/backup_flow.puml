@@ -1,0 +1,15 @@
+@startuml
+title Backup Flow (pgBackRest + MinIO)
+actor "Operator" as Op
+participant "pgBackRest Client" as Client
+participant "pgBackRest Server" as Server
+database "TimescaleDB Primary" as DB
+participant "MinIO (S3)" as S3
+
+Op -> Client : pgbackrest backup
+Client -> Server : TLS control
+Server -> DB : read data/WAL
+Server -> S3 : upload backup
+Server --> Client : status/metadata
+Client --> Op : completion
+@enduml

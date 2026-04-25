@@ -1,0 +1,153 @@
+# docker/cluster/docker-compose.control.yml
+services:
+  minio:
+    build:
+      context: ../..
+      dockerfile: docker/minio/Dockerfile
+    command: ["server", "/data", "--console-address", ":9001"]
+    user: "0"
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_MINIO_API_HOST_PORT:-9000}:9000"
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+      - ../certs:/root/.minio/certs:ro
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-apm_backup}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-apm_backup_secret}
+      - MINIO_SERVER_URL=https://minio:9000
+      - MINIO_BROWSER=on
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsSk https://localhost:9000/minio/health/ready || curl -fsS http://localhost:9000/minio/health/ready",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: https://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-apm_backup}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-apm_backup_secret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-pgbackrest}
+      MINIO_BUCKET_COLD: ${MINIO_BUCKET_COLD:-pgbackrest-cold}
+      MINIO_ALIAS: myminio
+      MINIO_ENABLE_VERSIONING: "1"
+      MINIO_INSECURE: "1"
+      MINIO_INIT_WAIT_SECONDS: "120"
+      MINIO_INIT_WAIT_INTERVAL: "2"
+    volumes:
+      - ../minio/init.sh:/init.sh:ro
+    restart: "no"
+    entrypoint: ["sh", "-lc", "sh /init.sh"]
+
+  pgbackrest:
+    build:
+      context: ../..
+      dockerfile: docker/pgbackrest/Dockerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    volumes:
+      - ../backup/pgbackrest-client.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ../certs:/certs:ro
+      - pgbackrest_spool:/var/lib/pgbackrest
+    environment:
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+      - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+      - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+    # Garde ton nom: pgbackrest-server résout vers l'IP du DATA node
+    extra_hosts:
+      - "pgbackrest-server:${DATA_NODE_HOST_GATEWAY}"
+    restart: "no"
+    command: ["sleep", "infinity"]
+
+  pgbackrest-cron:
+    build:
+      context: ../..
+      dockerfile: docker/pgbackrest/Dockerfile
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    volumes:
+      - ../backup/pgbackrest-client.conf:/etc/pgbackrest/pgbackrest.conf:ro
+      - ../certs:/certs:ro
+      - pgbackrest_spool:/var/lib/pgbackrest
+    environment:
+      - PGBACKREST_CONFIG=/etc/pgbackrest/pgbackrest.conf
+      - PGBACKREST_REPO1_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+      - PGBACKREST_REPO2_CIPHER_PASS=${PGBACKREST_CIPHER_PASS:-}
+    extra_hosts:
+      - "pgbackrest-server:${DATA_NODE_HOST_GATEWAY}"
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/pgbackrest-cron.sh"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SERVER_DOMAIN: ${CONTROL_NODE_IP}
+      GF_SERVER_ROOT_URL: "https://${CONTROL_NODE_IP}:${CLUSTER_CONTROL_GRAFANA_HOST_PORT:-3000}"
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_reader}
+      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}
+      DATA_NODE_IP: ${DATA_NODE_IP}
+      CLUSTER_DATA_DB_HOST_PORT: ${CLUSTER_DATA_DB_HOST_PORT:-5432}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+    restart: unless-stopped
+
+  monitoring-proxy:
+    image: nginx:alpine
+    depends_on:
+      - grafana
+      - prometheus
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_GRAFANA_HOST_PORT:-3000}:3000"
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_PROMETHEUS_HOST_PORT:-9090}:9090"
+    volumes:
+      - ../certs:/etc/nginx/certs:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../monitoring/nginx/conf.d:/etc/nginx/conf.d:ro
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_NODE_EXPORTER_HOST_PORT:-9100}:9100"
+    volumes:
+      - /:/host:ro
+    command:
+      - "--path.rootfs=/host"
+    restart: unless-stopped
+
+volumes:
+  minio_data:
+  pgbackrest_spool:
+  grafana_data:
+  prometheus_data:

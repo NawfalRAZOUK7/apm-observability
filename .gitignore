@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtualenv
+.venv/
+
+# Env files
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# Local cluster config (generated)
+configs/cluster/cluster.yml
+
+# Django
+staticfiles/
+media/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Generated project outputs
+reports/
+archive/legacy/
+docs/report_latex/*.aux
+docs/report_latex/*.bbl
+docs/report_latex/*.blg
+docs/report_latex/*.fdb_latexmk
+docs/report_latex/*.fls
+docs/report_latex/*.lof
+docs/report_latex/*.out
+docs/report_latex/*.toc
+
+# Generated local TLS / SSH material
+docker/certs/private.key
+docker/certs/pgbackrest/*.key
+docker/certs/pgbackrest/*.csr
+docker/certs/pgbackrest/*.srl
+archive/configs/**/id_rsa
+archive/configs/**/id_rsa.pub
+archive/configs/**/known_hosts
+archive/configs/**/pgpass

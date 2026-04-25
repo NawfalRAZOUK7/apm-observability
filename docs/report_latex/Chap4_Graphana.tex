@@ -1,0 +1,121 @@
+\section{Supervision avec Grafana}
+
+\subsection{Présentation de Grafana}
+Grafana est une plateforme open-source de visualisation et de surveillance de données. Elle permet de créer des tableaux de bord interactifs et personnalisables, facilitant le suivi en temps réel des métriques provenant de diverses sources. Son interface intuitive rend l’analyse des données accessible, même pour des utilisateurs non techniques.~\cite{grafana-docs}
+
+\subsection{Intégration avec TimescaleDB}
+Grafana s’intègre facilement avec TimescaleDB, une base de données optimisée pour les séries temporelles. Cette intégration permet de récupérer et d’afficher efficacement des données historiques et en temps réel, offrant ainsi une visibilité complète sur les tendances et les anomalies.
+
+\subsection{Configuration de la datasource TimescaleDB}
+Grafana est exposé en local sur \url{http://localhost:33000} (stack principale) ou via \texttt{make grafana} en mode cluster. Deux modes sont possibles :
+
+\textbf{Stack principale (local)} :
+\begin{itemize}
+    \item URL: \texttt{db:5432}
+    \item Database: \texttt{apm}
+    \item User: \texttt{apm} (ou un utilisateur read-only)
+    \item SSL mode: \texttt{disable} en local
+\end{itemize}
+
+\textbf{Mode cluster} :
+la datasource est provisionnée automatiquement via le fichier
+\path{docker/monitoring/grafana/provisioning/datasources/datasources.yml}.~\cite{grafana-postgres}
+
+La Figure~\ref{fig:grafana-datasources} illustre les datasources configurées (TimescaleDB + Prometheus).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{grafana_datasources.png}
+    \caption{Datasources Grafana (TimescaleDB et Prometheus)}
+    \label{fig:grafana-datasources}
+\end{figure}
+
+\subsection{Exemples de requêtes SQL (panels)}
+Les vues continues sont disponibles pour accélérer les requêtes.
+Exemple : \path{apirequest_hourly}.
+Exemples :
+
+\begin{verbatim}
+-- Hits par heure
+SELECT bucket AS time, hits
+FROM apirequest_hourly
+WHERE $__timeFilter(bucket)
+ORDER BY bucket;
+\end{verbatim}
+
+\begin{verbatim}
+-- Taux d'erreur (%)
+SELECT
+  bucket AS time,
+  100.0 * errors / NULLIF(hits, 0) AS error_rate
+FROM apirequest_hourly
+WHERE $__timeFilter(bucket)
+ORDER BY bucket;
+\end{verbatim}
+
+\begin{verbatim}
+-- Latence moyenne par service (raw table)
+SELECT
+  time_bucket('1 hour', time) AS time,
+  service,
+  AVG(latency_ms) AS avg_latency_ms
+FROM observability_apirequest
+WHERE $__timeFilter(time)
+GROUP BY 1, 2
+ORDER BY 1;
+\end{verbatim}
+
+\subsection{Dashboard de monitoring}
+Le tableau de bord ci-dessous montre la supervision d’un système avec Grafana et TimescaleDB.
+
+Métriques affichées :
+\begin{itemize}
+    \item Nombre de requêtes par heure (hits/hour)
+    \item Latence moyenne par service
+    \item Taux d’erreur par endpoint
+\end{itemize}
+
+En mode cluster, des dashboards sont déjà provisionnés dans
+\path{docker/monitoring/grafana/provisioning/dashboards}. Exemples :
+\begin{itemize}
+    \item \path{apm-timescale.json}
+    \item \path{apm-infra.json}
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{grafana_dashboard.png}
+    \caption{Structure logique du dashboard Grafana}
+    \label{fig:grafana-dashboard-uml}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{grafana_dashboard_screenshot.png}
+    \caption{Dashboard Grafana (capture d'écran)}
+    \label{fig:grafana-dashboard-shot}
+\end{figure}
+
+\subsection{Infrastructure et targets (Prometheus)}
+Les tableaux de bord Prometheus mettent en évidence l’état des cibles de scraping et l’infrastructure sous-jacente (CPU, mémoire, disque).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{grafana_infra.png}
+    \caption{Dashboard APM Infra Overview}
+    \label{fig:grafana-infra}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{grafana_targets.png}
+    \caption{Dashboard APM Prometheus Targets}
+    \label{fig:grafana-targets}
+\end{figure}
+
+La Figure~\ref{fig:prometheus-targets} montre l’état des targets directement dans l’UI Prometheus.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{prometheus_targets.png}
+    \caption{Prometheus /targets (état des cibles)}
+    \label{fig:prometheus-targets}
+\end{figure}

@@ -1,0 +1,190 @@
+\section{Mise en œuvre et expérimentation}
+
+\subsection{Architecture globale}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{architecture.png}
+    \caption{Architecture globale (stack principale)}
+\end{figure}
+
+\subsection{Flux de données}
+
+\begin{figure}[H]
+    \centering
+\includegraphics[width=0.8\textwidth]{data_flow.png}
+    \caption{Flux d’ingestion et d’analyse des données}
+\end{figure}
+
+\subsection{Démarrage et connexion}
+
+\subsubsection*{Lancement d'une instance TimescaleDB}
+Le projet fournit un environnement Docker prêt à l’emploi pour lancer une instance TimescaleDB. Il suffit de copier le fichier d’exemple \texttt{.env} et de démarrer les services via Docker Compose :
+
+\begin{verbatim}
+cp .env.example .env
+docker compose -f docker/docker-compose.yml up --build
+\end{verbatim}
+
+Cette commande initialise à la fois le conteneur TimescaleDB et le backend Django.
+
+\subsubsection*{Connexion à la base de données}
+Une fois le conteneur en fonctionnement, la connexion peut se faire directement depuis Docker :
+
+\begin{verbatim}
+docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm
+\end{verbatim}
+
+Il est également possible de se connecter depuis l’hôte si le port est exposé :
+
+\begin{verbatim}
+psql -h localhost -p 5432 -U apm -d apm
+\end{verbatim}
+
+\subsection{Prise en main}
+
+\subsubsection*{Création des tables}
+Les modèles Django sont déjà définis. La commande de migration crée automatiquement les tables nécessaires, incluant les hypertables de TimescaleDB :
+
+\begin{verbatim}
+python manage.py migrate
+\end{verbatim}
+
+En environnement Docker, l’équivalent peut être lancé avec :
+
+\begin{verbatim}
+make docker-migrate
+\end{verbatim}
+
+\subsubsection*{Insertion et manipulation des données}
+Deux modes d’ingestion sont disponibles : un CRUD unitaire et un mode bulk.
+
+\textbf{Mode unitaire (CRUD)} :
+
+\begin{verbatim}
+curl -X POST http://127.0.0.1:8000/api/requests/ \
+-H "Content-Type: application/json" \
+-d '{
+"time": "2025-12-14T12:00:00Z",
+"service": "billing",
+"endpoint": "/health",
+"method": "GET",
+"status_code": 200,
+"latency_ms": 42
+}'
+\end{verbatim}
+
+\textbf{Mode bulk (ingest)} :
+
+\begin{verbatim}
+curl -X POST "http://127.0.0.1:8000/api/requests/ingest/?strict=false" \
+-H "Content-Type: application/json" \
+-d '[
+  {
+    "time": "2025-12-14T12:00:00Z",
+    "service": "billing",
+    "endpoint": "/health",
+    "method": "GET",
+    "status_code": 200,
+    "latency_ms": 42
+  },
+  {
+    "time": "2025-12-14T12:00:05Z",
+    "service": "billing",
+    "endpoint": "/pay",
+    "method": "POST",
+    "status_code": 500,
+    "latency_ms": 180
+  }
+]'
+\end{verbatim}
+
+Le paramètre \texttt{strict=true} permet d’échouer la requête si un item est invalide.
+
+\subsubsection*{Diagramme de séquence d’ingestion}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{sequence_ingest.png}
+    \caption{Séquence d’ingestion en mode bulk}
+\end{figure}
+
+Les requêtes peuvent ensuite être consultées avec :
+
+\begin{verbatim}
+curl http://127.0.0.1:8000/api/requests/
+\end{verbatim}
+
+Des endpoints d’analytics sont aussi disponibles :
+\begin{itemize}
+    \item \path{/api/requests/hourly/}
+    \item \path{/api/requests/daily/}
+    \item \path{/api/requests/kpis/}
+    \item \path{/api/requests/top-endpoints/}
+\end{itemize}
+
+L’interface d’administration Django permet de consulter les requêtes ingérées (Figure~\ref{fig:django-admin}).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{admin_apirequest.png}
+    \caption{Django Admin - liste des ApiRequest}
+    \label{fig:django-admin}
+\end{figure}
+
+\subsubsection*{Fonctionnalités spécifiques de TimescaleDB}
+Le projet utilise les particularités de TimescaleDB pour :
+
+\begin{itemize}
+    \item Créer des hypertables pour le partitionnement automatique.
+    \item Mettre en place des agrégats continus (hourly/daily) pour accélérer les requêtes analytiques.
+    \item Assurer un fallback sur PostgreSQL standard si TimescaleDB n’est pas disponible.
+\end{itemize}
+
+\subsection{Cas d’usage et modèle de données}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{use_case.png}
+    \caption{Cas d’usage principaux de la plateforme}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+\includegraphics[width=0.8\textwidth]{class_diagram.png}
+    \caption{Diagramme de classes (modèle de données)}
+\end{figure}
+
+\subsection{Déploiement en cluster}
+
+\subsubsection*{Architecture générale}
+Le cluster repose sur plusieurs nœuds TimescaleDB orchestrés via Docker Compose, avec un backend Django commun pour l’API et l’ingestion des données.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{cluster_topology.png}
+    \caption{Topologie du cluster}
+\end{figure}
+
+\subsubsection*{Cluster TimescaleDB avec Docker Compose}
+Chaque nœud est défini dans les fichiers suivants :
+\begin{itemize}
+    \item \path{docker/cluster/docker-compose.control.yml}
+    \item \path{docker/cluster/docker-compose.data.yml}
+    \item \path{docker/cluster/docker-compose.app.yml}
+\end{itemize}
+Les conteneurs communiquent entre eux et partagent les configurations de réplication.
+
+\begin{verbatim}
+make up-data
+make up-control
+make up-app
+\end{verbatim}
+
+Ou en une seule commande :
+\begin{verbatim}
+make up-all
+\end{verbatim}
+
+\subsubsection*{Communication entre les nœuds}
+Les nœuds utilisent les ports internes Docker pour échanger les données et maintenir la cohérence des hypertables. Les services Django et TimescaleDB se connectent via des noms de service Docker.
+
+\subsubsection*{Sécurisation des accès}
+L’accès aux conteneurs se fait uniquement via les variables d’environnement définies dans \texttt{.env}. Les scripts de backup/restauration gèrent automatiquement les clés SSH pour sécuriser les opérations sans intervention manuelle.

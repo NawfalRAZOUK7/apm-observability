@@ -1,0 +1,19 @@
+- name: Check repo path exists
+  ansible.builtin.stat:
+    path: "{{ repo_path }}"
+  register: repo_dir
+
+- name: Fail if repo is missing
+  ansible.builtin.fail:
+    msg: "repo_path {{ repo_path }} is missing. Update inventory/group_vars or clone the repo on the target host."
+  when: not repo_dir.stat.exists
+
+- name: Check cluster compose files exist
+  ansible.builtin.stat:
+    path: "{{ data_compose_file }}"
+  register: data_compose
+
+- name: Fail if cluster compose files are missing
+  ansible.builtin.fail:
+    msg: "Cluster compose files not found under {{ repo_path }}/docker/cluster."
+  when: not data_compose.stat.exists

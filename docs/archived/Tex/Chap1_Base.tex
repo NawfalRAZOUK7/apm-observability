@@ -1,0 +1,92 @@
+\section{Présentation de la base}
+
+TimescaleDB est une base de données open-source spécialisée dans la gestion des séries temporelles. Elle se présente sous la forme d’une extension de PostgreSQL, ce qui lui permet de bénéficier de la fiabilité et de l’écosystème PostgreSQL, tout en ajoutant des optimisations dédiées aux données horodatées (\textit{time-series}).
+
+Elle est conçue pour gérer efficacement de très grands volumes de données insérées en continu, comme les métriques de supervision, les données IoT (Internet of Things), les logs applicatifs ou les données financières.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{images/timescaledb.png}
+    \caption{Page d'accueil du site de TimescaleDB}
+\end{figure}
+
+\subsection{Use Case de la base}
+
+TimescaleDB est utilisée par de nombreuses entreprises à l’échelle mondiale, notamment dans les domaines du monitoring, de l’IoT et de la finance.
+
+\subsubsection*{Exemples d’entreprises utilisatrices}
+\begin{itemize}
+    \item Comcast : supervision de réseaux et métriques de performance
+    \item Cisco : monitoring d’équipements réseau
+    \item IBM : gestion de données IoT
+    \item Schneider Electric : capteurs industriels et énergie
+    \item T-Mobile : analyse des performances réseau
+\end{itemize}
+
+\subsubsection*{Cas d’usage typiques}
+\begin{itemize}
+    \item Monitoring d’infrastructure et observabilité
+    \item Internet des objets (IoT)
+    \item Analyse financière et trading
+    \item DevOps (Development and Operations) et métriques applicatives
+\end{itemize}
+
+\subsection{Architecture interne de la base}
+
+TimescaleDB repose sur l’architecture interne de PostgreSQL et ajoute une couche spécifique pour les séries temporelles.
+
+\subsubsection*{Fichiers et stockage}
+Les données sont stockées dans des \textit{hypertables}, qui sont automatiquement découpées en \textit{chunks} (partitions temporelles). Chaque chunk est physiquement une table PostgreSQL classique stockée sur le système de fichiers.
+
+\subsubsection*{Processus internes}
+TimescaleDB utilise des processus d’arrière-plan (\textit{background workers}) pour :
+\begin{itemize}
+    \item la compression automatique des données anciennes
+    \item la suppression des données selon des politiques de rétention
+    \item la mise à jour des agrégations continues
+\end{itemize}
+
+L’ensemble reste conforme aux propriétés ACID (Atomicité, Cohérence, Isolation, Durabilité) grâce au moteur PostgreSQL, basé notamment sur le WAL (Write-Ahead Logging) et le MVCC (Multi-Version Concurrency Control).
+
+\subsection{Particularités de la base de données}
+
+La principale particularité de TimescaleDB est le partitionnement automatique des données temporelles via les hypertables, totalement transparent pour l’utilisateur.
+
+Elle propose également :
+\begin{itemize}
+    \item une compression columnaire très efficace (jusqu’à 90–95 \%)
+    \item des fonctions temporelles avancées (ex. \textit{time\_bucket})
+    \item des agrégations continues pour accélérer les requêtes analytiques
+\end{itemize}
+
+\subsection{Comparaison avec Oracle Database}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Critère} & \textbf{TimescaleDB} & \textbf{Oracle Database} \\
+\midrule
+Licence & Open-source & Propriétaire \\
+Spécialisation & Séries temporelles & Généraliste \\
+Partitionnement temporel & Automatique & Manuel (option) \\
+Compression & Native & Option payante \\
+Coût & Faible & Très élevé \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Oracle est une base de données généraliste adaptée aux charges OLTP (Online Transaction Processing) et OLAP (Online Analytical Processing), tandis que TimescaleDB est optimisée pour les séries temporelles avec un coût et une complexité bien moindres.
+
+\subsection{Comparaison On-Premise et Cloud}
+
+\subsubsection*{Coûts}
+Une solution on-premise implique des coûts initiaux élevés (matériel, administration, maintenance). Les solutions cloud réduisent ces coûts grâce à un modèle à l’usage.
+
+\subsubsection*{Performances}
+\begin{itemize}
+    \item On-premise : performances maximales si l’infrastructure est bien dimensionnée
+    \item Cloud : légère latence réseau, mais excellente scalabilité
+    \item Amazon Aurora (service cloud PostgreSQL managé) : bonnes performances mais coût plus élevé à grande échelle
+\end{itemize}
+

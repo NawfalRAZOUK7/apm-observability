@@ -1,0 +1,28 @@
+- name: Base setup (Docker + repo + env)
+  hosts: apm_nodes
+  roles:
+    - docker_engine
+    - repo_assert
+    - env_cluster
+
+- name: Data node stack
+  hosts: data
+  roles:
+    - stack_data
+
+- name: Control node stack
+  hosts: control
+  roles:
+    - stack_control
+
+- name: App node stack
+  hosts: app
+  roles:
+    - stack_app
+
+- name: Validation (optional)
+  hosts: data:control:app
+  roles:
+    - validate
+  tags:
+    - validate

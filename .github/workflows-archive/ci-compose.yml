@@ -1,0 +1,163 @@
+name: CI Compose
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-compose-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  PYTHONUNBUFFERED: "1"
+  DJANGO_DEBUG: "0"
+  DJANGO_SECRET_KEY: "ci-not-secret"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+  DJANGO_TIME_ZONE: "UTC"
+  DRF_PAGE_SIZE: "50"
+  DB_SSLMODE: "disable"
+  DB_CONN_MAX_AGE: "0"
+
+jobs:
+  docker-compose-smoke:
+    name: Docker Compose smoke (build + migrate + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      COMPOSE_PROJECT_NAME: apm-ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+
+      - name: Cache Docker layers (buildx)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Prepare CI settings module
+        run: |
+          set -euxo pipefail
+          cat > apm_platform/ci_settings.py <<'PY'
+          from apm_platform.settings import *  # noqa: F403
+
+          SECURE_SSL_REDIRECT = False
+          SECURE_PROXY_SSL_HEADER = None
+          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
+
+          DATABASE_ROUTERS = []
+          if "default" in DATABASES:  # noqa: F405
+              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
+          PY
+
+      - name: Prepare CI env
+        run: |
+          set -euxo pipefail
+          cp .env.docker .env.docker.ci
+          sed -i 's/^DJANGO_SECRET_KEY=.*/DJANGO_SECRET_KEY=ci-not-secret/' .env.docker.ci
+          sed -i 's/^DJANGO_DEBUG=.*/DJANGO_DEBUG=0/' .env.docker.ci
+          {
+            echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings"
+            echo "POSTGRES_HOST=db"
+            echo "POSTGRES_PORT=5432"
+
+            # Reduce any accidental runtime overhead if web ever starts
+            echo "GUNICORN_WORKERS=1"
+            echo "GUNICORN_TIMEOUT=60"
+          } >> .env.docker.ci
+
+      - name: Build image (web) with cache
+        run: |
+          set -euxo pipefail
+          docker buildx bake -f docker/docker-compose.yml web \
+            --set *.cache-from=type=local,src=/tmp/.buildx-cache \
+            --set *.cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --set *.output=type=docker
+
+      - name: Move buildx cache
+        if: always()
+        run: |
+          if [ -d /tmp/.buildx-cache-new ]; then
+            rm -rf /tmp/.buildx-cache
+            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          fi
+
+      - name: Start DB only
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci up -d db
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps
+
+      - name: Wait for DB ready (pg_isready)
+        run: |
+          set -euxo pipefail
+          for i in {1..40}; do
+            if docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+              pg_isready -h 127.0.0.1 -p 5432 -U "${POSTGRES_USER:-apm}" -d "${POSTGRES_DB:-apm}" >/dev/null 2>&1; then
+              echo "DB is ready"
+              exit 0
+            fi
+            echo "Waiting for DB... ($i/40)"
+            sleep 2
+          done
+          echo "DB never became ready"
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs db --tail=200 || true
+          exit 1
+
+      - name: Bootstrap DB (extension + roles)
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+            psql -U apm -d apm -c "create extension if not exists timescaledb;"
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+            psql -U apm -d apm -f /docker-entrypoint-initdb.d/001_roles.sql
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci exec -T db \
+            psql -U apm -d apm -c "alter role apm_app createdb;"
+
+      - name: Run checks + migrate + tests (one-off web container)
+        run: |
+          set -euxo pipefail
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci run --rm --no-deps \
+            -e DJANGO_SETTINGS_MODULE=apm_platform.ci_settings \
+            --entrypoint bash web -lc "
+              python manage.py check &&
+              python manage.py migrate --noinput --verbosity 2 &&
+              python manage.py showmigrations --plan &&
+              python manage.py test -v 2
+            "
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci logs --no-color > compose.log || true
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci ps || true
+          free -m || true
+          docker stats --no-stream || true
+
+      - name: Upload compose logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-compose-logs
+          path: compose.log
+
+      - name: Shutdown
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.yml --env-file .env.docker.ci down -v --remove-orphans || true

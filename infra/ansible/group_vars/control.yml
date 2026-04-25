@@ -1,0 +1,7 @@
+# Control node overrides (optional)
+# control_node_ip: 192.168.0.11
+# minio_root_user: apm_backup
+# minio_root_password: apm_backup_secret
+# minio_bucket: pgbackrest
+# minio_bucket_cold: pgbackrest-cold
+# pgbackrest_cipher_pass: CHANGE_ME

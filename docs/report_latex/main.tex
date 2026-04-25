@@ -1,0 +1,45 @@
+\documentclass[12pt,a4paper]{apm_report}
+
+\graphicspath{{images/}}
+
+% Report metadata
+\input{metadata}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+{\Large\bfseries Résumé}
+\end{center}
+Ce rapport s’inscrit dans le cadre du module Administration de données et décrit la conception et la mise en œuvre d’APM-Observability, une plateforme d’observabilité applicative. Après une synthèse sur TimescaleDB et le modèle des séries temporelles, nous présentons l’architecture globale : pipeline d’ingestion via API Django, stockage en hypertables, vues continues pour les KPI et exposition des métriques vers Prometheus. La partie pratique détaille la configuration en mode cluster, la génération de données, les sauvegardes et restaurations pgBackRest vers MinIO, ainsi que la validation par tests Postman/Newman. Enfin, la supervision est illustrée par des tableaux de bord Grafana et des indicateurs de performance (latence, taux d’erreur, volumétrie). L’ensemble fournit une base opérationnelle pour le suivi applicatif et la prise de décision.
+
+\begin{center}
+{\Large\bfseries Abstract}
+\end{center}
+This report, developed for the Data Administration course, presents the design and implementation of APM-Observability, an application performance monitoring platform. We describe the data pipeline from ingestion to storage in TimescaleDB hypertables, the use of continuous aggregates for KPI computation, and the export of metrics to Prometheus. Operational aspects include cluster deployment, data seeding, pgBackRest backups to MinIO, and automated validation with Postman/Newman. The monitoring layer is showcased through Grafana dashboards covering availability, latency, error rate, and system health. The project delivers a practical, reproducible foundation for observability in data-intensive applications.
+
+\clearpage
+\tableofcontents
+\clearpage
+\listoffigures
+\clearpage
+
+\input{intro}
+\clearpage
+\input{Chap1_Base}
+\clearpage
+\input{Chap2_Mise}
+\clearpage
+\input{Chap3_Pratique}
+\clearpage
+\input{Chap4_Graphana}
+\clearpage
+\input{conclusion}
+\clearpage
+\appendix
+\input{annexes}
+
+\clearpage
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

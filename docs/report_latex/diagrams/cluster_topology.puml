@@ -1,0 +1,31 @@
+@startuml
+title Cluster Topology
+skinparam shadowing false
+
+node "Control Node" as Control {
+  component "MinIO" as Minio
+  component "pgBackRest Client" as PgbClient
+  component "Prometheus" as Prom
+  component "Grafana" as Grafana
+  component "Monitoring Proxy" as Proxy
+  component "Node Exporter" as NodeExp
+}
+
+node "Data Node" as Data {
+  database "TimescaleDB Primary" as DB1
+  database "TimescaleDB Replica" as DB2
+  component "pgBackRest Server" as PgbServer
+}
+
+node "App Node" as App {
+  component "Nginx" as Nginx
+  component "Django API" as API
+}
+
+API --> DB1 : SQL
+DB1 --> DB2 : replication
+PgbClient --> PgbServer : TLS
+PgbClient --> Minio : S3/HTTPS
+Grafana --> DB1 : SQL
+Prom --> NodeExp : scrape
+@enduml

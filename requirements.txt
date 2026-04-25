@@ -1,0 +1,14 @@
+Django
+djangorestframework
+django-filter
+django-prometheus
+psycopg[binary]
+python-dotenv
+Faker
+unittest-xml-reporting
+pgvector
+PyYAML
+ruff
+black
+whitenoise
+gunicorn

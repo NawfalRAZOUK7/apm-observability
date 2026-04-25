@@ -1,0 +1,144 @@
+\section{Application pratique}
+
+\subsection{Sauvegardes et restauration}
+
+\subsubsection*{Backups hot et cold}
+Les sauvegardes sont assurées via pgBackRest avec deux dépôts (hot/cold) sur un stockage compatible S3 (MinIO). Les opérations sont automatisées et idempotentes.
+
+\textbf{Stack backup dédiée} :
+\begin{verbatim}
+docker compose -f docker/docker-compose.backup.yml up -d --build
+make setup-backup-ssh
+docker compose -f docker/docker-compose.backup.yml exec pgbackrest \
+  pgbackrest --stanza=apm info
+docker compose -f docker/docker-compose.backup.yml exec pgbackrest \
+  pgbackrest --stanza=apm --type=full backup
+\end{verbatim}
+
+\textbf{Mode cluster} :
+\begin{verbatim}
+make pgbackrest-full
+make pgbackrest-full-repo2
+\end{verbatim}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{backup_flow.png}
+    \caption{Flux de sauvegarde pgBackRest vers MinIO}
+\end{figure}
+
+\subsubsection*{Stockage compatible S3}
+Les backups peuvent être exportés vers un stockage compatible S3 (MinIO). La configuration S3 se trouve dans :
+\begin{itemize}
+    \item \path{docker/backup/pgbackrest-client.conf}
+    \item \path{docker/backup/pgbackrest-server.conf}
+\end{itemize}
+Les buckets hot/cold sont séparés pour isoler les stratégies de rétention.
+
+Les Figures~\ref{fig:minio-hot} et~\ref{fig:minio-cold} illustrent la séparation hot/cold côté MinIO.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{minio_pgbackrest.png}
+    \caption{Bucket hot \texttt{pgbackrest}}
+    \label{fig:minio-hot}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{minio_pgbackrest_cold.png}
+    \caption{Bucket cold \texttt{pgbackrest-cold}}
+    \label{fig:minio-cold}
+\end{figure}
+
+\subsection{Données de test}
+
+\subsubsection*{Seeding de la base avec Faker}
+Pour les tests et démonstrations, la base peut être peuplée avec des données factices générées via la librairie Faker.
+
+\textbf{Mode cluster} :
+\begin{verbatim}
+make seed
+\end{verbatim}
+
+\textbf{Stack principale (local)} :
+\begin{verbatim}
+docker compose -f docker/docker-compose.yml exec web \
+  python manage.py seed_apirequests --count 1000 --days 1
+\end{verbatim}
+
+\textbf{Script utilitaire} :
+\begin{verbatim}
+scripts/seed_faker.sh --count 1000 --days 1
+\end{verbatim}
+
+\subsection{Tolérance aux pannes}
+
+\subsubsection*{Simulation de pannes}
+Des tests de tolérance sont possibles en simulant l’arrêt de nœuds Docker pour vérifier la résilience du cluster. Des scripts de drill sont fournis dans \texttt{scripts/drills} :
+
+\begin{verbatim}
+CONFIRM=YES scripts/drills/02_failover_replica.sh
+CONFIRM=YES scripts/drills/03_minio_outage.sh
+\end{verbatim}
+
+\subsubsection*{Procédures de recovery}
+La restauration automatique depuis les backups permet de remettre rapidement le système en état de fonctionnement.
+
+\begin{verbatim}
+docker compose -f docker/docker-compose.backup.yml exec pgbackrest \
+  pgbackrest --stanza=apm restore
+CONFIRM=YES scripts/drills/01_primary_restore.sh
+\end{verbatim}
+
+\subsection{Optimisation}
+
+\subsubsection*{Index et performances}
+L’utilisation des hypertables, des agrégats continus et d’index spécifiques permet d’optimiser les performances des requêtes analytiques, notamment pour les KPI et les tableaux de bord. Après un gros seeding, un rafraîchissement des CAGG garantit des résultats cohérents :
+
+\begin{verbatim}
+python manage.py refresh_apirequest_hourly
+python manage.py refresh_apirequest_daily
+\end{verbatim}
+
+\subsection{Tests et validation}
+Les scénarios API sont automatisés via Postman et exécutés en CLI avec Newman. Les collections et environnements sont disponibles dans \path{postman/} :
+\begin{itemize}
+    \item \path{APM_Observability_Step1.postman_collection.json} \\
+    \path{APM_Observability_Step5.postman_collection.json}
+    \item \path{APM_Observability.cluster.postman_environment.json}
+    \item \path{APM_Observability.main.postman_environment.json}
+\end{itemize}
+
+Les rapports HTML/JUnit de l’exécution sont disponibles dans \path{reports/all_tests_20251225_134101/}. Le tableau ci-dessous synthétise les résultats.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Step} & \textbf{Tests} & \textbf{Failures} & \textbf{Errors} & \textbf{Time (s)} \\
+\midrule
+Step 1 & 14 & 0 & 0 & 3.394 \\
+Step 2 & 4 & 0 & 0 & 1.232 \\
+Step 3 & 3 & 0 & 0 & 0.285 \\
+Step 4 & 2 & 0 & 0 & 0.410 \\
+Step 5 & 5 & 0 & 0 & 0.609 \\
+\midrule
+\textbf{Total} & \textbf{28} & \textbf{0} & \textbf{0} & \textbf{5.930} \\
+\bottomrule
+\end{tabular}
+\caption{Synthèse des tests Newman (Postman)}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{tests_step1_report.png}
+    \caption{Rapport Newman - Step 1 (CRUD + filtres)}
+    \label{fig:tests-step1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{tests_step5_report.png}
+    \caption{Rapport Newman - Step 5 (KPIs / analytics)}
+    \label{fig:tests-step5}
+\end{figure}

@@ -1,0 +1,32 @@
+- name: Validate OS support for docker install
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family in ["Debian"]
+    fail_msg: "docker_engine role currently supports Debian/Ubuntu only."
+  when: install_docker | bool
+
+- name: Install Docker engine and compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-compose-plugin
+    update_cache: true
+  become: true
+  when: install_docker | bool
+
+- name: Ensure Docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  become: true
+  when: install_docker | bool
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  become: true
+  loop: "{{ docker_users }}"
+  when: docker_users | length > 0
