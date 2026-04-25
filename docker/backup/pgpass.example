@@ -1,8 +1,9 @@
 # ==========================================================================
-# docker/backup/pgpass  (DO NOT COMMIT)
+# docker/backup/pgpass.example
 #
 # Purpose:
 # - Prevent any interactive password prompt when pgBackRest connects to Postgres.
+# - Copy this file to docker/backup/pgpass locally, then chmod 600 it.
 #
 # Format:
 #   hostname:port:database:username:password

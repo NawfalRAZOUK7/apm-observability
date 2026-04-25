@@ -61,6 +61,13 @@ python scripts/cluster/switch_cluster_mode.py --config configs/cluster/cluster.y
 ```
 Cela met a jour `docker/cluster/.env.cluster` et `docker/monitoring/prometheus.yml`.
 
+## 3 bis) Preparer le fichier pgpass local
+```
+cp docker/backup/pgpass.example docker/backup/pgpass
+chmod 600 docker/backup/pgpass
+```
+Necessaire pour les commandes pgBackRest qui utilisent l'authentification non interactive.
+
 ## 4) Lancer le cluster (data, control, app)
 ```
 make up-data

@@ -7,6 +7,7 @@ __pycache__/
 
 # Virtualenv
 .venv/
+.ruff_cache/
 
 # Env files
 .env

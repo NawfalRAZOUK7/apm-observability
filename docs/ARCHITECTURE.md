@@ -140,7 +140,7 @@ Cluster topology:
   - `pgbackrest-client.conf` - pgBackRest client config.
   - `pgbackrest-cron.sh` - Cron schedule runner.
   - `pgbackrest-server.conf` - pgBackRest server config.
-  - `pgpass` - Local pgpass for non-interactive auth.
+  - `pgpass.example` - Template for local pgpass non-interactive auth.
 - `certs/`
   - `setup-ssl.sh` - Generate self-signed app TLS certs.
   - `gen_pgbackrest_mtls.sh` - Generate pgBackRest mTLS certs.

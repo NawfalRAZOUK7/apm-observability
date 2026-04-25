@@ -83,6 +83,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 - `docker/.env.ports.localdev` - local port overrides.
 - `configs/cluster/cluster.yml` - local config used by the switcher (gitignored).
 - `make certs-dev` - regenerates local self-signed TLS and pgBackRest mTLS assets.
+- `cp docker/backup/pgpass.example docker/backup/pgpass && chmod 600 docker/backup/pgpass` - prepares local pgBackRest DB auth.
 
 ## Backups (pgBackRest)
 - Hot repository: `pgbackrest` bucket (MinIO).
