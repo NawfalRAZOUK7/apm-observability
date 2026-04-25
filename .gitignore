@@ -46,6 +46,7 @@ docker/certs/private.key
 docker/certs/pgbackrest/*.key
 docker/certs/pgbackrest/*.csr
 docker/certs/pgbackrest/*.srl
+docker/backup/pgpass
 archive/configs/**/id_rsa
 archive/configs/**/id_rsa.pub
 archive/configs/**/known_hosts
