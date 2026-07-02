@@ -16,7 +16,7 @@ echo ""
 # Show next steps
 echo "=== Next Steps ==="
 echo "1. ✅ Add PostgreSQL database (if not done)"
-echo "2. Run: ./setup_railway_env.sh"
+echo "2. Run: ./scripts/deploy/setup_railway_env.sh"
 echo "3. Enable TimescaleDB: railway connect postgres"
 echo "4. Run SQL: CREATE EXTENSION IF NOT EXISTS timescaledb;"
 echo "5. Redeploy: railway up"

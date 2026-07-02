@@ -1,0 +1,12 @@
+# Normalize line endings.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.py text eol=lf
+Makefile text eol=lf
+
+# Mark generated/vendored files so GitHub's language stats and diffs are cleaner.
+requirements.txt linguist-generated=true
+docs/report_latex/main.pdf binary
+*.png binary
+*.pdf binary

@@ -229,7 +229,7 @@ def main() -> int:
     root = _repo_root()
     default_env = root / "docker" / "cluster" / ".env.cluster"
     default_template = root / "docker" / "cluster" / ".env.cluster.example"
-    default_prom = root / "docker" / "monitoring" / "prometheus.yml"
+    default_prom = root / "docker" / "monitoring" / "prometheus" / "prometheus.cluster.yml"
 
     argv = sys.argv[1:]
     if argv and argv[0] in {"single", "multi"}:

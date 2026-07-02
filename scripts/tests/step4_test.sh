@@ -2,66 +2,18 @@
 set -euo pipefail
 
 # Run from repo root no matter where script is called from
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT_DIR"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/common.sh
+source "$ROOT_DIR/scripts/lib/common.sh"
+cd_repo_root
 
 # Auto-load .env if present (so Django uses Postgres in scripts)
-if [[ -f ".env" ]]; then
-  set -a
-  source .env
-  set +a
-fi
-
-# Load port registry for consistent host ports (main/cluster).
-for env_file in "$ROOT_DIR/docker/.env.ports" "$ROOT_DIR/docker/.env.ports.localdev"; do
-  if [[ -f "$env_file" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$env_file"
-    set +a
-  fi
-done
-
-STACK="${STACK:-main}"
-APP_HOST="${APP_HOST:-127.0.0.1}"
-
-if [[ "$STACK" == "cluster" ]]; then
-  APP_HTTPS_PORT="${APP_HTTPS_PORT:-${CLUSTER_APP_NGINX_HTTPS_HOST_PORT:-18443}}"
-  POSTMAN_ENV_DEFAULT="postman/APM_Observability.cluster.postman_environment.json"
-  DB_PORT_DEFAULT="${CLUSTER_DATA_DB_HOST_PORT:-5432}"
-else
-  APP_HTTPS_PORT="${APP_HTTPS_PORT:-${MAIN_NGINX_HTTPS_HOST_PORT:-8443}}"
-  POSTMAN_ENV_DEFAULT="postman/APM_Observability.main.postman_environment.json"
-  DB_PORT_DEFAULT="${MAIN_DB_HOST_PORT:-5432}"
-fi
-
-POSTMAN_ENV="${POSTMAN_ENV:-$POSTMAN_ENV_DEFAULT}"
-BASE_URL="${BASE_URL:-https://${APP_HOST}:${APP_HTTPS_PORT}}"
-DB_HOST="${DB_HOST:-localhost}"
-DB_PORT="${DB_PORT:-$DB_PORT_DEFAULT}"
-DB_NAME="${DB_NAME:-apm}"
-DB_USER="${DB_USER:-apm}"
-DB_PASSWORD="${DB_PASSWORD:-apm}"
-REPORT_DIR="${REPORT_DIR:-reports}"
-SSL_VERIFY="${SSL_VERIFY:-false}"
+load_env_files .env
+configure_step_environment
 LOG_FILE="${LOG_FILE:-}"
 
-# Set curl SSL flags based on SSL_VERIFY
-if [[ "$SSL_VERIFY" == "false" ]]; then
-    CURL_SSL_FLAGS="-k"
-else
-    CURL_SSL_FLAGS=""
-fi
-
-# Set newman SSL flags based on SSL_VERIFY
-if [[ "$SSL_VERIFY" == "false" ]]; then
-    NEWMAN_SSL_FLAGS="--insecure"
-else
-    NEWMAN_SSL_FLAGS=""
-fi
-
 # Optional: if you use docker for TimescaleDB
-# docker compose -f docker/docker-compose.yml up -d
+# docker compose --env-file .env.docker -f docker/docker-compose.yml up -d
 
 POSTGRES_HOST="$DB_HOST" POSTGRES_PORT="$DB_PORT" POSTGRES_DB="$DB_NAME" POSTGRES_USER="$DB_USER" POSTGRES_PASSWORD="$DB_PASSWORD" \
   python manage.py migrate --noinput

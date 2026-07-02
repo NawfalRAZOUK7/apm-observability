@@ -12,7 +12,7 @@ LOG="$REPORT_DIR/step6_tests.log"
 export DJANGO_SETTINGS_MODULE
 
 # Optional: if you use docker for TimescaleDB
-# docker compose -f docker/docker-compose.yml up -d
+# docker compose --env-file .env.docker -f docker/docker-compose.yml up -d
 
 echo "---- Step 6: check migrations up-to-date ----"
 if ! $PY manage.py makemigrations --check --dry-run >/dev/null 2>&1; then

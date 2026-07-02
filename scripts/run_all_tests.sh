@@ -136,16 +136,16 @@ if [[ "$AUTO_SKIP_STEP6" == "true" && "$SKIP_STEP6" == "true" ]]; then
 fi
 mkdir -p "$REPORT_DIR"
 
-scripts/step1_test.sh
-scripts/step2_test.sh
-scripts/step3_test.sh
-scripts/step4_test.sh
-scripts/step5_test.sh
+scripts/tests/step1_test.sh
+scripts/tests/step2_test.sh
+scripts/tests/step3_test.sh
+scripts/tests/step4_test.sh
+scripts/tests/step5_test.sh
 
 if [[ "$SKIP_STEP6" == "true" ]]; then
   echo "---- Step 6 skipped ----"
 else
-  REPORT_DIR="$REPORT_DIR" scripts/step6_test.sh
+  REPORT_DIR="$REPORT_DIR" scripts/tests/step6_test.sh
 fi
 
 echo ""

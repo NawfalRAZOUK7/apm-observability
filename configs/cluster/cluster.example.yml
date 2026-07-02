@@ -1,7 +1,7 @@
 mode: single
 env_file: docker/cluster/.env.cluster
 template: docker/cluster/.env.cluster.example
-prometheus: docker/monitoring/prometheus.yml
+prometheus: docker/monitoring/prometheus/prometheus.cluster.yml
 update_prometheus: true
 backup_env: true
 
