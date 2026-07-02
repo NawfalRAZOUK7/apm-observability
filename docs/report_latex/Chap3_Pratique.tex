@@ -62,7 +62,7 @@ make seed
 
 \textbf{Stack principale (local)} :
 \begin{verbatim}
-docker compose -f docker/docker-compose.yml exec web \
+docker compose --env-file .env.docker -f docker/docker-compose.yml exec web \
   python manage.py seed_apirequests --count 1000 --days 1
 \end{verbatim}
 

@@ -49,9 +49,9 @@ Cluster topology:
 - `.env.example` - Example environment file for local dev.
 - `.env.docker` - Docker runtime environment defaults for web app.
 - `railway.json` - Railway deployment config.
-- `check_railway_db.sh` - Script to verify Railway DB connectivity.
-- `setup_railway_env.sh` - Script to export Railway env vars.
-- `deploy-production.sh` - Production deployment helper.
+- `scripts/deploy/check_railway_db.sh` - Script to verify Railway DB connectivity.
+- `scripts/deploy/setup_railway_env.sh` - Script to export Railway env vars.
+- `scripts/deploy/deploy-production.sh` - Production deployment helper.
 - `.env` / `.env.gemini` - Local-only secret files (ignored by git).
 
 ### .github/
@@ -67,12 +67,12 @@ Cluster topology:
 - `asgi.py` - ASGI entry point.
 - `wsgi.py` - WSGI entry point.
 - `settings.py` - Primary Django settings.
+- `env.py` - Environment variable and host/port parsing helpers.
 - `ci_settings.py` - CI-only overrides (single DB, no SSL redirect).
 - `urls.py` - Root URL routing.
 - `db_middleware.py` - Tracks request method and marks writes.
 - `db_routing.py` - Read-after-write TTL + safe method detection.
 - `db_router.py` - Primary/replica DB router logic.
-- `__pycache__/` - Python cache (generated, ignored).
 
 ### observability/ (Django app)
 - `__init__.py` - Package marker.
@@ -84,12 +84,18 @@ Cluster topology:
 - `serializers.py` - DRF serializers for ingest and read APIs.
 - `urls.py` - App-level routes.
 - `views.py` - API endpoints (ingest, KPIs, search).
+- `api/`
+  - `__init__.py` - API helper package marker.
+  - `query_params.py` - Shared query parameter parsing helpers.
 - `ai/`
   - `__init__.py` - AI package marker.
   - `gemini.py` - Gemini embeddings client + helpers.
 - `analytics/`
   - `__init__.py` - Analytics package marker.
   - `sql.py` - SQL snippets for KPIs + analytics queries.
+- `services/`
+  - `__init__.py` - Service package marker.
+  - `ingestion.py` - Bulk ingest validation, insertion, and custom metrics updates.
 - `management/`
   - `__init__.py` - Django management package marker.
   - `commands/`
@@ -168,9 +174,15 @@ Cluster topology:
   - `gen-minio-cert.sh` - Self-signed MinIO certs.
   - `init.sh` - Bucket init (hot/cold).
 - `monitoring/`
-  - `prometheus.yml` - Scrape targets and TLS settings.
+  - `prometheus/`
+    - `prometheus.simple.yml` - Single-node scrape targets.
+    - `prometheus.cluster.yml` - Cluster scrape targets and TLS settings.
+    - `alert.rules.yml` - Prometheus alerting rules.
+  - `alertmanager/`
+    - `alertmanager.yml` - Alertmanager routing and receivers.
   - `grafana/provisioning/`
     - `dashboards/dashboards.yml` - Dashboard provisioning.
+    - `dashboards/apm-custom-metrics.json` - Custom ingestion metrics dashboard.
     - `dashboards/apm-infra.json` - Infra dashboard.
     - `dashboards/apm-targets.json` - Targets dashboard.
     - `dashboards/apm-timescale.json` - Timescale SQL dashboard.
@@ -204,6 +216,7 @@ Cluster topology:
 ### scripts/
 - `run_all_tests.sh` - Orchestrates step1..step6 tests.
 - `seed_faker.sh` - Quick seed helper for API requests.
+- `lib/common.sh` - Shared shell helpers for repo root, env loading, ports, SSL flags.
 - `step1_test.sh` - Step 1 functional checks.
 - `step2_test.sh` - Step 2 cluster connectivity checks.
 - `step3_test.sh` - Step 3 roles/routing checks.

@@ -32,7 +32,9 @@ Terraform:
 Objectif: visualiser la sante infra + KPIs APM.
 
 Lien projet:
-- Prometheus config: `docker/monitoring/prometheus.yml`
+- Prometheus configs:
+  `docker/monitoring/prometheus/prometheus.simple.yml`,
+  `docker/monitoring/prometheus/prometheus.cluster.yml`
 - Grafana datasources/dashboards:
   `docker/monitoring/grafana/provisioning/`
 - Control stack: `docker/cluster/docker-compose.control.yml`

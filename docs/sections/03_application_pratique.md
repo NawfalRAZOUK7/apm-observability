@@ -55,7 +55,7 @@ Objectif: valider resilience du cluster (primary, replicas, backup).
 Lien projet:
 - Drills: `scripts/drills/00_baseline.sh`, `01_primary_restore.sh`,
   `02_failover_replica.sh`, `03_minio_outage.sh`
-- Tests: `scripts/step6_test.sh`
+- Tests: `scripts/tests/step6_test.sh`
 
 Scenario recommande (pas a pas):
 1) Baseline:

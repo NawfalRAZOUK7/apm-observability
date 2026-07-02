@@ -3,7 +3,7 @@
 ## 2.1 Demarrage d'une seule instance
 Option simple (main stack):
 ```
-docker compose -f docker/docker-compose.yml up -d --build
+docker compose --env-file .env.docker -f docker/docker-compose.yml up -d --build
 ```
 
 Option cluster (single-machine, 3 stacks):
@@ -22,7 +22,7 @@ Lien projet:
 ## 2.2 Procedure de connexion a la base
 Depuis le conteneur:
 ```
-docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm
+docker compose --env-file .env.docker -f docker/docker-compose.yml exec db psql -U apm -d apm
 ```
 
 Exemple avec host/port (cluster, local):
@@ -132,7 +132,7 @@ python manage.py check_cluster_dbs
 Checks automatiques:
 ```
 make check-dbs
-bash scripts/step2_test.sh
+bash scripts/tests/step2_test.sh
 ```
 
 Variables reseau:

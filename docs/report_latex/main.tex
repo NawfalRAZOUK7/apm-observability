@@ -11,12 +11,12 @@
 \begin{center}
 {\Large\bfseries Résumé}
 \end{center}
-Ce rapport s’inscrit dans le cadre du module Administration de données et décrit la conception et la mise en œuvre d’APM-Observability, une plateforme d’observabilité applicative. Après une synthèse sur TimescaleDB et le modèle des séries temporelles, nous présentons l’architecture globale : pipeline d’ingestion via API Django, stockage en hypertables, vues continues pour les KPI et exposition des métriques vers Prometheus. La partie pratique détaille la configuration en mode cluster, la génération de données, les sauvegardes et restaurations pgBackRest vers MinIO, ainsi que la validation par tests Postman/Newman. Enfin, la supervision est illustrée par des tableaux de bord Grafana et des indicateurs de performance (latence, taux d’erreur, volumétrie). L’ensemble fournit une base opérationnelle pour le suivi applicatif et la prise de décision.
+Ce rapport s’inscrit dans le cadre du module Administration de données et décrit la conception et la mise en œuvre d’APM-Observability, une plateforme d’observabilité applicative. Après une synthèse sur TimescaleDB et le modèle des séries temporelles, nous présentons l’architecture globale : pipeline d’ingestion via API Django, stockage en hypertables, vues continues pour les KPI et exposition des métriques vers Prometheus. La partie pratique détaille la configuration en mode cluster, la génération de données, les sauvegardes et restaurations pgBackRest vers MinIO, ainsi que la validation par tests Postman/Newman. Enfin, la supervision est illustrée par des tableaux de bord Grafana et des indicateurs de performance (latence, taux d’erreur, volumétrie). La plateforme est également industrialisée : documentation d’API OpenAPI, tests de charge, observabilité complète (métriques, journaux, traces distribuées), alerting orienté SLO, cycle de vie et qualité des données, chaîne CI/CD sécurisée et déploiement Kubernetes (Helm, GitOps). L’ensemble fournit une base opérationnelle pour le suivi applicatif et la prise de décision.
 
 \begin{center}
 {\Large\bfseries Abstract}
 \end{center}
-This report, developed for the Data Administration course, presents the design and implementation of APM-Observability, an application performance monitoring platform. We describe the data pipeline from ingestion to storage in TimescaleDB hypertables, the use of continuous aggregates for KPI computation, and the export of metrics to Prometheus. Operational aspects include cluster deployment, data seeding, pgBackRest backups to MinIO, and automated validation with Postman/Newman. The monitoring layer is showcased through Grafana dashboards covering availability, latency, error rate, and system health. The project delivers a practical, reproducible foundation for observability in data-intensive applications.
+This report, developed for the Data Administration course, presents the design and implementation of APM-Observability, an application performance monitoring platform. We describe the data pipeline from ingestion to storage in TimescaleDB hypertables, the use of continuous aggregates for KPI computation, and the export of metrics to Prometheus. Operational aspects include cluster deployment, data seeding, pgBackRest backups to MinIO, and automated validation with Postman/Newman. The monitoring layer is showcased through Grafana dashboards covering availability, latency, error rate, and system health. The platform is further industrialized: OpenAPI documentation, load testing, full observability (metrics, logs, distributed traces), SLO-based alerting, data lifecycle and quality policies, a secured CI/CD pipeline, and Kubernetes delivery (Helm, GitOps). The project delivers a practical, reproducible foundation for observability in data-intensive applications.
 
 \clearpage
 \tableofcontents
@@ -33,6 +33,8 @@ This report, developed for the Data Administration course, presents the design a
 \input{Chap3_Pratique}
 \clearpage
 \input{Chap4_Graphana}
+\clearpage
+\input{Chap5_Avance}
 \clearpage
 \input{conclusion}
 \clearpage

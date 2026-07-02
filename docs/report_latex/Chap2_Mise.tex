@@ -23,7 +23,7 @@ Le projet fournit un environnement Docker prêt à l’emploi pour lancer une in
 
 \begin{verbatim}
 cp .env.example .env
-docker compose -f docker/docker-compose.yml up --build
+docker compose --env-file .env.docker -f docker/docker-compose.yml up --build
 \end{verbatim}
 
 Cette commande initialise à la fois le conteneur TimescaleDB et le backend Django.
@@ -32,7 +32,7 @@ Cette commande initialise à la fois le conteneur TimescaleDB et le backend Djan
 Une fois le conteneur en fonctionnement, la connexion peut se faire directement depuis Docker :
 
 \begin{verbatim}
-docker compose -f docker/docker-compose.yml exec db psql -U apm -d apm
+docker compose --env-file .env.docker -f docker/docker-compose.yml exec db psql -U apm -d apm
 \end{verbatim}
 
 Il est également possible de se connecter depuis l’hôte si le port est exposé :
@@ -136,6 +136,7 @@ Le projet utilise les particularités de TimescaleDB pour :
 \begin{itemize}
     \item Créer des hypertables pour le partitionnement automatique.
     \item Mettre en place des agrégats continus (hourly/daily) pour accélérer les requêtes analytiques.
+    \item Appliquer des politiques de compression colonnaire et de rétention sur l’hypertable brute (cf. chapitre~\ref{sec:avance} pour le cycle de vie des données).
     \item Assurer un fallback sur PostgreSQL standard si TimescaleDB n’est pas disponible.
 \end{itemize}
 

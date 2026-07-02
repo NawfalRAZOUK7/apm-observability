@@ -74,12 +74,17 @@ Métriques affichées :
     \item Taux d’erreur par endpoint
 \end{itemize}
 
-En mode cluster, des dashboards sont déjà provisionnés dans
-\path{docker/monitoring/grafana/provisioning/dashboards}. Exemples :
+Des dashboards sont déjà provisionnés dans
+\path{docker/monitoring/grafana/provisioning/dashboards} :
 \begin{itemize}
-    \item \path{apm-timescale.json}
-    \item \path{apm-infra.json}
+    \item \path{apm-timescale.json} (KPI SQL : requêtes, taux d'erreur, latence)
+    \item \path{apm-infra.json} (infrastructure : CPU, mémoire, disque)
+    \item \path{apm-targets.json} (état des cibles Prometheus)
+    \item \path{apm-custom-metrics.json} (métriques applicatives custom)
 \end{itemize}
+Outre TimescaleDB et Prometheus, les datasources Tempo (traces) et Loki (journaux)
+sont provisionnées automatiquement ; l'observabilité complète (les trois piliers)
+est détaillée au chapitre~\ref{sec:avance}.
 
 \begin{figure}[H]
     \centering

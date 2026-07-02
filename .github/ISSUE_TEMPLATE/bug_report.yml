@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a problem with the platform
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to file a bug. Please fill in the details below.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including any error output.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `make demo`
+        2. Call `...`
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: stack
+    attributes:
+      label: Which stack?
+      options:
+        - Single-node (make demo / docker-compose.yml)
+        - Cluster (docker/cluster)
+        - Kubernetes (Helm)
+        - Local (venv / SQLite)
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Docker version, Python version, relevant env vars.
+    validations:
+      required: false

@@ -7,7 +7,7 @@ Objectif: permettre un lancement propre depuis un environnement vide et verifier
 | Mode | Quand l'utiliser | Commande de base |
 | --- | --- | --- |
 | Cluster | Demo complete (replicas, pgBackRest, monitoring) | `make up-all` |
-| Local / main stack | Test rapide sans cluster | `docker compose -f docker/docker-compose.yml up -d --build` |
+| Local / main stack | Test rapide sans cluster | `docker compose --env-file .env.docker -f docker/docker-compose.yml up -d --build` |
 
 ## 0) Prerequis
 - Docker Desktop + Docker Compose
@@ -25,7 +25,7 @@ pip install pyyaml
 ## 1) Nettoyer l'etat Docker (repartir de zero)
 ```
 make down-all
-docker compose -f docker/docker-compose.yml down -v --remove-orphans
+docker compose --env-file .env.docker -f docker/docker-compose.yml down -v --remove-orphans
 
 # Supprimer les volumes restants du projet (si besoin).
 # Cela supprime aussi la base "main stack" (volume db_data).
@@ -59,7 +59,7 @@ Notes:
 ```
 python scripts/cluster/switch_cluster_mode.py --config configs/cluster/cluster.yml
 ```
-Cela met a jour `docker/cluster/.env.cluster` et `docker/monitoring/prometheus.yml`.
+Cela met a jour `docker/cluster/.env.cluster` et `docker/monitoring/prometheus/prometheus.cluster.yml`.
 
 ## 3 bis) Preparer le fichier pgpass local
 ```
@@ -85,6 +85,7 @@ make seed
 ## 6) Initialiser pgBackRest (une fois)
 ```
 docker compose -p apm-control \
+  --env-file .env.docker \
   --env-file docker/.env.ports \
   --env-file docker/.env.ports.localdev \
   --env-file docker/cluster/.env.cluster \
@@ -144,22 +145,22 @@ Si tu veux tester la stack principale (non-cluster) sur une seule machine:
 
 ### 12.1) Lancer la stack principale
 ```
-docker compose -f docker/docker-compose.yml up -d --build
+docker compose --env-file .env.docker -f docker/docker-compose.yml up -d --build
 ```
 
 ### 12.2) Seed (donnees de demo)
 ```
-docker compose -f docker/docker-compose.yml exec web \
+docker compose --env-file .env.docker -f docker/docker-compose.yml exec web \
   python manage.py seed_apirequests --count 1000 --days 1
 ```
 
 ### 12.3) Verifier que tout est OK
 ```
-docker compose -f docker/docker-compose.yml exec web python manage.py test -v 2
+docker compose --env-file .env.docker -f docker/docker-compose.yml exec web python manage.py test -v 2
 curl -kI https://localhost:8443/api/health/ | head -n 5
 ```
 
 ### 12.4) Stop + wipe (local)
 ```
-docker compose -f docker/docker-compose.yml down -v --remove-orphans
+docker compose --env-file .env.docker -f docker/docker-compose.yml down -v --remove-orphans
 ```
