@@ -16,15 +16,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from apm_platform.env import env, env_bool, env_csv, parse_host_list, split_host_port
+
 # Load environment variables from .env file
 load_dotenv()
-
-
-def _env_bool_top(name: str, default: bool = False) -> bool:
-    val = os.environ.get(name)
-    if val is None:
-        return default
-    return val.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -38,19 +33,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env_bool_top("DJANGO_DEBUG", default=False)
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
 
 # Comma-separated: "localhost,127.0.0.1"
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
-    if h.strip()
-]
+ALLOWED_HOSTS = env_csv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
 
 # Comma-separated list of trusted origins for CSRF (include scheme + port).
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
-]
+CSRF_TRUSTED_ORIGINS = env_csv("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 # Application definition
 
@@ -66,6 +55,7 @@ INSTALLED_APPS = [
     "django_prometheus",
     "rest_framework",
     "django_filters",
+    "drf_spectacular",
     # Local
     "observability",
 ]
@@ -109,69 +99,21 @@ WSGI_APPLICATION = 'apm_platform.wsgi.application'
 
 RUNNING_TESTS = any(arg in sys.argv for arg in ["test", "pytest"])
 
+FORCE_SQLITE = env_bool("FORCE_SQLITE", False)
 
-def _env(name: str, default: str = "") -> str:
-    return os.environ.get(name, default).strip()
+POSTGRES_NAME = env("POSTGRES_DB") or env("DB_NAME")
+POSTGRES_HOST = env("POSTGRES_HOST") or env("DB_HOST", "localhost")
+POSTGRES_PORT = env("POSTGRES_PORT") or env("DB_PORT", "5432")
 
+ADMIN_USER = env("POSTGRES_USER") or env("DB_USER")
+ADMIN_PASSWORD = env("POSTGRES_PASSWORD") or env("DB_PASSWORD")
 
-def _env_bool(name: str, default: bool = False) -> bool:
-    val = _env(name, "")
-    if not val:
-        return default
-    return val.lower() in {"1", "true", "yes", "y", "on"}
+WRITER_USER = env("POSTGRES_WRITER_USER") or env("POSTGRES_APP_USER") or ADMIN_USER
+WRITER_PASSWORD = env("POSTGRES_WRITER_PASSWORD") or env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
 
-
-def _split_host_port(raw: str, default_port: int) -> tuple[str, int]:
-    value = raw.strip() if raw else ""
-    if not value:
-        return "localhost", default_port
-
-    if value.startswith("["):
-        host_part, _, rest = value[1:].partition("]")
-        if not host_part:
-            raise ValueError(f"Invalid host entry: {raw}")
-        if not rest:
-            return host_part, default_port
-        if not rest.startswith(":"):
-            raise ValueError(f"Invalid host entry: {raw}")
-        port_part = rest[1:]
-    else:
-        if ":" in value:
-            host_part, port_part = value.rsplit(":", 1)
-        else:
-            host_part = value
-            port_part = str(default_port)
-
-    try:
-        port = int(port_part)
-    except ValueError as exc:
-        raise ValueError(f"Invalid port in host entry: {raw}") from exc
-
-    return host_part, port
-
-
-def _parse_host_list(raw: str, default_port: int) -> list[tuple[str, int]]:
-    entries = [entry.strip() for entry in raw.split(",") if entry.strip()]
-    return [_split_host_port(entry, default_port) for entry in entries]
-
-
-FORCE_SQLITE = _env_bool("FORCE_SQLITE", False)
-
-POSTGRES_NAME = _env("POSTGRES_DB") or _env("DB_NAME")
-POSTGRES_HOST = _env("POSTGRES_HOST") or _env("DB_HOST", "localhost")
-POSTGRES_PORT = _env("POSTGRES_PORT") or _env("DB_PORT", "5432")
-
-ADMIN_USER = _env("POSTGRES_USER") or _env("DB_USER")
-ADMIN_PASSWORD = _env("POSTGRES_PASSWORD") or _env("DB_PASSWORD")
-
-WRITER_USER = _env("POSTGRES_WRITER_USER") or _env("POSTGRES_APP_USER") or ADMIN_USER
-WRITER_PASSWORD = (
-    _env("POSTGRES_WRITER_PASSWORD") or _env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
-)
-
-READER_USER = _env("POSTGRES_READER_USER") or _env("POSTGRES_READONLY_USER") or WRITER_USER
+READER_USER = env("POSTGRES_READER_USER") or env("POSTGRES_READONLY_USER") or WRITER_USER
 READER_PASSWORD = (
-    _env("POSTGRES_READER_PASSWORD") or _env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
+    env("POSTGRES_READER_PASSWORD") or env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
 )
 
 if not ADMIN_USER:
@@ -179,20 +121,20 @@ if not ADMIN_USER:
 if not ADMIN_PASSWORD:
     ADMIN_PASSWORD = WRITER_PASSWORD
 
-CLUSTER_DB_PRIMARY_HOST = _env("CLUSTER_DB_PRIMARY_HOST") or POSTGRES_HOST
-CLUSTER_DB_REPLICA_HOSTS = _env("CLUSTER_DB_REPLICA_HOSTS")
+CLUSTER_DB_PRIMARY_HOST = env("CLUSTER_DB_PRIMARY_HOST") or POSTGRES_HOST
+CLUSTER_DB_REPLICA_HOSTS = env("CLUSTER_DB_REPLICA_HOSTS")
 
 # Optional SSL mode for hosted Postgres (examples: disable, require, verify-ca, verify-full)
-DB_SSLMODE = _env("DB_SSLMODE")
+DB_SSLMODE = env("DB_SSLMODE")
 DB_OPTIONS = {"sslmode": DB_SSLMODE} if DB_SSLMODE else {}
-READ_AFTER_WRITE_TTL = int(_env("READ_AFTER_WRITE_TTL", "2") or "2")
+READ_AFTER_WRITE_TTL = int(env("READ_AFTER_WRITE_TTL", "2") or "2")
 
 HAS_POSTGRES_ENV = all([POSTGRES_NAME, WRITER_USER, WRITER_PASSWORD])
 
 REPLICA_DATABASES: list[str] = []
 
 if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
-    primary_host, primary_port = _split_host_port(
+    primary_host, primary_port = split_host_port(
         CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432")
     )
     default_db = {
@@ -206,7 +148,7 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
         # psycopg/Django expects a dict here
         "OPTIONS": DB_OPTIONS,
         "TEST": {
-            "NAME": _env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
+            "NAME": env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
         },
     }
     writer_db = default_db.copy()
@@ -225,7 +167,7 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
 
     if CLUSTER_DB_REPLICA_HOSTS:
         for idx, (host, port) in enumerate(
-            _parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1
+            parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1
         ):
             alias = f"replica_{idx}"
             replica_db = reader_db.copy()
@@ -326,6 +268,20 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("DRF_PAGE_SIZE", "50")),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# --- OpenAPI schema (drf-spectacular) ---
+SPECTACULAR_SETTINGS = {
+    "TITLE": "APM Observability API",
+    "DESCRIPTION": (
+        "Application Performance Monitoring backend: batch ingestion of API "
+        "request events, time-series analytics (hourly/daily aggregates, KPIs, "
+        "top endpoints), and semantic search over errors."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 # --- APM ingestion defaults (Step 2) ---
@@ -336,10 +292,52 @@ APM_INGEST_MAX_ERRORS = 25  # max number of per-item error details returned
 
 # SSL/HTTPS Security Settings
 # Keep local/test defaults HTTP-friendly; enable strict HTTPS via env in docker/prod.
-SECURE_SSL_REDIRECT = _env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if SECURE_SSL_REDIRECT else None
-SESSION_COOKIE_SECURE = _env_bool("DJANGO_SESSION_COOKIE_SECURE", default=SECURE_SSL_REDIRECT)
-CSRF_COOKIE_SECURE = _env_bool("DJANGO_CSRF_COOKIE_SECURE", default=SECURE_SSL_REDIRECT)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", default=SECURE_SSL_REDIRECT)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", default=SECURE_SSL_REDIRECT)
 
 # Exempt health endpoint from SSL redirect (for Railway healthcheck)
-SECURE_REDIRECT_EXEMPT = [r"^/api/health/$", r"^/metrics/$"]
+SECURE_REDIRECT_EXEMPT = [r"^api/health/$", r"^metrics/?$"]
+
+# ---------------------------------------------------------------------------
+# Observability: structured JSON logging correlated with traces
+# ---------------------------------------------------------------------------
+LOG_LEVEL = os.environ.get("DJANGO_LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "trace_context": {
+            "()": "apm_platform.logging_utils.TraceContextFilter",
+        },
+    },
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s %(trace_id)s %(span_id)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["trace_context"],
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Observability: distributed tracing (OpenTelemetry -> Collector -> Tempo)
+# Disabled unless OTEL_ENABLED is truthy; never affects tests/CI.
+# ---------------------------------------------------------------------------
+OTEL_ENABLED = env_bool("OTEL_ENABLED", default=False)
+if OTEL_ENABLED:
+    from apm_platform.tracing import configure_tracing
+
+    configure_tracing()
