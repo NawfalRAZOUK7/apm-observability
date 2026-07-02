@@ -1,0 +1,28 @@
+# ArgoCD Application — declarative GitOps delivery of the Helm chart.
+# Apply once into the argocd namespace; ArgoCD then keeps the cluster in sync
+# with the chart in Git (self-healing + pruning).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apm-observability
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NawfalRAZOUK7/apm-observability.git
+    targetRevision: main
+    path: deploy/helm/apm-observability
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

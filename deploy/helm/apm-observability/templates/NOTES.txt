@@ -1,0 +1,19 @@
+{{ include "apm.fullname" . }} deployed.
+
+1. Watch the rollout:
+   kubectl rollout status deploy/{{ include "apm.fullname" . }}
+
+2. Port-forward the API locally:
+   kubectl port-forward svc/{{ include "apm.fullname" . }} 8000:{{ .Values.service.port }}
+   Then open http://localhost:8000/api/docs/  (Swagger UI)
+
+{{- if .Values.ingress.enabled }}
+3. Ingress is enabled. Hosts:
+   {{- range .Values.ingress.hosts }}
+   - http://{{ .host }}
+   {{- end }}
+{{- else }}
+3. Ingress is disabled (set ingress.enabled=true to expose via an Ingress controller).
+{{- end }}
+
+Postgres in-cluster: {{ .Values.postgres.enabled }}

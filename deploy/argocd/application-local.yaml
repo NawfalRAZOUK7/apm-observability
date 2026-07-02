@@ -1,0 +1,46 @@
+# Argo CD Application — LOCAL variant for a self-contained demo / screenshot.
+#
+# Differences vs application.yaml:
+#   - uses a locally-built image (apm-web:local) instead of GHCR, so no release
+#     image is required;
+#   - runs on SQLite (postgres.enabled=false, FORCE_SQLITE=1) to minimise the
+#     number of container images the cluster must pull -> easier to reach a
+#     Synced/Healthy state on constrained networks.
+#
+# Argo CD syncs the Helm chart FROM Git (deploy/helm on the tracked branch).
+# `bootstrap.sh` overwrites `targetRevision` below with your current branch and can
+# push it for you (PUSH=1). Applied directly, it tracks the value set here (main).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apm-observability
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NawfalRAZOUK7/apm-observability.git
+    targetRevision: main
+    path: deploy/helm/apm-observability
+    helm:
+      parameters:
+        - name: image.repository
+          value: apm-web
+        - name: image.tag
+          value: local
+        - name: image.pullPolicy
+          value: IfNotPresent
+        - name: postgres.enabled
+          value: "false"
+        - name: config.FORCE_SQLITE
+          value: "1"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
