@@ -3,29 +3,87 @@ name: CodeQL
 on:
   push:
   pull_request:
+  workflow_dispatch:
   schedule:
     - cron: "0 3 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   security-events: write
 
 jobs:
-  analyze:
-    name: Analyze (python)
+  codeql-preflight:
+    name: CodeQL Preflight
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Validate Python project markers
+        run: |
+          test -f manage.py
+          test -f requirements.txt
+
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: codeql-preflight
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
         with:
           languages: python
+          queries: +security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
         with:
           category: "/language:python"
+
+  codeql-status:
+    name: CodeQL Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - codeql-preflight
+      - analyze
+    if: always()
+
+    steps:
+      - name: Summarize CodeQL graph
+        env:
+          NEEDS_JSON: ${{ toJson(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          needs = json.loads(os.environ["NEEDS_JSON"])
+          failed = {
+              name: meta["result"]
+              for name, meta in needs.items()
+              if meta["result"] != "success"
+          }
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## CodeQL job graph\n\n")
+              summary.write("| Job | Result |\n| --- | --- |\n")
+              for name, meta in sorted(needs.items()):
+                  summary.write(f"| `{name}` | `{meta['result']}` |\n")
+
+          if failed:
+              print("Failing CodeQL jobs:", failed)
+              sys.exit(1)
+          PY
