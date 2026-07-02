@@ -1,0 +1,22 @@
+Django
+djangorestframework
+django-filter
+django-prometheus
+prometheus-client
+drf-spectacular
+# Observability: distributed tracing (OpenTelemetry) + structured JSON logs
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-http
+opentelemetry-instrumentation-django
+opentelemetry-instrumentation-psycopg
+python-json-logger
+psycopg[binary]
+python-dotenv
+Faker
+unittest-xml-reporting
+pgvector
+PyYAML
+ruff
+black
+whitenoise
+gunicorn
