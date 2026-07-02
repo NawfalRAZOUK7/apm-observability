@@ -1,15 +1,16 @@
-# observability/views.py
 from __future__ import annotations
 
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, timedelta
+from time import perf_counter
 from typing import Any
 
 from django.conf import settings
-from django.db import connection, transaction
+from django.db import connection
 from django.db.utils import ProgrammingError
 from django.utils import timezone
-from django.utils.dateparse import parse_date, parse_datetime
 from django_filters import rest_framework as df_filters
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from pgvector.django import CosineDistance
 from rest_framework import filters as drf_filters
 from rest_framework import status, viewsets
@@ -30,17 +31,28 @@ from .analytics.sql import (
     top_endpoints_from_cagg_sql,
     top_endpoints_from_raw_sql,
 )
+from .api.query_params import (
+    get_bool_query_param,
+    get_datetime_or_date_query_param,
+    get_int_query_param,
+)
 from .filters import ApiRequestFilter
 from .guards import postgres_required
+from .metrics import apm_ingest_latency_seconds
 from .models import ApiRequest, ApiRequestEmbedding
 from .serializers import (
-    ApiRequestIngestItemSerializer,
     ApiRequestSerializer,
     DailyAggRowSerializer,
     DailyQueryParamsSerializer,
     KpiQueryParamsSerializer,
     SemanticSearchQueryParamsSerializer,
     TopEndpointsQueryParamsSerializer,
+)
+from .services.ingestion import (
+    IngestConfig,
+    IngestPayloadTooLarge,
+    StrictIngestValidationError,
+    ingest_api_requests,
 )
 
 
@@ -73,185 +85,72 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     ]
 
     # ----------------------------
-    # Helpers (query params)
-    # ----------------------------
-    def _get_int_qp(
-        self,
-        request,
-        name: str,
-        default: int,
-        *,
-        min_value: int,
-        max_value: int | None = None,
-    ) -> int:
-        raw = request.query_params.get(name)
-        if raw is None or raw == "":
-            value = default
-        else:
-            try:
-                value = int(raw)
-            except (TypeError, ValueError) as exc:
-                raise ValidationError({name: "Must be an integer."}) from exc
-
-        if value < min_value:
-            raise ValidationError({name: f"Must be >= {min_value}."})
-        if max_value is not None and value > max_value:
-            raise ValidationError({name: f"Must be <= {max_value}."})
-        return value
-
-    def _get_bool_qp(self, request, name: str, default: bool = False) -> bool:
-        raw = request.query_params.get(name)
-        if raw is None or raw == "":
-            return default
-
-        s = str(raw).strip().lower()
-        if s in ("1", "true", "t", "yes", "y", "on"):
-            return True
-        if s in ("0", "false", "f", "no", "n", "off"):
-            return False
-
-        raise ValidationError({name: "Must be a boolean (true/false)."})
-
-    def _get_dt_or_date_qp(self, request, name: str, *, end_of_day: bool = False):
-        raw = request.query_params.get(name)
-        if raw is None or raw == "":
-            return None
-
-        s = str(raw).strip()
-
-        dt = parse_datetime(s)
-        if dt is not None:
-            if timezone.is_naive(dt):
-                dt = timezone.make_aware(dt, timezone=UTC)
-            return dt.astimezone(UTC)
-
-        d = parse_date(s)
-        if d is not None:
-            if end_of_day:
-                dt2 = datetime.combine(d, time(23, 59, 59, 999999))
-            else:
-                dt2 = datetime.combine(d, time(0, 0, 0))
-            dt2 = timezone.make_aware(dt2, timezone=UTC)
-            return dt2.astimezone(UTC)
-
-        raise ValidationError(
-            {name: "Must be an ISO datetime or date (e.g. 2025-12-14T10:00:00Z or 2025-12-14)."}
-        )
-
-    def _parse_ingest_payload(self, data: Any) -> list[Any]:
-        if isinstance(data, list):
-            return data
-
-        if isinstance(data, dict):
-            if "events" not in data:
-                raise ValidationError(
-                    {"detail": "Expected a list payload or an object with an 'events' list."}
-                )
-            events = data.get("events")
-            if not isinstance(events, list):
-                raise ValidationError({"events": "Must be a list of event objects."})
-            return events
-
-        raise ValidationError({"detail": "Expected JSON list or object payload."})
-
-    # ----------------------------
     # Step 2 endpoint: /api/requests/ingest/
     # ----------------------------
+    @extend_schema(
+        request=ApiRequestSerializer(many=True),
+        responses=OpenApiTypes.OBJECT,
+        summary="Bulk-ingest API request events",
+    )
     @action(detail=False, methods=["post"], url_path="ingest")
     def ingest(self, request, *args, **kwargs):
+        ingest_started_at = perf_counter()
         settings_max_events = int(getattr(settings, "APM_INGEST_MAX_EVENTS", 50_000))
         settings_max_errors = int(getattr(settings, "APM_INGEST_MAX_ERRORS", 25))
         settings_batch_size = int(getattr(settings, "APM_INGEST_BATCH_SIZE", 1000))
 
-        max_events = self._get_int_qp(
-            request, "max_events", settings_max_events, min_value=1, max_value=settings_max_events
-        )
-        max_errors = self._get_int_qp(
-            request, "max_errors", settings_max_errors, min_value=0, max_value=settings_max_errors
-        )
-        batch_size = self._get_int_qp(
-            request, "batch_size", settings_batch_size, min_value=1, max_value=max(1, max_events)
-        )
-        strict = self._get_bool_qp(request, "strict", default=False)
-
-        events = self._parse_ingest_payload(request.data)
-
-        if len(events) > max_events:
-            return Response(
-                {
-                    "detail": f"Too many events: got {len(events)}, max allowed is {max_events}.",
-                    "max_events": max_events,
-                },
-                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        try:
+            max_events = get_int_query_param(
+                request,
+                "max_events",
+                settings_max_events,
+                min_value=1,
+                max_value=settings_max_events,
             )
-
-        validated_rows: list[dict[str, Any]] = []
-        errors: list[dict[str, Any]] = []
-        invalid_found = False
-
-        for idx, item in enumerate(events):
-            if not isinstance(item, dict):
-                invalid_found = True
-                if len(errors) < max_errors:
-                    errors.append(
-                        {
-                            "index": idx,
-                            "errors": {
-                                "non_field_errors": ["Each event must be a JSON object/dict."]
-                            },
-                        }
-                    )
-                continue
-
-            ser = ApiRequestIngestItemSerializer(data=item)
-            if ser.is_valid():
-                validated_rows.append(ser.validated_data)
-            else:
-                invalid_found = True
-                if len(errors) < max_errors:
-                    errors.append({"index": idx, "errors": ser.errors})
-
-        if strict and invalid_found:
-            return Response(
-                {
-                    "detail": (
-                        "Strict mode enabled: payload contains invalid items. "
-                        "Nothing was inserted."
-                    ),
-                    "inserted": 0,
-                    "rejected": len(events),
-                    "errors": errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            max_errors = get_int_query_param(
+                request,
+                "max_errors",
+                settings_max_errors,
+                min_value=0,
+                max_value=settings_max_errors,
             )
+            batch_size = get_int_query_param(
+                request,
+                "batch_size",
+                settings_batch_size,
+                min_value=1,
+                max_value=max(1, max_events),
+            )
+            strict = get_bool_query_param(request, "strict", default=False)
 
-        instances: list[ApiRequest] = [ApiRequest(**row) for row in validated_rows]
-
-        inserted = 0
-        if instances:
-            with transaction.atomic():
-                ApiRequest.objects.bulk_create(instances, batch_size=batch_size)
-            inserted = len(instances)
-
-        rejected = len(events) - inserted
-
-        return Response(
-            {"inserted": inserted, "rejected": rejected, "errors": errors},
-            status=status.HTTP_200_OK,
-        )
+            config = IngestConfig(
+                max_events=max_events,
+                max_errors=max_errors,
+                batch_size=batch_size,
+                strict=strict,
+            )
+            result = ingest_api_requests(request.data, config=config)
+            return Response(result.as_response_data(), status=status.HTTP_200_OK)
+        except IngestPayloadTooLarge as exc:
+            return Response(exc.as_response_data(), status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+        except StrictIngestValidationError as exc:
+            return Response(exc.as_response_data(), status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            apm_ingest_latency_seconds.observe(perf_counter() - ingest_started_at)
 
     # ----------------------------
     # Step 3 endpoint: /api/requests/hourly/
     # ----------------------------
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="Hourly aggregated metrics")
     @action(detail=False, methods=["get"], url_path="hourly")
     @postgres_required(
         "Hourly analytics requires PostgreSQL + TimescaleDB (hypertable + hourly CAGG)."
     )
     def hourly(self, request, *args, **kwargs):
-        limit = self._get_int_qp(request, "limit", default=500, min_value=1, max_value=5000)
+        limit = get_int_query_param(request, "limit", default=500, min_value=1, max_value=5000)
 
-        start = self._get_dt_or_date_qp(request, "start", end_of_day=False)
-        end = self._get_dt_or_date_qp(request, "end", end_of_day=True)
+        start = get_datetime_or_date_query_param(request, "start", end_of_day=False)
+        end = get_datetime_or_date_query_param(request, "end", end_of_day=True)
 
         now = timezone.now().astimezone(UTC)
         if end is None:
@@ -335,6 +234,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # ----------------------------
     # Step 5 endpoint: /api/requests/kpis/
     # ----------------------------
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="KPIs (requests, error rate, latency)")
     @action(detail=False, methods=["get"], url_path="kpis")
     @postgres_required(
         "KPIs requires PostgreSQL (percentile_cont) and optionally TimescaleDB (CAGG fast-path)."
@@ -433,6 +333,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # ----------------------------
     # Step 5 endpoint: /api/requests/top-endpoints/
     # ----------------------------
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="Top endpoints by hits/errors/latency")
     @action(detail=False, methods=["get"], url_path="top-endpoints")
     @postgres_required(
         "Top endpoints requires PostgreSQL (percentile_cont for p95) and "
@@ -459,7 +360,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
         sort_by = v.get("sort_by", "hits")
         direction = v.get("direction", "desc")
 
-        with_p95 = self._get_bool_qp(request, "with_p95", default=False)
+        with_p95 = get_bool_query_param(request, "with_p95", default=False)
 
         filters_obj = AnalyticsFilters(
             start=start,
@@ -612,6 +513,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # ----------------------------
     # Embeddings: /api/requests/semantic-search/
     # ----------------------------
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="Semantic search over errors (pgvector)")
     @action(detail=False, methods=["get"], url_path="semantic-search")
     @postgres_required("Semantic search requires PostgreSQL + pgvector.")
     def semantic_search(self, request, *args, **kwargs):
@@ -677,6 +579,7 @@ class ApiRequestViewSet(viewsets.ModelViewSet):
     # ----------------------------
     # Step 4 endpoint: /api/requests/daily/
     # ----------------------------
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="Daily aggregated metrics")
     @action(detail=False, methods=["get"], url_path="daily")
     @postgres_required("Daily analytics requires PostgreSQL + TimescaleDB (daily CAGG).")
     def daily(self, request, *args, **kwargs):
@@ -780,6 +683,7 @@ class HealthView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(responses=OpenApiTypes.OBJECT, summary="Liveness/readiness health check")
     def get(self, request, *args, **kwargs):
         db_flag = (request.query_params.get("db") or "").strip().lower()
         check_db = db_flag in {"1", "true", "yes", "y", "on"}
