@@ -46,6 +46,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
@@ -60,21 +61,8 @@ jobs:
           pip -V
           pip freeze | sed -n '1,200p'
 
-      - name: Prepare CI settings module
-        run: |
-          set -euxo pipefail
-          cat > apm_platform/ci_settings.py <<'PY'
-          from apm_platform.settings import *  # noqa: F403
-
-          SECURE_SSL_REDIRECT = False
-          SECURE_PROXY_SSL_HEADER = None
-          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
-
-          DATABASE_ROUTERS = []
-          if "default" in DATABASES:  # noqa: F405
-              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
-          PY
-          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+      - name: Select CI settings module (committed apm_platform/ci_settings.py)
+        run: echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
       - name: Django system check
         run: |
@@ -104,6 +92,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
@@ -134,6 +123,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
@@ -181,6 +171,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
@@ -188,21 +179,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Prepare CI settings module
-        run: |
-          set -euxo pipefail
-          cat > apm_platform/ci_settings.py <<'PY'
-          from apm_platform.settings import *  # noqa: F403
-
-          SECURE_SSL_REDIRECT = False
-          SECURE_PROXY_SSL_HEADER = None
-          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
-
-          DATABASE_ROUTERS = []
-          if "default" in DATABASES:  # noqa: F405
-              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
-          PY
-          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+      - name: Select CI settings module (committed apm_platform/ci_settings.py)
+        run: echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
       - name: Apply migrations (SQLite)
         run: |
@@ -263,6 +241,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
@@ -270,21 +249,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Prepare CI settings module
-        run: |
-          set -euxo pipefail
-          cat > apm_platform/ci_settings.py <<'PY'
-          from apm_platform.settings import *  # noqa: F403
-
-          SECURE_SSL_REDIRECT = False
-          SECURE_PROXY_SSL_HEADER = None
-          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
-
-          DATABASE_ROUTERS = []
-          if "default" in DATABASES:  # noqa: F405
-              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
-          PY
-          echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
+      - name: Select CI settings module (committed apm_platform/ci_settings.py)
+        run: echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
       - name: Install postgres client tools (for diagnostics)
         run: |
@@ -315,6 +281,16 @@ jobs:
           set -euxo pipefail
           python manage.py test -v 2 2>&1 | tee test-timescale.log
 
+      - name: Seed sample data
+        run: |
+          set -euxo pipefail
+          python manage.py seed_apirequests --count 500 --days 1 2>&1 | tee seed-timescale.log
+
+      - name: Data quality gate
+        run: |
+          set -euxo pipefail
+          python manage.py check_data_quality --fail-on-empty 2>&1 | tee dataquality-timescale.log
+
       - name: Upload logs (Timescale) on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -324,6 +300,8 @@ jobs:
             migrate-timescale.log
             showmigrations-timescale.log
             test-timescale.log
+            seed-timescale.log
+            dataquality-timescale.log
 
   demo-sql:
     name: Demo SQL (Timescale script)
@@ -415,21 +393,6 @@ jobs:
           docker compose version
           docker buildx version
           docker buildx ls
-
-      - name: Prepare CI settings module
-        run: |
-          set -euxo pipefail
-          cat > apm_platform/ci_settings.py <<'PY'
-          from apm_platform.settings import *  # noqa: F403
-
-          SECURE_SSL_REDIRECT = False
-          SECURE_PROXY_SSL_HEADER = None
-          ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver"]
-
-          DATABASE_ROUTERS = []
-          if "default" in DATABASES:  # noqa: F405
-              DATABASES = {"default": DATABASES["default"]}  # noqa: F405
-          PY
 
       - name: Prepare CI env
         run: |
@@ -537,6 +500,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
+            requirements.in
 
       - name: Install dependencies
         run: |
