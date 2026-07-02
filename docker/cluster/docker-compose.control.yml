@@ -94,13 +94,24 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     volumes:
-      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/prometheus.cluster.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}"
       - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    volumes:
+      - ../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "${CONTROL_BIND_IP:-0.0.0.0}:${CLUSTER_CONTROL_ALERTMANAGER_HOST_PORT:-9093}:9093"
     restart: unless-stopped
 
   grafana:

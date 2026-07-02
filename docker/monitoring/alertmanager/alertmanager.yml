@@ -1,0 +1,25 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: default
+  group_by:
+    - alertname
+    - severity
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: default
+    # Configure one of these receivers when a real notification channel is available.
+    # email_configs:
+    #   - to: "ops@example.com"
+    #     from: "alertmanager@apm.local"
+    #     smarthost: "smtp.example.com:587"
+    #     auth_username: "alertmanager"
+    #     auth_password: "change-me"
+    # slack_configs:
+    #   - api_url: "https://hooks.slack.com/services/replace/me"
+    #     channel: "#alerts"
+    #     title: "{{ .CommonAnnotations.summary }}"

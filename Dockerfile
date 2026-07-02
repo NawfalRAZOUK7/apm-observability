@@ -1,5 +1,8 @@
 # Dockerfile
-FROM python:3.12-slim
+# Base image is overridable so builds can bypass a blocked Docker Hub, e.g.:
+#   docker build --build-arg PYTHON_IMAGE=public.ecr.aws/docker/library/python:3.12-slim .
+ARG PYTHON_IMAGE=python:3.12-slim
+FROM ${PYTHON_IMAGE}
 
 # Prevent Python from writing .pyc files and enable unbuffered logs
 ENV PYTHONDONTWRITEBYTECODE=1 \

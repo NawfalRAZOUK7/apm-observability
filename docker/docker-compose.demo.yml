@@ -1,0 +1,36 @@
+# Demo override for local report/screenshot runs.
+#
+# The full compose stack keeps TimescaleDB, nginx, and the OTel Collector
+# available for production-like runs. The demo target uses this override so it
+# can start on machines that already have the core observability images cached
+# but cannot currently pull extra Docker Hub images.
+
+services:
+  db:
+    profiles:
+      - timescale
+
+  web:
+    depends_on: !reset []
+    environment:
+      FORCE_SQLITE: "1"
+      DJANGO_SECURE_SSL_REDIRECT: "0"
+      DJANGO_SESSION_COOKIE_SECURE: "0"
+      DJANGO_CSRF_COOKIE_SECURE: "0"
+      OTEL_ENABLED: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo:4318"
+
+  nginx:
+    profiles:
+      - reverse-proxy
+
+  otel-collector:
+    profiles:
+      - collector
+
+  postgres-exporter:
+    profiles:
+      - timescale
+
+  grafana:
+    depends_on: !reset []

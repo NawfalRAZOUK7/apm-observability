@@ -20,8 +20,8 @@ services:
 
       POSTGRES_APP_USER: ${POSTGRES_APP_USER:-apm_app}
       POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-apm_app_pass}
-      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_readonly}
-      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_readonly_pass}
+      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_reader}
+      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}
 
     ports:
       - "${MAIN_DB_HOST_PORT:-5432}:5432"
@@ -59,7 +59,7 @@ services:
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0,web}
 
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
@@ -76,6 +76,11 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-3}
       GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-60}
       GUNICORN_BIND: ${GUNICORN_BIND:-0.0.0.0:8000}
+
+      # Distributed tracing (OpenTelemetry -> Collector -> Tempo)
+      OTEL_ENABLED: ${OTEL_ENABLED:-1}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-apm-observability}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
 
     ports:
       - "${MAIN_WEB_HOST_PORT:-8000}:8000"
@@ -117,25 +122,129 @@ services:
     networks:
       - app_network
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./monitoring/prometheus/prometheus.simple.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9090:9090"
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "9093:9093"
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_READONLY_USER:-apm_reader}:${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}@db:5432/${POSTGRES_DB:-apm}?sslmode=disable"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:latest
     container_name: apm_grafana
     ports:
       - "33000:3000"
-    depends_on:
-      - db
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      # Variables consumed by grafana/provisioning/datasources/datasources.yml.
+      # In the single-node stack the DB is simply the `db` service on port 5432.
+      DATA_NODE_IP: db
+      CLUSTER_DATA_DB_HOST_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-apm}
+      POSTGRES_READONLY_USER: ${POSTGRES_READONLY_USER:-apm_reader}
+      POSTGRES_READONLY_PASSWORD: ${POSTGRES_READONLY_PASSWORD:-apm_reader_pass}
+      DB_SSLMODE: ${DB_SSLMODE:-disable}
+    depends_on:
+      - db
+      - prometheus
+      - tempo
+      - loki
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     networks:
       - app_network
+
+  # --- Distributed tracing (3rd pillar): OTel Collector -> Tempo ---
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ./monitoring/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otel/config.yaml:ro
+    depends_on:
+      - tempo
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # --- Logs (2nd pillar): Promtail -> Loki ---
+  loki:
+    image: grafana/loki:3.3.2
+    command: ["-config.file=/etc/loki/loki-config.yaml"]
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    command: ["-config.file=/etc/promtail/promtail-config.yaml"]
+    volumes:
+      - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    networks:
+      - app_network
+    restart: unless-stopped
 
 volumes:
   db_data:
   certbot_webroot:
   certbot_config:
   grafana_data:
+  prometheus_data:
+  tempo_data:
+  loki_data:
 
 networks:
   app_network:

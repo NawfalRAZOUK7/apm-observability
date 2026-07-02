@@ -21,3 +21,27 @@ datasources:
       sslmode: ${DB_SSLMODE}
       postgresVersion: 1600
       timescaledb: true
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # Correlate a trace's spans with logs in Loki.
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      # Jump from a log line's trace_id to the trace in Tempo.
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id":\s*"(\w+)"'
+          url: "$${__value.raw}"
+          datasourceUid: tempo
