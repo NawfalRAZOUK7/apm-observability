@@ -18,7 +18,7 @@ Instead, report privately via one of:
 
 - GitHub's **private vulnerability reporting** (repository → *Security* →
   *Report a vulnerability*), or
-- email: **nawfalrazouk@icloud.com**
+- email: **nawfal.razouk@enim.ac.ma**
 
 Include a description, reproduction steps, affected component, and any suggested
 remediation. You can expect an acknowledgement within a few days.
