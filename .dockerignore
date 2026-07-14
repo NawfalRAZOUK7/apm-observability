@@ -1,66 +1,45 @@
-# .dockerignore
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.so
-*.egg-info/
-.eggs/
-dist/
-build/
-
-# Virtualenvs
-.venv/
-venv/
-ENV/
-env/
-
-# Django
-*.log
-*.sqlite3
-db.sqlite3
-staticfiles/
-media/
-
-# Tests / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-.coverage.*
-.tox/
-
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Git
-.git/
+.git
+.github
 .gitignore
+.DS_Store
 
-# Docs / reports / local artifacts
-archive/
-docs/
-infra/
-postman/
-reports/
-*.zip
-docker/certs/
-configs/cluster/cluster.yml
-
-# Env / secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
 
-# Node (if any)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 
-# Docker misc
-docker-compose.override.yml
+.venv/
+venv/
+env/
+
+db.sqlite3
+*.sqlite3
+reports/
+docs/
+postman/
+loadtest/
+infra/
+deploy/
+docker/
+scripts/
+
+docs/report_latex/*.aux
+docs/report_latex/*.blg
+docs/report_latex/*.fdb_latexmk
+docs/report_latex/*.fls
+docs/report_latex/*.log
+docs/report_latex/*.lof
+docs/report_latex/*.out
+docs/report_latex/*.toc
