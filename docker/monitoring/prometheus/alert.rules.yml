@@ -9,6 +9,7 @@ groups:
         annotations:
           summary: "Target {{ $labels.job }} is down"
           description: "{{ $labels.instance }} has not responded for at least 1 minute."
+          runbook_url: "https://github.com/NawfalRAZOUK7/apm-observability/blob/main/docs/runbooks/TargetDown.md"
 
       - alert: HighErrorRate
         expr: |
@@ -88,3 +89,39 @@ groups:
         annotations:
           summary: "Slow error-budget burn (availability SLO 99.5%)"
           description: "5xx error ratio is burning the error budget >6x over 6h and 30m windows."
+
+  # -------------------------------------------------------------------------
+  # Track B: disaster-recovery / backup health, fed by the DR verification job
+  # (scripts/drills/verify_restore.sh -> node-exporter textfile collector).
+  # -------------------------------------------------------------------------
+  - name: apm-dr
+    rules:
+      - alert: BackupRestoreVerificationFailing
+        expr: apm_backup_restore_success == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup restore verification is failing"
+          description: "The latest automated restore verification for stanza {{ $labels.stanza }} did not succeed."
+          runbook_url: "https://github.com/NawfalRAZOUK7/apm-observability/blob/main/docs/runbooks/BackupRestoreFailing.md"
+
+      - alert: BackupTooOld
+        # RPO breach: newest backup older than 26h (daily backups + slack).
+        expr: apm_backup_age_seconds > 26 * 3600
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latest backup is too old (RPO at risk)"
+          description: "Newest backup for stanza {{ $labels.stanza }} is {{ $value | humanizeDuration }} old."
+
+      - alert: BackupVerificationStale
+        # The verification job itself hasn't run in over 8 days (weekly + slack).
+        expr: time() - apm_backup_verify_timestamp_seconds > 8 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "DR verification job has not run recently"
+          description: "No successful restore verification for stanza {{ $labels.stanza }} in over 8 days."

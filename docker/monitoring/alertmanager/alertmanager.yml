@@ -1,25 +1,61 @@
 global:
   resolve_timeout: 5m
 
+# ---------------------------------------------------------------------------
+# Routing tree by severity (Phase 4).
+#   critical -> fast repeat, routed to the sink which pages + chats
+#   warning  -> normal repeat, chat only
+#   info     -> dashboard only (recorded, not pushed)
+# All receivers post to the Django notification sink, which is the source of
+# truth for channel fan-out (see notifications/providers.py:SEVERITY_POLICY).
+# No secrets live in this file: real Slack/Discord/ntfy URLs are injected into
+# the web service via environment variables, never committed here.
+# ---------------------------------------------------------------------------
 route:
-  receiver: default
+  receiver: sink-default
   group_by:
     - alertname
     - severity
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 3h
+  routes:
+    - matchers:
+        - severity = "critical"
+      receiver: sink-critical
+      group_wait: 10s
+      repeat_interval: 1h
+    - matchers:
+        - severity = "warning"
+      receiver: sink-warning
+    - matchers:
+        - severity = "info"
+      receiver: sink-info
+
+# Suppress dependent warnings while a critical for the same alert/instance fires.
+inhibit_rules:
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    equal:
+      - alertname
+      - instance
 
 receivers:
-  - name: default
-    # Configure one of these receivers when a real notification channel is available.
-    # email_configs:
-    #   - to: "ops@example.com"
-    #     from: "alertmanager@apm.local"
-    #     smarthost: "smtp.example.com:587"
-    #     auth_username: "alertmanager"
-    #     auth_password: "change-me"
-    # slack_configs:
-    #   - api_url: "https://hooks.slack.com/services/replace/me"
-    #     channel: "#alerts"
-    #     title: "{{ .CommonAnnotations.summary }}"
+  - name: sink-default
+    webhook_configs:
+      - url: "http://web:8000/sink/notify"
+        send_resolved: true
+  - name: sink-critical
+    webhook_configs:
+      - url: "http://web:8000/sink/notify"
+        send_resolved: true
+  - name: sink-warning
+    webhook_configs:
+      - url: "http://web:8000/sink/notify"
+        send_resolved: true
+  - name: sink-info
+    webhook_configs:
+      - url: "http://web:8000/sink/notify"
+        send_resolved: true
