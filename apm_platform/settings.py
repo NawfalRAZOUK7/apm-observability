@@ -57,7 +57,11 @@ INSTALLED_APPS = [
     "django_filters",
     "drf_spectacular",
     # Local
+    "tenancy",
     "observability",
+    "notifications",
+    "alerting",
+    "dora",
 ]
 
 
@@ -71,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "tenancy.middleware.TenantContextMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
@@ -176,7 +181,15 @@ if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
             DATABASES[alias] = replica_db
             REPLICA_DATABASES.append(alias)
 
-    DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
+    # The router sends writes to "writer" and reads to "reader"/replicas. Django's
+    # TestCase only permits queries on "default" unless every test class opts in via
+    # `databases`, so with the router installed each write raises
+    # DatabaseOperationForbidden. All three aliases address the same physical
+    # database (writer/reader differ only in credentials) and there are no replicas
+    # under test, so skipping the router keeps a Postgres test run equivalent to the
+    # SQLite one instead of exercising a split that does not exist here.
+    if not RUNNING_TESTS:
+        DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
 else:
     # SQLite fallback (great for quick local runs / CI without Postgres)
     BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
@@ -269,6 +282,31 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": int(os.environ.get("DRF_PAGE_SIZE", "50")),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Multi-tenant auth (Phase 5): scoped API keys for ingestion, JWT for the
+    # dashboard/API, session for the browsable admin. Order matters — API key is
+    # tried first and bails out cleanly if the header keyword doesn't match.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "tenancy.authentication.ApiKeyAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    # Endpoints stay open by default (ingestion/analytics are currently public);
+    # tenant-scoped views opt in via explicit permission_classes.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+}
+
+from datetime import timedelta as _timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": _timedelta(
+        minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "30"))
+    ),
+    "REFRESH_TOKEN_LIFETIME": _timedelta(
+        days=int(os.environ.get("JWT_REFRESH_DAYS", "7"))
+    ),
+    "ROTATE_REFRESH_TOKENS": True,
 }
 
 # --- OpenAPI schema (drf-spectacular) ---

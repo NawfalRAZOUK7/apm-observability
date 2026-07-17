@@ -216,7 +216,20 @@ _demo-urls:
 	@echo "  Prometheus     : http://localhost:9090"
 	@echo "  Alertmanager   : http://localhost:9093"
 	@echo "=============================================================="
-	@echo "Next: run 'make loadtest' to drive traffic and watch it react."
+	@echo "Next: 'make loadtest' to drive traffic, or 'make demo-features'"
+	@echo "      to seed a tenant + API key, send OTLP traces, and fire an alert."
+
+# --- End-to-end feature demo (Phases 4-9) ---
+# Seeds a demo tenant + ingestion API key, sends sample OTLP traces to
+# /v1/traces (span storage + service map), and fires a test alert at
+# /sink/notify (notification sink + incident workflow). Requires the stack to be
+# up ('make demo' or 'make demo-lite'); runs inside the web container.
+DEMO_TRACES ?= 25
+.PHONY: demo-features
+demo-features:
+	@echo ">> Running end-to-end feature demo (OTLP traces + test alert)..."
+	@$(COMPOSE) exec -T web python manage.py demo_e2e --traces $(DEMO_TRACES) || \
+		echo "(demo-features failed - is the stack up? run 'make demo' first)"
 
 # Tears down either variant (same compose project).
 demo-down:

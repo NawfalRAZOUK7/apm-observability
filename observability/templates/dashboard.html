@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>APM Observability — Dashboard</title>
+  <!-- Phase 12 first-party UI. Single-file, no build step: React + Cytoscape via CDN,
+       talks to the platform's own REST API on the same origin. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js" crossorigin></script>
+  <style>
+    :root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--fg:#e6edf3;--muted:#8b949e;
+      --accent:#58a6ff;--ok:#3fb950;--warn:#d29922;--crit:#f85149;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--panel)}
+    header h1{font-size:16px;margin:0;font-weight:600}
+    header .spacer{flex:1}
+    input,button,select{background:#0d1117;color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px}
+    button{cursor:pointer}
+    button:hover{border-color:var(--accent)}
+    nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--border);background:var(--panel)}
+    nav button{background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;padding:8px 14px;color:var(--muted)}
+    nav button.active{color:var(--fg);border-bottom-color:var(--accent)}
+    main{padding:20px;max-width:1200px;margin:0 auto}
+    .grid{display:grid;gap:14px}
+    .cards{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px}
+    .kpi{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+    .kpi .card{min-width:150px}
+    .kpi .n{font-size:24px;font-weight:700}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase}
+    .sev-critical,.st-open{background:rgba(248,81,73,.15);color:var(--crit)}
+    .sev-warning,.st-acknowledged{background:rgba(210,153,34,.15);color:var(--warn)}
+    .sev-info,.st-resolved{background:rgba(63,185,80,.15);color:var(--ok)}
+    table{width:100%;border-collapse:collapse}
+    th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px}
+    th{color:var(--muted);font-weight:600}
+    #cy{height:460px;background:var(--panel);border:1px solid var(--border);border-radius:8px}
+    .wf-row{display:flex;align-items:center;gap:8px;margin:3px 0}
+    .wf-label{width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+    .wf-track{flex:1;background:#0d1117;border-radius:4px;position:relative;height:18px}
+    .wf-bar{position:absolute;height:18px;border-radius:4px;background:var(--accent);opacity:.85}
+    .wf-bar.err{background:var(--crit)}
+    .row-click{cursor:pointer}
+    .row-click:hover{background:rgba(88,166,255,.08)}
+    .empty{color:var(--muted);padding:30px;text-align:center}
+    .err{color:var(--crit)}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      if (!r.ok) throw new Error(path + " -> " + r.status);
+      return r.json();
+    }
+    const q = (project) => (project ? `?project=${encodeURIComponent(project)}` : "");
+    const fmtPct = (x) => (x == null ? "–" : (x * 100).toFixed(1) + "%");
+    const fmtMs = (x) => (x == null ? "–" : Math.round(x) + " ms");
+    const fmtSecs = (s) => (s == null ? "–" : s < 90 ? Math.round(s) + "s" : (s / 60).toFixed(1) + "m");
+
+    function Empty({ msg }) { return <div className="empty">{msg || "No data yet."}</div>; }
+
+    function ServiceMap({ project }) {
+      const ref = useRef(null);
+      const [data, setData] = useState(null);
+      const [err, setErr] = useState(null);
+      useEffect(() => {
+        api("/api/service-map/" + q(project)).then(setData).catch((e) => setErr(String(e)));
+      }, [project]);
+      useEffect(() => {
+        if (!data || !ref.current || !window.cytoscape) return;
+        const unhealthy = new Set(data.unhealthy_services || []);
+        const nodes = (data.nodes || []).map((n) => ({
+          data: { id: n.service, label: `${n.service}\n${fmtPct(n.error_rate)}` , bad: unhealthy.has(n.service) },
+        }));
+        const edges = (data.edges || []).map((e, i) => ({
+          data: { id: "e" + i, source: e.from, target: e.to,
+                  label: `${e.calls}× ${fmtPct(e.error_rate)}`, bad: e.unhealthy },
+        }));
+        const cy = window.cytoscape({
+          container: ref.current, elements: [...nodes, ...edges],
+          style: [
+            { selector: "node", style: { "background-color": "#1f6feb", label: "data(label)",
+              color: "#e6edf3", "text-wrap": "wrap", "text-valign": "center", "font-size": 10,
+              "text-outline-color": "#0d1117", "text-outline-width": 2, width: 46, height: 46 } },
+            { selector: "node[?bad]", style: { "background-color": "#f85149" } },
+            { selector: "edge", style: { width: 2, "line-color": "#30363d", label: "data(label)",
+              "target-arrow-color": "#30363d", "target-arrow-shape": "triangle",
+              "curve-style": "bezier", "font-size": 9, color: "#8b949e",
+              "text-background-color": "#0d1117", "text-background-opacity": 1 } },
+            { selector: "edge[?bad]", style: { "line-color": "#f85149", "target-arrow-color": "#f85149" } },
+          ],
+          layout: { name: "breadthfirst", directed: true, padding: 20, spacingFactor: 1.3 },
+        });
+        return () => cy.destroy();
+      }, [data]);
+      if (err) return <div className="card err">Failed to load: {err}</div>;
+      if (!data) return <Empty msg="Loading service map…" />;
+      const cp = data.critical_path || [];
+      return (
+        <div className="grid">
+          <div id="cy" ref={ref}></div>
+          <div className="card">
+            <strong>Critical path</strong> <span className="muted">(slowest trace)</span>
+            {cp.length === 0 ? <div className="muted">No traces in window.</div> :
+              <div style={{marginTop:8}}>{cp.map((s, i) =>
+                <span key={i}>{i>0 && " → "}<span className={s.error ? "err" : ""}>{s.service}</span>
+                  <span className="muted"> ({s.duration_ms}ms)</span></span>)}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    function Incidents({ project }) {
+      const [list, setList] = useState(null);
+      const [metrics, setMetrics] = useState(null);
+      const load = useCallback(() => {
+        api("/sink/incidents/").then((d) => setList(d.results || d)).catch(() => setList([]));
+        api("/sink/incidents/metrics/").then(setMetrics).catch(() => {});
+      }, []);
+      useEffect(load, [project]);
+      const act = async (id, verb) => {
+        await fetch(`/sink/incidents/${id}/${verb}/`, { method: "POST",
+          headers: { "Content-Type": "application/json" }, body: "{}" });
+        load();
+      };
+      if (!list) return <Empty msg="Loading incidents…" />;
+      return (
+        <div>
+          {metrics && <div className="kpi">
+            <div className="card"><div className="muted">Open</div><div className="n">{metrics.open}</div></div>
+            <div className="card"><div className="muted">Resolved</div><div className="n">{metrics.resolved}</div></div>
+            <div className="card"><div className="muted">MTTA (avg)</div><div className="n">{fmtSecs(metrics.mtta_seconds_avg)}</div></div>
+            <div className="card"><div className="muted">MTTR (avg)</div><div className="n">{fmtSecs(metrics.mttr_seconds_avg)}</div></div>
+          </div>}
+          {list.length === 0 ? <Empty msg="No incidents. 🎉" /> :
+          <div className="grid cards">
+            {list.map((i) => (
+              <div className="card" key={i.id}>
+                <div style={{display:"flex",gap:6,marginBottom:6}}>
+                  <span className={"pill sev-" + i.severity}>{i.severity}</span>
+                  <span className={"pill st-" + i.status}>{i.status}</span>
+                </div>
+                <div style={{fontWeight:600}}>{i.title}</div>
+                <div className="muted" style={{fontSize:12,margin:"4px 0"}}>
+                  MTTA {fmtSecs(i.mtta_seconds)} · MTTR {fmtSecs(i.mttr_seconds)}</div>
+                {i.runbook_url && <a href={i.runbook_url} target="_blank" style={{color:"var(--accent)",fontSize:12}}>Runbook ↗</a>}
+                <div style={{display:"flex",gap:6,marginTop:10}}>
+                  {i.status !== "resolved" && <button onClick={() => act(i.id, "ack")}>Ack</button>}
+                  {i.status !== "resolved" && <button onClick={() => act(i.id, "resolve")}>Resolve</button>}
+                  <a href={`/sink/incidents/${i.id}/postmortem/`} target="_blank"><button>Postmortem</button></a>
+                </div>
+              </div>
+            ))}
+          </div>}
+        </div>
+      );
+    }
+
+    function Anomalies({ project }) {
+      const [data, setData] = useState(null);
+      useEffect(() => { api("/api/anomalies/" + q(project)).then(setData).catch(() => setData({series:[],anomalies:[]})); }, [project]);
+      if (!data) return <Empty msg="Loading anomalies…" />;
+      const rows = data.series && data.series.length ? data.series : data.anomalies || [];
+      return (
+        <div>
+          <div className="kpi">
+            <div className="card"><div className="muted">Flagged anomalies</div><div className="n">{data.anomaly_count ?? (data.anomalies||[]).length}</div></div>
+            <div className="card"><div className="muted">Series evaluated</div><div className="n">{rows.length}</div></div>
+          </div>
+          {rows.length === 0 ? <Empty msg="No series with enough history yet." /> :
+          <div className="card"><table>
+            <thead><tr><th>Service</th><th>Endpoint</th><th>Metric</th><th>Current</th><th>Baseline</th><th>z</th><th></th></tr></thead>
+            <tbody>{rows.map((a, i) => (
+              <tr key={i}>
+                <td>{a.service}</td><td className="muted">{a.endpoint}</td><td>{a.metric}</td>
+                <td>{a.current}</td><td className="muted">{a.baseline}</td><td>{a.z_score}</td>
+                <td>{a.is_anomaly && <span className="pill sev-critical">anomaly</span>}</td>
+              </tr>))}</tbody>
+          </table></div>}
+        </div>
+      );
+    }
+
+    function Traces({ project }) {
+      const [list, setList] = useState(null);
+      const [trace, setTrace] = useState(null);
+      useEffect(() => { api("/api/traces/" + q(project)).then((d) => setList(d.traces || [])).catch(() => setList([])); }, [project]);
+      const open = (id) => api(`/api/traces/${id}/` + q(project)).then(setTrace).catch(() => {});
+      if (!list) return <Empty msg="Loading traces…" />;
+      return (
+        <div className="grid" style={{gridTemplateColumns:"1fr 1.4fr"}}>
+          <div className="card" style={{maxHeight:520,overflow:"auto"}}>
+            <table><thead><tr><th>Root</th><th>Spans</th><th>Dur</th></tr></thead>
+            <tbody>{list.map((t) => (
+              <tr key={t.trace_id} className="row-click" onClick={() => open(t.trace_id)}>
+                <td>{t.error && <span className="err">● </span>}{t.root_service}<div className="muted" style={{fontSize:11}}>{t.root_name}</div></td>
+                <td>{t.span_count}</td><td>{fmtMs(t.duration_ms)}</td>
+              </tr>))}</tbody></table>
+            {list.length === 0 && <Empty msg="No traces. Run make demo-features." />}
+          </div>
+          <div className="card">
+            {!trace ? <Empty msg="Select a trace to see its waterfall." /> :
+            <div>
+              <div style={{marginBottom:8}}><strong>{trace.trace_id}</strong>
+                <span className="muted"> · {trace.span_count} spans · {fmtMs(trace.total_ms)}</span></div>
+              {trace.spans.map((s) => {
+                const total = trace.total_ms || 1;
+                const left = (s.start_offset_ms / total) * 100;
+                const width = Math.max((s.duration_ms / total) * 100, 0.5);
+                return (
+                  <div className="wf-row" key={s.span_id}>
+                    <div className="wf-label" title={s.service + " " + s.name}>
+                      <span className="muted">{s.service}</span> {s.name}</div>
+                    <div className="wf-track">
+                      <div className={"wf-bar" + (s.error ? " err" : "")} style={{left:left+"%",width:width+"%"}}
+                        title={s.duration_ms + "ms"}></div>
+                    </div>
+                    <div className="muted" style={{width:60,fontSize:11,textAlign:"right"}}>{s.duration_ms}ms</div>
+                  </div>);
+              })}
+            </div>}
+          </div>
+        </div>
+      );
+    }
+
+    function Issues({ project }) {
+      const [data, setData] = useState(null);
+      useEffect(() => { api("/api/issues/" + q(project)).then(setData).catch(() => setData({issues:[]})); }, [project]);
+      if (!data) return <Empty msg="Loading issues…" />;
+      const issues = data.issues || [];
+      if (issues.length === 0) return <Empty msg="No grouped errors. Run make demo-features, then manage.py group_errors." />;
+      return (
+        <div className="card"><table>
+          <thead><tr><th>Issue</th><th>Service</th><th>Status</th><th>Count</th><th>Last seen</th></tr></thead>
+          <tbody>{issues.map((i) => (
+            <tr key={i.id}>
+              <td>{i.title}<div className="muted" style={{fontSize:11}}>{i.sample_message}</div></td>
+              <td>{i.service}</td><td><span className="pill sev-critical">{i.status_code}</span></td>
+              <td style={{fontWeight:700}}>{i.count}</td>
+              <td className="muted">{i.last_seen ? new Date(i.last_seen).toLocaleString() : "–"}</td>
+            </tr>))}</tbody>
+        </table></div>
+      );
+    }
+
+    function Query({ project }) {
+      const [q0, setQ0] = useState("error rate for the last 24 hours");
+      const [res, setRes] = useState(null);
+      const [busy, setBusy] = useState(false);
+      const run = () => {
+        setBusy(true);
+        api("/api/nl-query/?q=" + encodeURIComponent(q0) + (project ? "&project=" + project : ""))
+          .then(setRes).catch((e) => setRes({error:String(e)})).finally(() => setBusy(false));
+      };
+      return (
+        <div className="grid">
+          <div className="card">
+            <div style={{display:"flex",gap:8}}>
+              <input style={{flex:1}} value={q0} onChange={(e)=>setQ0(e.target.value)}
+                onKeyDown={(e)=>e.key==="Enter"&&run()} placeholder="Ask about your telemetry…" />
+              <button onClick={run} disabled={busy}>{busy ? "…" : "Ask"}</button>
+            </div>
+            <div className="muted" style={{fontSize:12,marginTop:8}}>
+              e.g. “latency for checkout last 6 hours”, “error rate last day”. Uses an LLM when
+              configured (LLM_PROVIDER), otherwise a keyword heuristic.</div>
+          </div>
+          {res && !res.error && <div className="card">
+            <div className="muted">Interpreted as</div>
+            <div style={{fontWeight:600,margin:"2px 0 12px"}}>{res.interpretation}
+              <span className="pill sev-info" style={{marginLeft:8}}>{res.source}</span></div>
+            <div className="kpi">
+              <div className="card"><div className="muted">{res.result.metric}</div><div className="n">{res.result.value}</div></div>
+              <div className="card"><div className="muted">sample size</div><div className="n">{res.result.sample_size}</div></div>
+            </div>
+          </div>}
+          {res && res.error && <div className="card err">{res.error}</div>}
+        </div>
+      );
+    }
+
+    function Dora({ project }) {
+      const [d, setD] = useState(null);
+      useEffect(() => { api("/api/dora/metrics/" + q(project)).then(setD).catch(() => setD(null)); }, [project]);
+      if (!d) return <Empty msg="Loading DORA metrics… (record deploys via the CD pipeline)" />;
+      const bandColor = { Elite: "sev-info", High: "sev-info", Medium: "sev-warning", Low: "sev-critical", unknown: "" };
+      const Card = ({ title, value, band }) => (
+        <div className="card">
+          <div className="muted">{title}</div>
+          <div className="n">{value}</div>
+          <span className={"pill " + (bandColor[band] || "")}>{band}</span>
+        </div>
+      );
+      const df = d.deployment_frequency, lt = d.lead_time_for_changes,
+        cfr = d.change_failure_rate, ttr = d.time_to_recovery;
+      const hrs = (s) => (s == null ? "–" : s < 3600 ? Math.round(s/60)+"m" : (s/3600).toFixed(1)+"h");
+      return (
+        <div className="kpi">
+          <Card title="Deployment frequency" value={df.per_day + "/day"} band={df.band} />
+          <Card title="Lead time for changes" value={hrs(lt.median_seconds)} band={lt.band} />
+          <Card title="Change failure rate" value={cfr.rate == null ? "–" : (cfr.rate*100).toFixed(1)+"%"} band={cfr.band} />
+          <Card title="Time to recovery (MTTR)" value={hrs(ttr.mttr_seconds_avg)} band={ttr.band} />
+        </div>
+      );
+    }
+
+    const TABS = { "Service Map": ServiceMap, "Incidents": Incidents, "Anomalies": Anomalies,
+      "Traces": Traces, "Issues": Issues, "Ask": Query, "DORA": Dora };
+
+    function App() {
+      const [tab, setTab] = useState("Service Map");
+      const [project, setProject] = useState("");
+      const [tick, setTick] = useState(0);
+      const Active = TABS[tab];
+      return (
+        <div>
+          <header>
+            <h1>APM Observability</h1>
+            <span className="muted">first-party dashboard</span>
+            <div className="spacer"></div>
+            <input placeholder="project slug (blank = all)" value={project}
+              onChange={(e) => setProject(e.target.value)} onKeyDown={(e)=>e.key==="Enter"&&setTick(t=>t+1)} />
+            <button onClick={() => setTick((t) => t + 1)}>Refresh</button>
+          </header>
+          <nav>{Object.keys(TABS).map((t) => (
+            <button key={t} className={t === tab ? "active" : ""} onClick={() => setTab(t)}>{t}</button>))}</nav>
+          <main><Active key={tab + tick + project} project={project} /></main>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
