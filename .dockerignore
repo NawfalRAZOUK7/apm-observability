@@ -33,13 +33,16 @@ loadtest/
 infra/
 deploy/
 docker/
+# ...but the web image's entrypoint lives there and is run at container start
+# (compose: entrypoint: ["bash", "docker/entrypoint.sh"]).
+!docker/entrypoint.sh
 scripts/
 
-docs/report_latex/*.aux
-docs/report_latex/*.blg
-docs/report_latex/*.fdb_latexmk
-docs/report_latex/*.fls
-docs/report_latex/*.log
-docs/report_latex/*.lof
-docs/report_latex/*.out
-docs/report_latex/*.toc
+docs/report/latex/*.aux
+docs/report/latex/*.blg
+docs/report/latex/*.fdb_latexmk
+docs/report/latex/*.fls
+docs/report/latex/*.log
+docs/report/latex/*.lof
+docs/report/latex/*.out
+docs/report/latex/*.toc

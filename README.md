@@ -1,266 +1,178 @@
-# APM Observability (PostgreSQL + TimescaleDB)
+# APM Observability Platform
 
 [![CI](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/ci.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/codeql.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/codeql.yml)
 [![Trivy](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/trivy.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/trivy.yml)
+[![Secret scan](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/gitleaks.yml)
+[![Terraform](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml)
+[![Policy](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
-APM Observability is a Django-based APM backend built on PostgreSQL + TimescaleDB,
-with optional pgvector embeddings, pgBackRest backups (hot/cold), and a full
-monitoring stack (Prometheus + Grafana). It supports a local single-node setup
-and a multi-node cluster layout (DATA / CONTROL / APP).
+A **multi-tenant, OpenTelemetry-native observability platform** — the three
+pillars (metrics, logs, traces) on TimescaleDB, with per-tenant API keys and
+RBAC, real alerting and incident management, a first-party dashboard, an AI
+assist layer, and a full platform-engineering delivery chain: Infrastructure as
+Code, secrets management, policy-enforced supply chain, progressive delivery, and
+DORA metrics.
 
-## Quick demo (one command)
+Built as a Django/DRF service on PostgreSQL + TimescaleDB + pgvector. **Every
+feature runs at $0 by default** via a provider pattern (each external dependency
+has a free/local driver selectable by env var).
+
+## Quick demo
+
+```bash
+make demo            # full stack (TimescaleDB + metrics/logs/traces) + seed + URLs
+make demo-features   # seed a tenant + API key, send OTLP traces, fire a test alert
+# open http://localhost:8000/dashboard/   ← the first-party UI
+make loadtest        # drive traffic with k6 and watch dashboards/alerts react
+make demo-down       # tear it all down
 ```
-make demo       # FULL stack (TimescaleDB + 3 pillars), seed data, print URLs
-make loadtest   # drive traffic with k6 and watch dashboards/alerts react
-make demo-down  # tear everything down
-```
-`make demo` prints the URLs for the API, interactive docs, Grafana, Prometheus,
-and Alertmanager once the stack is healthy. On machines that cannot pull all
-Docker Hub images, use `make demo-lite` (SQLite, no TimescaleDB/nginx/collector;
-analytics endpoints return 501 in that mode). Requires Docker Compose ≥ 2.24.
 
-## Highlights
-- Time-series storage with TimescaleDB hypertables and continuous aggregates.
-- Read/write routing with primary + replicas.
-- Hot/cold backups with pgBackRest + MinIO (S3-compatible).
-- Three pillars of observability: metrics (Prometheus), logs (Loki), and
-  distributed traces (OpenTelemetry + Tempo) — all in one Grafana.
-- Alerting with Alertmanager, including SLO error-budget burn-rate alerts.
-- Time-series data lifecycle: TimescaleDB compression + retention policies, plus a
-  `check_data_quality` command usable as a CI gate.
-- Optional Gemini embeddings with pgvector and semantic search.
-- Multiple delivery paths: Docker Compose, Ansible, and a Helm chart with ArgoCD
-  GitOps for Kubernetes.
-- Auto-generated OpenAPI docs (Swagger UI + ReDoc) via drf-spectacular.
-- k6 load-test suite that drives metrics and fires alerts (performance gate).
-- Ansible-based deployment automation.
-- CI (lint, tests, compose smoke, pip-audit) + CD (GHCR build/push, SBOM, Cosign signing).
+`make demo-lite` runs an offline SQLite variant. Requires Docker Compose ≥ 2.24.
 
-## Screenshots
-Architecture overview:
+## Capabilities
+
+### Observability & product
+
+| Area | What it does |
+|---|---|
+| **Three pillars** | Metrics (Prometheus), logs (Loki), traces (OpenTelemetry + Tempo) in one Grafana |
+| **Native OTLP ingestion** | OTLP/HTTP **and gRPC** (`:4317`), JSON **and protobuf**, for traces + metrics + logs; tail sampling + per-tenant ingest rate limiting |
+| **Multi-tenancy** | Organization → Project → Environment, hashed/rotatable API keys, JWT auth, RBAC, per-project quotas, PostgreSQL **Row-Level Security** |
+| **Service maps** | Dependency topology from span edges, per-edge rate/error/latency, critical path |
+| **Anomaly detection** | Robust (median/MAD) baselines per service+endpoint; pluggable embeddings (free local Ollama or Gemini) |
+| **Alerting & incidents** | Real Alertmanager delivery (Slack/Discord/ntfy/email), tenant-defined alert rules + scheduler, incidents with MTTA/MTTR, runbooks, postmortems |
+| **First-party dashboard** | Service-map graph, incident board, anomaly explorer, trace waterfall, issues, NL query, DORA — at `/dashboard/` |
+| **AI assist** | AI-drafted postmortems, Sentry-style error grouping, natural-language telemetry queries (all with $0 fallbacks) |
+
+### Platform engineering & delivery
+
+| Area | What it does |
+|---|---|
+| **Infrastructure as Code** | Terraform/OpenTofu — local `kind` env ($0) + reference AWS (VPC/EKS/RDS/S3); fmt/validate/tflint/tfsec in CI ([`infra/terraform`](infra/terraform)) |
+| **Secrets management** | External Secrets Operator, Sealed Secrets, or SOPS+age; no plaintext in git, enforced by gitleaks ([`infra/secrets`](infra/secrets)) |
+| **Policy & supply chain** | Kyverno admission policies incl. **Cosign signature verification** at admit; images are signed (SBOM + provenance) in CI ([`infra/policy`](infra/policy)) |
+| **Progressive delivery** | Argo Rollouts canary with Prometheus **metric analysis** — auto-promote or auto-rollback ([docs](docs/PROGRESSIVE_DELIVERY.md)) |
+| **CD** | Tag → staging → smoke → approval → production → smoke → rollback; Helm + ArgoCD GitOps |
+| **DORA metrics** | Deployment frequency, lead time, change-failure rate, MTTR — Elite/High/Medium/Low bands, in the API + Grafana + dashboard |
+| **Reliability / DR** | pgBackRest backups + automated **restore verification** (RPO/RTO metrics) + chaos drills |
+
+> The full phase-by-phase build log is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+## Dashboard
+
+The first-party UI at `/dashboard/` (single-file React, served by Django — no
+build step) turns the whole platform into one pane of glass:
+
+![First-party dashboard](docs/images/dashboard.png)
+
+*Tabs: Service Map (dependency graph) · Incidents (ack/resolve, MTTA/MTTR) ·
+Anomalies · Traces (waterfall) · Issues (grouped errors) · Ask
+(natural-language queries) · DORA (delivery scorecard).*
+
+Distributed traces are broken down span by span, so a slow dependency is one
+click away:
+
+![Trace waterfall](docs/images/dashboard-traces.png)
+
+Alertmanager webhooks land as incidents with ack/resolve, MTTA/MTTR and a
+generated postmortem:
+
+![Incidents](docs/images/dashboard-incidents.png)
+
+> Bring it up with `make demo` → `make demo-features`, then open
+> `https://localhost:8443/dashboard/` (nginx terminates TLS with a self-signed
+> cert, so expect a browser warning). The container also publishes port 8000,
+> but Django redirects plain HTTP to HTTPS there and only Gunicorn is listening.
+
+## Architecture
+
 ![Architecture overview](docs/images/architecture.png)
 
-Data flow (ingestion to analytics):
-![Data flow](docs/images/data-flow.png)
+A Django/DRF core ingests telemetry (custom REST **and** native OTLP) into
+TimescaleDB hypertables with continuous aggregates. Tenancy is enforced by
+Row-Level Security. Prometheus/Loki/Tempo provide the pillars; Alertmanager feeds
+a notification sink that opens incidents. Delivery is GitOps (Helm + ArgoCD) with
+Kyverno policy gates and Argo Rollouts canaries, provisioned by Terraform.
 
-Cluster topology:
-![Cluster topology](docs/images/cluster-topology.png)
+## Key API surface
 
-Grafana dashboard:
-![Grafana dashboard](docs/images/grafana-dashboard.png)
-
-## Quick Start (single-machine cluster)
-This is the recommended local mode that mirrors the multi-node design.
-
-Prerequisites:
-- Docker + Docker Compose
-- Python 3.12 (optional for local management commands)
-
-1) Create a local cluster config (gitignored):
 ```
-cp configs/cluster/cluster.example.yml configs/cluster/cluster.yml
+/api/requests/…                custom REST ingestion + analytics (KPIs, top endpoints)
+/v1/traces  /v1/metrics /v1/logs   native OTLP ingestion (HTTP+gRPC, JSON+protobuf)
+/api/tenancy/…                 JWT auth, projects, API keys, usage
+/api/service-map/  /api/traces/<id>/   topology + trace waterfall
+/api/anomalies/  /api/issues/  /api/nl-query/   anomaly, error groups, NL query
+/api/alerting/rules/           tenant-defined alert rules
+/api/dora/…                    delivery metrics
+/sink/  /sink/incidents/…      notification sink + incident workflow
+/api/docs/                     OpenAPI (Swagger UI) · /dashboard/  first-party UI
 ```
 
-2) Generate local TLS assets (not committed):
-```
+## Running it
+
+**Local (Docker Compose).**
+
+```bash
 make certs-dev
+make demo            # or: docker compose --env-file .env.docker -f docker/docker-compose.yml up -d --build
 ```
 
-3) Generate the cluster env + Prometheus targets:
-```
-python scripts/cluster/switch_cluster_mode.py --config configs/cluster/cluster.yml
-```
+**Kubernetes (Helm + GitOps).**
 
-4) Bring up the stacks:
-```
-make up-data
-make up-control
-make up-app
+```bash
+helm install apm deploy/helm/apm-observability -n apm --create-namespace
+kubectl apply -f deploy/argocd/application.yaml       # or declaratively via ArgoCD
 ```
 
-5) Seed data and validate:
-```
-make seed
-make validate
-```
+**Infrastructure as Code (Terraform).**
 
-6) Monitoring:
-```
-make grafana
-make prometheus
-make targets
+```bash
+cd infra/terraform/environments/local   # free local kind cluster
+terraform init && terraform apply
 ```
 
-For the full runbook, see `docs/PRISE_EN_MAIN.md`.
+See [`infra/README.md`](infra/README.md), [`deploy/README.md`](deploy/README.md),
+and [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) for details.
 
-## Main Stack (single-node, minimal)
-```
-make certs-dev
-docker compose --env-file .env.docker -f docker/docker-compose.yml up -d --build
-```
+## Security & supply chain
 
-This mode uses `docker/monitoring/prometheus/prometheus.simple.yml`, which scrapes
-Docker service names directly (`web:8000`, `postgres-exporter:9187`,
-`node-exporter:9100`). Grafana provisioning is mounted automatically, so the
-Prometheus datasource and dashboards are available on first boot.
-
-## Configuration
-- `.env.docker` - web app defaults.
-- `docker/cluster/.env.cluster` - cluster runtime configuration.
-- `docker/.env.ports.localdev` - local port overrides.
-- `configs/cluster/cluster.yml` - local config used by the switcher (gitignored).
-- `docker/monitoring/prometheus/prometheus.simple.yml` - single-node scrape targets.
-- `docker/monitoring/prometheus/prometheus.cluster.yml` - cluster scrape targets, rewritten by `scripts/cluster/switch_cluster_mode.py`.
-- `make certs-dev` - regenerates local self-signed TLS and pgBackRest mTLS assets.
-- `cp docker/backup/pgpass.example docker/backup/pgpass && chmod 600 docker/backup/pgpass` - prepares local pgBackRest DB auth.
-
-## Backups (pgBackRest)
-- Hot repository: `pgbackrest` bucket (MinIO).
-- Cold repository: `pgbackrest-cold` bucket (MinIO).
-
-Common commands:
-```
-make pgbackrest-info
-make pgbackrest-check
-make pgbackrest-full
-make pgbackrest-full-repo2
-```
-
-Backup scheduling is defined in `docker/backup/pgbackrest-cron.sh`.
-
-## Monitoring (TLS)
-Grafana and Prometheus are exposed over HTTPS via a TLS proxy on CONTROL:
-- `https://<CONTROL_NODE_IP>:3000` (Grafana)
-- `https://<CONTROL_NODE_IP>:9090` (Prometheus)
-
-The app Nginx is also HTTPS-only. Self-signed certs are used for local dev.
-
-Alertmanager is available on port `9093`. Alert rules live in
-`docker/monitoring/prometheus/alert.rules.yml`, and Alertmanager routing lives in
-`docker/monitoring/alertmanager/alertmanager.yml`.
-
-## Dependencies
-Top-level Python dependencies are kept in `requirements.in`; the pinned lockfile
-used by Docker and CI is `requirements.txt`.
-
-Regenerate the lockfile after dependency changes:
-```
-make compile-deps
-```
-
-## AI Embeddings (Gemini + pgvector)
-Optional semantic search is supported via Gemini embeddings.
-
-Setup:
-- Create `.env.gemini` (ignored) with `GEMINI_API_KEY=...`
-- Ensure DB has pgvector: `docker/db/Dockerfile` + `docker/initdb/002_pgvector.sql`
-
-Backfill embeddings:
-```
-python manage.py embed_apirequests --status-from 500 --limit 1000 --batch-size 16
-```
-
-Semantic search endpoint:
-```
-GET /api/requests/semantic-search/?q=timeout&limit=10
-```
-
-## Ansible Deployment
-Ansible playbook and roles live in `infra/ansible/`.
-
-Validate (local or remote):
-```
-ansible-playbook infra/ansible/site.yml --tags validate -e run_validation=true
-```
-
-## Kubernetes (Helm + GitOps)
-A Helm chart and an ArgoCD Application live in `deploy/`.
-```
-helm lint deploy/helm/apm-observability
-helm install apm deploy/helm/apm-observability --namespace apm --create-namespace
-# or, declaratively, via ArgoCD:
-kubectl apply -f deploy/argocd/application.yaml
-```
-See `deploy/README.md` for kind/minikube setup, overrides, and the GitOps flow.
-
-## Data lifecycle & quality
-- Migration `0009_retention_compression` enables TimescaleDB columnar compression
-  (default: chunks older than `APM_COMPRESS_AFTER_DAYS=7`) and a retention policy
-  (`APM_RETENTION_DAYS=90`) on the raw hypertable, while the continuous aggregates
-  keep the long-term history.
-- Data-quality gate (nulls, ranges, duplicate trace_ids, freshness):
-```
-python manage.py check_data_quality --max-age-minutes 60 --fail-on-empty
-```
-
-## API documentation (OpenAPI)
-The API is self-documented via `drf-spectacular`. Once the stack is running:
-- Swagger UI: `http://localhost:8000/api/docs/`
-- ReDoc: `http://localhost:8000/api/redoc/`
-- Raw OpenAPI schema: `http://localhost:8000/api/schema/`
-
-Generate the schema to a file:
-```
-python manage.py spectacular --file openapi.yml
-```
-
-## Load testing (k6)
-A [k6](https://k6.io/) suite drives the API end-to-end and makes the observability
-stack react (dashboards fill, alerts fire). It doubles as a performance gate via
-thresholds.
-```
-make demo        # start the stack first
-make loadtest    # BASE_URL/BATCH/ERROR_RATIO overridable
-```
-See `loadtest/README.md` for details and what to watch while it runs.
-
-## Observability: the three pillars
-- **Metrics** — Prometheus scrapes the app (`/metrics`, via django-prometheus and
-  custom metrics), node-exporter, and postgres-exporter. Dashboards are
-  provisioned in Grafana.
-- **Logs** — the app emits structured JSON logs (with `trace_id`/`span_id`);
-  Promtail ships container logs to Loki, queryable in Grafana.
-- **Traces** — Django is instrumented with OpenTelemetry; spans are exported via
-  OTLP to an OpenTelemetry Collector and stored in Tempo. Grafana links traces to
-  logs (Tempo → Loki) and logs to traces (Loki → Tempo).
-
-Tracing is opt-in via `OTEL_ENABLED` and is off during tests/CI. The `make demo`
-stack turns it on automatically. Explore everything in Grafana
-(`http://localhost:33000`): the Prometheus, TimescaleDB, Tempo, and Loki
-datasources are all provisioned.
+- Images built in CI are scanned (Trivy), SBOM + provenance attested, and **signed
+  with Cosign** (keyless); Kyverno **verifies those signatures at admission**.
+- Secrets never live in git (empty chart defaults, gitleaks CI, External
+  Secrets/Sealed Secrets/SOPS at deploy).
+- Pods run non-root with dropped capabilities (restricted Pod Security Standard);
+  optional default-deny NetworkPolicy.
+- CodeQL static analysis + `pip-audit` in CI.
 
 ## Testing
-- Unit/API tests: `python manage.py test`
-- Step scripts: `scripts/tests/step1_test.sh` ... `scripts/tests/step6_test.sh`
-- Full suite: `bash scripts/run_all_tests.sh`
 
-Test evidence is stored under `reports/`.
+```bash
+python manage.py test        # unit/API suite (128 tests)
+bash scripts/run_all_tests.sh
+```
 
 ## Documentation
-- `docs/PRISE_EN_MAIN.md` - step-by-step runbook.
-- `docs/ARCHITECTURE.md` - repo structure and component roles.
-- `docs/ROADMAP.md` - feature roadmap and implementation status.
-- `docs/sections/` - project writeups mapped to assignment sections.
 
-## Contributing & project files
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) - dev setup, quality gates, PR workflow.
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) - community guidelines.
-- [`SECURITY.md`](SECURITY.md) - how to report vulnerabilities.
-- [`CHANGELOG.md`](CHANGELOG.md) - notable changes.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — full capability + implementation history (Phases 1–18).
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components and repo structure.
+- [`docs/adr/`](docs/adr) — architecture decision records.
+- [`docs/runbooks/`](docs/runbooks) — operational runbooks (TargetDown, DR, secret rotation).
+- [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) — canary + analysis.
+- [`infra/README.md`](infra/README.md) — IaC, policy, secrets index.
+- [`docs/report/`](docs/report) — original academic report and section write-ups.
 
-## License
-Released under the [MIT License](LICENSE).
+## Project files
 
-## Troubleshooting
-- Re-generate cluster env: `python scripts/cluster/switch_cluster_mode.py --config configs/cluster/cluster.yml`
-- Rebuild stacks: `make up-data`, `make up-control`, `make up-app`
-- Wipe cluster containers/volumes: `make down-all`
-
-If a container is unhealthy, wait 20-30 seconds and re-run `make up-data`.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) ·
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) ·
+[`SECURITY.md`](SECURITY.md) ·
+[`CHANGELOG.md`](CHANGELOG.md) ·
+[MIT License](LICENSE)
 
 ---
 
-Maintained for the APM Observability project (IDATA 3A 2025/2026).
+Originally built for the APM Observability project (IDATA 3A 2025/2026) and
+extended into a full platform-engineering showcase.

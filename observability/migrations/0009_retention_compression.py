@@ -16,17 +16,23 @@ def _int_env(name: str, default: int) -> int:
 def forwards(apps, schema_editor):
     """
     Data lifecycle policies on the raw hypertable (PostgreSQL + TimescaleDB only):
-      - Native columnar compression for chunks older than APM_COMPRESS_AFTER_DAYS.
       - Retention: drop raw chunks older than APM_RETENTION_DAYS.
 
     Raw data is dropped while the hourly/daily continuous aggregates keep the
     long-term history -- the idiomatic time-series lifecycle. All statements are
     idempotent and guarded so SQLite / plain-PostgreSQL runs are no-ops.
+
+    Native columnar compression (a.k.a. "columnstore") is deliberately NOT enabled
+    here: TimescaleDB refuses it on any table with row-level security
+    ("columnstore cannot be used on table with row security"), and conversely
+    refuses to enable RLS once columnstore is on. Tenant isolation (0012/0015/0017
+    install the `tenant_isolation` policy on this table) is a security invariant and
+    wins over the storage optimisation. Retention + the continuous aggregates are
+    unaffected -- neither depends on compression.
     """
     if schema_editor.connection.vendor != "postgresql":
         return
 
-    compress_after = _int_env("APM_COMPRESS_AFTER_DAYS", 7)
     retention_days = _int_env("APM_RETENTION_DAYS", 90)
 
     sql = f"""
@@ -52,22 +58,6 @@ def forwards(apps, schema_editor):
             RETURN;
         END IF;
 
-        -- Enable compression (segment by the common query dimensions).
-        EXECUTE $sql$
-            ALTER TABLE observability_apirequest SET (
-                timescaledb.compress,
-                timescaledb.compress_segmentby = 'service, endpoint',
-                timescaledb.compress_orderby = 'time DESC'
-            )
-        $sql$;
-
-        -- Compress chunks older than the configured age.
-        PERFORM add_compression_policy(
-            'observability_apirequest',
-            INTERVAL '{compress_after} days',
-            if_not_exists => TRUE
-        );
-
         -- Drop raw chunks older than the retention window.
         PERFORM add_retention_policy(
             'observability_apirequest',
@@ -82,7 +72,12 @@ def forwards(apps, schema_editor):
 
 
 def backwards(apps, schema_editor):
-    """Remove the lifecycle policies and disable compression (idempotent)."""
+    """Remove the lifecycle policies (idempotent).
+
+    `remove_compression_policy` is still called so that a database created by an
+    earlier revision of this migration -- which did enable columnstore -- unwinds
+    cleanly; it is a no-op everywhere else.
+    """
     if schema_editor.connection.vendor != "postgresql":
         return
 
@@ -99,7 +94,6 @@ def backwards(apps, schema_editor):
 
         PERFORM remove_retention_policy('observability_apirequest', if_exists => TRUE);
         PERFORM remove_compression_policy('observability_apirequest', if_exists => TRUE);
-        EXECUTE 'ALTER TABLE observability_apirequest SET (timescaledb.compress = false)';
     END $$;
     """
 

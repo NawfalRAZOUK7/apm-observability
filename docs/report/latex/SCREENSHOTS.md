@@ -2,7 +2,7 @@
 
 Chapter 5 (`Chap5_Avance.tex`) uses placeholder boxes so the report compiles
 without images. To finalize it, capture the screenshots below, save them to
-`docs/report_latex/images/` with the exact filename, then in `Chap5_Avance.tex`
+`docs/report/latex/images/` with the exact filename, then in `Chap5_Avance.tex`
 uncomment the matching `\includegraphics` line and delete the `\fbox{...}`
 placeholder just below it.
 
