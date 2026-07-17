@@ -1,0 +1,26 @@
+{{- if .Values.metrics.podMonitor.enabled }}
+# Scrapes the app pods via the Prometheus Operator (kube-prometheus-stack) and
+# — crucially for canary analysis — carries the pod's rollouts-pod-template-hash
+# through onto the metrics as `rollouts_pod_template_hash`, so the
+# AnalysisTemplate can scope its queries to just the canary pods.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "apm.fullname" . }}
+  labels:
+    {{- include "apm.labels" . | nindent 4 }}
+    {{- with .Values.metrics.podMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "apm.webSelectorLabels" . | nindent 6 }}
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.metrics.podMonitor.interval }}
+  # Copy the Argo Rollouts pod-template-hash label onto the series.
+  podTargetLabels:
+    - rollouts-pod-template-hash
+{{- end }}

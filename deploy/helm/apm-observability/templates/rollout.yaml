@@ -1,7 +1,9 @@
-{{- /* Use a plain Deployment unless progressive delivery (Argo Rollouts) is on. */ -}}
-{{- if not .Values.rollout.enabled }}
-apiVersion: apps/v1
-kind: Deployment
+{{- if .Values.rollout.enabled }}
+# Progressive delivery via Argo Rollouts (Phase 17). Canary steps interleave with
+# a Prometheus AnalysisTemplate that auto-aborts the rollout if the canary
+# breaches the SLO. Pod spec mirrors the Deployment (kept off when this is on).
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: {{ include "apm.fullname" . }}
   labels:
@@ -13,14 +15,35 @@ spec:
   selector:
     matchLabels:
       {{- include "apm.webSelectorLabels" . | nindent 6 }}
+  strategy:
+    canary:
+      analysis:
+        templates:
+          - templateName: {{ include "apm.fullname" . }}-canary
+        startingStep: 1
+        args:
+          - name: service
+            value: {{ include "apm.fullname" . }}
+          # The canary ReplicaSet's pod-template-hash, so the AnalysisTemplate
+          # scopes its Prometheus queries to the NEW pods only (not the whole
+          # Service). Requires the app metrics to carry a matching
+          # rollouts_pod_template_hash label — see the PodMonitor below.
+          - name: pod-template-hash
+            valueFrom:
+              podTemplateHashValue: Latest
+      steps:
+        {{- range .Values.rollout.steps }}
+        - setWeight: {{ .setWeight }}
+        - pause: { duration: {{ .pause }} }
+        {{- end }}
   template:
     metadata:
       labels:
         {{- include "apm.webSelectorLabels" . | nindent 8 }}
       annotations:
-        # Roll the pods when the rendered config/secret change (otherwise a
-        # ConfigMap-only edit — e.g. a DB host change — leaves pods serving the
-        # old config while migrations target the new DB: a split brain).
+        # Roll the canary when the rendered config/secret change (a config-only
+        # edit otherwise wouldn't trigger a new revision, leaving pods on the old
+        # config while migrations target the new DB).
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
@@ -48,11 +71,10 @@ spec:
           env:
             {{- include "apm.runtimeEnv" . | nindent 12 }}
           readinessProbe:
-            # ?db=1 gates readiness on DB connectivity (SELECT 1 -> 503), so a pod
-            # isn't added to the Service until the database is reachable (closes
-            # the install-time window where the app was Ready before Postgres).
-            # Note: this checks connectivity, not whether migrations are applied.
-            # Liveness stays shallow (no restart storm on a transient DB blip).
+            # ?db=1 gates readiness on DB connectivity (SELECT 1 -> 503) so a pod
+            # isn't added to the Service until the database is reachable. Checks
+            # connectivity, not whether migrations are applied. Liveness stays
+            # shallow (no restart storm on a transient DB blip).
             httpGet:
               path: /api/health/?db=1
               port: http
@@ -74,14 +96,6 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 {{- end }}

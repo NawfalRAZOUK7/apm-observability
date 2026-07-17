@@ -1,0 +1,34 @@
+# Production overrides (Track A). Applied on top of values.yaml.
+replicaCount: 2
+
+config:
+  DJANGO_DEBUG: "0"
+  DJANGO_ALLOWED_HOSTS: "apm.local"
+  OTEL_ENABLED: "1"
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 768Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Production should point at a managed database, not the in-chart one.
+# Set POSTGRES_HOST via a secret/values file in your real environment.
+postgres:
+  enabled: false
+
+ingress:
+  enabled: true
+  hosts:
+    - host: apm.local
+      paths:
+        - path: /
+          pathType: Prefix

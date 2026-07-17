@@ -1,0 +1,49 @@
+{{- if .Values.rollout.enabled }}
+# Metric-based canary analysis (Phase 17). Queries Prometheus for the app's own
+# SLIs; if the canary's success rate drops below threshold or p95 latency exceeds
+# the budget, the metric fails and Argo Rollouts aborts + rolls back automatically.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "apm.fullname" . }}-canary
+  labels:
+    {{- include "apm.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: service
+    # The canary pod-template-hash (passed by the Rollout). Queries below filter on
+    # the matching metric label so analysis measures ONLY the canary pods. Argo's
+    # own arg placeholders are emitted via a quoted string literal, because Helm
+    # templating is text-based: an unescaped Argo placeholder is parsed as a Helm
+    # action even inside a YAML comment ("function \"args\" not defined").
+    - name: pod-template-hash
+  metrics:
+    - name: success-rate
+      interval: {{ .Values.rollout.analysis.interval }}
+      count: {{ .Values.rollout.analysis.count }}
+      # result[0], not result: a Prometheus vector query arrives as []float64, and
+      # comparing a slice to a float is a hard type error ("invalid operation: >=
+      # (mismatched types []float64 and float64)") that aborts every rollout,
+      # healthy or not. An empty vector (no traffic yet) raises a measurement error
+      # instead, which consecutiveErrorLimit tolerates before giving up.
+      successCondition: result[0] >= {{ .Values.rollout.analysis.successRateThreshold }}
+      failureLimit: {{ .Values.rollout.analysis.failureLimit }}
+      provider:
+        prometheus:
+          address: {{ .Values.rollout.analysis.prometheusAddress | quote }}
+          query: |
+            sum(rate(django_http_responses_total_by_status_total{rollouts_pod_template_hash="{{ "{{args.pod-template-hash}}" }}", status!~"5.."}[2m]))
+            /
+            sum(rate(django_http_responses_total_by_status_total{rollouts_pod_template_hash="{{ "{{args.pod-template-hash}}" }}"}[2m]))
+    - name: p95-latency-seconds
+      interval: {{ .Values.rollout.analysis.interval }}
+      count: {{ .Values.rollout.analysis.count }}
+      successCondition: result[0] <= {{ .Values.rollout.analysis.latencyP95Threshold }}
+      failureLimit: {{ .Values.rollout.analysis.failureLimit }}
+      provider:
+        prometheus:
+          address: {{ .Values.rollout.analysis.prometheusAddress | quote }}
+          query: |
+            histogram_quantile(0.95,
+              sum(rate(django_http_requests_latency_seconds_by_view_method_bucket{rollouts_pod_template_hash="{{ "{{args.pod-template-hash}}" }}"}[2m])) by (le))
+{{- end }}

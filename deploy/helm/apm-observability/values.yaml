@@ -5,7 +5,10 @@ replicaCount: 1
 image:
   # Built and pushed by .github/workflows/release.yml
   repository: ghcr.io/nawfalrazouk7/apm-observability
-  tag: "latest"
+  # Empty => Chart.appVersion, which release.yml publishes as an immutable semver
+  # tag. A floating "latest" is rejected by the disallow-latest-tag policy in
+  # infra/policy/kyverno/ and makes rollouts non-reproducible.
+  tag: ""
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -30,11 +33,19 @@ config:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
   DJANGO_LOG_LEVEL: "INFO"
 
-# Secret values (rendered into a Secret). Override via --set or a values file /
-# an external secret manager in real environments.
+# Secret values. Empty by default — NO secrets in git. Provide them at deploy
+# time via one of:
+#   - an external secrets manager (set `existingSecret`; see infra/secrets/)
+#   - Terraform `set_sensitive` (see infra/terraform/modules/apm_platform)
+#   - `helm ... --set-string secrets.DJANGO_SECRET_KEY=...`
 secrets:
-  DJANGO_SECRET_KEY: "change-me-in-production"
-  POSTGRES_PASSWORD: "apm"
+  DJANGO_SECRET_KEY: ""
+  POSTGRES_PASSWORD: ""
+
+# Name of an externally-managed Secret (synced by External Secrets Operator or
+# Sealed Secrets, or decrypted by SOPS). When set, the chart does NOT create its
+# own Secret and consumes this one instead.
+existingSecret: ""
 
 service:
   type: ClusterIP
@@ -66,18 +77,104 @@ autoscaling:
   maxReplicas: 5
   targetCPUUtilizationPercentage: 75
 
+# Database migrations run as a Helm pre-install/pre-upgrade Job
+# (templates/migrate-job.yaml) BEFORE the app rolls out — reusing the app image
+# and secrets. A Job (not an initContainer) so migrations run exactly once even
+# with multiple replicas or a canary.
+migrations:
+  enabled: true
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
 # Optional in-cluster TimescaleDB for a self-contained kind/minikube demo.
 # In production set postgres.enabled=false and point config.POSTGRES_HOST at a
 # managed database.
 postgres:
   enabled: true
   host: ""              # if empty and enabled, defaults to <release>-postgres
-  image: timescale/timescaledb:latest-pg16
+  # Fully qualified on purpose: the restrict-image-registries policy pattern-matches
+  # the literal image string against "ghcr.io/* | registry.k8s.io/* | docker.io/*",
+  # so a bare "timescale/..." is rejected at admission even though Docker resolves it.
+  image: docker.io/timescale/timescaledb:2.17.2-pg16
   storage: 1Gi
+  # The TimescaleDB image is Alpine-based, where postgres is uid/gid 70 (999 is
+  # the Debian postgres uid and does not exist here). The Deployment runs non-root
+  # as this uid with a matching fsGroup + PGDATA subdir so it passes the
+  # restricted PSS + Kyverno policies.
+  runAsUser: 70
   resources:
     requests:
       cpu: 100m
       memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+# Pod- and container-level security context (Phase 16). Defaults satisfy the
+# Kubernetes "restricted" Pod Security Standard and the Kyverno policies in
+# infra/policy/. The image must run as a non-root user (uid 1000).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  capabilities:
+    drop:
+      - ALL
+  # Django writes to /tmp; keep the root FS writable unless the image is adapted.
+  readOnlyRootFilesystem: false
+
+# Default-deny NetworkPolicy + explicit allows (Phase 16). Off by default so it
+# doesn't surprise simple installs; enable in staging/production.
+networkPolicy:
+  enabled: false
+  # Namespace/labels permitted to reach the app on the HTTP port.
+  ingressNamespaceSelector:
+    kubernetes.io/metadata.name: ingress-nginx
+  # Egress: DNS + Postgres port. Adjust to your DB location.
+  postgresPort: 5432
+
+# Progressive delivery via Argo Rollouts (Phase 17). Off by default (renders a
+# plain Deployment). When enabled, renders a Rollout + AnalysisTemplate that
+# canaries new versions and auto-aborts on a Prometheus SLO breach.
+rollout:
+  enabled: false
+  steps:
+    - { setWeight: 20, pause: 60s }
+    - { setWeight: 50, pause: 60s }
+    - { setWeight: 80, pause: 60s }
+  analysis:
+    prometheusAddress: "http://kube-prometheus-stack-prometheus.monitoring:9090"
+    interval: "30s"
+    count: 3
+    failureLimit: 1
+    successRateThreshold: 0.95 # ≥95% non-5xx
+    latencyP95Threshold: 1.0 # ≤1s p95
+
+# PodMonitor for the Prometheus Operator (kube-prometheus-stack). REQUIRED for
+# per-canary rollout analysis: it carries the rollouts-pod-template-hash label
+# onto the app metrics so the AnalysisTemplate can scope to the canary pods.
+# Enable alongside rollout.enabled when using kube-prometheus-stack.
+metrics:
+  podMonitor:
+    enabled: false
+    interval: 15s
+    labels:
+      # The Prometheus Operator only selects PodMonitors carrying its release
+      # label; adjust to your kube-prometheus-stack release name.
+      release: kube-prometheus-stack
 
 podAnnotations:
   # Scraped by Prometheus (matches the app's /metrics endpoint).

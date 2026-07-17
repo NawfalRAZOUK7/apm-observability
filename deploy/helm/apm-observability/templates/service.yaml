@@ -7,7 +7,7 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   selector:
-    {{- include "apm.selectorLabels" . | nindent 4 }}
+    {{- include "apm.webSelectorLabels" . | nindent 4 }}
   ports:
     - name: http
       port: {{ .Values.service.port }}

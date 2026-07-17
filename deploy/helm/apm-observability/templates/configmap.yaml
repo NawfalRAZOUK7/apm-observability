@@ -5,7 +5,12 @@ metadata:
   labels:
     {{- include "apm.labels" . | nindent 4 }}
 data:
+  {{- /* POSTGRES_HOST is emitted once, below, via the helper (which already
+         falls back to config.POSTGRES_HOST). Skip it here so setting
+         config.POSTGRES_HOST doesn't render a duplicate key. */ -}}
   {{- range $k, $v := .Values.config }}
+  {{- if ne $k "POSTGRES_HOST" }}
   {{ $k }}: {{ $v | quote }}
+  {{- end }}
   {{- end }}
   POSTGRES_HOST: {{ include "apm.postgresHost" . | quote }}

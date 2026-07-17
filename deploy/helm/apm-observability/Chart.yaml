@@ -3,7 +3,9 @@ name: apm-observability
 description: APM Observability platform (Django API + TimescaleDB) — Helm chart for Kubernetes.
 type: application
 version: 0.1.0
-appVersion: "1.0.0"
+# appVersion is the default deployed image tag (see values.yaml image.tag) and is
+# kept in sync with the released git tag by .github/workflows/release.yml.
+appVersion: "1.0.1"
 keywords:
   - observability
   - apm
