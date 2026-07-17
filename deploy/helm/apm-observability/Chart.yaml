@@ -5,7 +5,7 @@ type: application
 version: 0.1.0
 # appVersion is the default deployed image tag (see values.yaml image.tag) and is
 # kept in sync with the released git tag by .github/workflows/release.yml.
-appVersion: "1.0.1"
+appVersion: "1.0.2"
 keywords:
   - observability
   - apm
