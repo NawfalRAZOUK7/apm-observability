@@ -22,7 +22,7 @@ django==5.2.16
     #   djangorestframework
     #   djangorestframework-simplejwt
     #   drf-spectacular
-django-filter==25.2
+django-filter==26.1
     # via -r requirements.in
 django-prometheus==2.5.0
     # via -r requirements.in
@@ -161,8 +161,6 @@ typing-extensions==4.15.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-    #   psycopg
-    #   referencing
 unittest-xml-reporting==4.0.0
     # via -r requirements.in
 uritemplate==4.2.0
