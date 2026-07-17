@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
 
   db-init:
-    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:latest-pg16}
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:2.17.2-pg16}
     depends_on:
       db:
         condition: service_healthy
@@ -100,7 +100,7 @@ services:
     restart: "no"
 
   db-replica-setup:
-    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:latest-pg16}
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:2.17.2-pg16}
     depends_on:
       db-init:
         condition: service_completed_successfully

@@ -1,0 +1,10 @@
+# Trivy config-scan suppressions (Phase 15/16). Each entry is a deliberate,
+# documented acceptance — not a blanket mute.
+
+# AWS-0104 — "unrestricted egress" on the EKS worker node security group.
+# This lives inside the upstream terraform-aws-modules/eks module: worker nodes
+# must reach the internet/AWS APIs to pull images, join the cluster, and talk to
+# EKS/ECR/STS. Restricting it fully breaks a managed node group. Accepted as
+# inherent to EKS; ingress remains locked down and the API endpoint is private
+# by default (see infra/terraform/environments/aws).
+AWS-0104

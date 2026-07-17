@@ -22,7 +22,7 @@ RUN set -eux; \
   meson setup /build/pgbackrest /build/pgbackrest-release-${PGBACKREST_VERSION}; \
   ninja -C /build/pgbackrest
 
-FROM timescale/timescaledb:latest-pg16 AS pgvector-build
+FROM timescale/timescaledb:2.17.2-pg16 AS pgvector-build
 ARG PGVECTOR_VERSION
 
 USER root
@@ -42,7 +42,7 @@ RUN set -eux; \
   make -C /tmp/pgvector install DESTDIR=/pgvector-install; \
   rm -rf /tmp/pgvector
 
-FROM timescale/timescaledb:latest-pg16
+FROM timescale/timescaledb:2.17.2-pg16
 
 USER root
 
