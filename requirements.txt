@@ -35,7 +35,7 @@ djangorestframework-simplejwt==5.5.1
     # via -r requirements.in
 drf-spectacular==0.29.0
     # via -r requirements.in
-faker==40.28.0
+faker==40.31.0
     # via -r requirements.in
 googleapis-common-protos==1.75.0
     # via opentelemetry-exporter-otlp-proto-http
@@ -161,8 +161,6 @@ typing-extensions==4.15.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-    #   psycopg
-    #   referencing
 unittest-xml-reporting==4.0.0
     # via -r requirements.in
 uritemplate==4.2.0
