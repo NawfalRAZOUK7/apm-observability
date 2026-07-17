@@ -33,14 +33,14 @@ media/
 # Generated project outputs
 reports/
 archive/legacy/
-docs/report_latex/*.aux
-docs/report_latex/*.bbl
-docs/report_latex/*.blg
-docs/report_latex/*.fdb_latexmk
-docs/report_latex/*.fls
-docs/report_latex/*.lof
-docs/report_latex/*.out
-docs/report_latex/*.toc
+docs/report/latex/*.aux
+docs/report/latex/*.bbl
+docs/report/latex/*.blg
+docs/report/latex/*.fdb_latexmk
+docs/report/latex/*.fls
+docs/report/latex/*.lof
+docs/report/latex/*.out
+docs/report/latex/*.toc
 
 # Generated local TLS / SSH material
 docker/certs/private.key
@@ -52,3 +52,21 @@ archive/configs/**/id_rsa
 archive/configs/**/id_rsa.pub
 archive/configs/**/known_hosts
 archive/configs/**/pgpass
+
+# Terraform / OpenTofu (Phase 14)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+# .terraform.lock.hcl is COMMITTED (Terraform best practice) — not ignored
+override.tf
+override.tf.json
+
+# Secrets (Phase 15): never commit decrypted material or age keys.
+# NOTE: SOPS *.enc.yaml files are encrypted and ARE meant to be committed.
+infra/secrets/**/*.dec.yaml
+infra/secrets/**/*.plain.yaml
+key.txt
+*.agekey

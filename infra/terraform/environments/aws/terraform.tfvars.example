@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars (gitignored) and edit. Applying this costs money.
+region             = "eu-west-1"
+name               = "apm-observability"
+kubernetes_version = "1.30"
+node_instance_type = "t3.large"
+node_desired_size  = 2
+db_instance_class  = "db.t3.medium"
+image_tag          = "v1.0.0"
+
+# Prefer TF_VAR_django_secret_key / TF_VAR_postgres_password env vars or a
+# secret manager over putting these in a file.
+django_secret_key = "change-me"
+postgres_password = "change-me"

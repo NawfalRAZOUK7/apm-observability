@@ -377,3 +377,31 @@ test-cluster-primary:
 	$(DATA_CMD) up -d db-replica db-replica-2
 	$(APP_CMD) up -d --force-recreate web
 	$(MAKE) test-cluster
+
+# --- Terraform / OpenTofu IaC (Phase 14) ---
+TF ?= terraform
+TF_ENV ?= local
+TF_DIR := infra/terraform/environments/$(TF_ENV)
+.PHONY: tf-fmt tf-validate tf-init tf-plan tf-apply tf-destroy
+tf-fmt:
+	$(TF) fmt -recursive infra/terraform
+tf-validate:
+	$(TF) -chdir=$(TF_DIR) init -backend=false && $(TF) -chdir=$(TF_DIR) validate
+tf-init:
+	$(TF) -chdir=$(TF_DIR) init
+tf-plan:
+	$(TF) -chdir=$(TF_DIR) plan
+tf-apply:
+	$(TF) -chdir=$(TF_DIR) apply
+tf-destroy:
+	$(TF) -chdir=$(TF_DIR) destroy
+
+# --- Secrets (SOPS) (Phase 15) ---
+SOPS_FILE ?= infra/secrets/sops/apm-secret.enc.yaml
+.PHONY: secrets-encrypt secrets-decrypt secrets-apply
+secrets-encrypt:
+	cd infra/secrets/sops && sops --encrypt --in-place $(notdir $(SOPS_FILE))
+secrets-decrypt:
+	sops --decrypt $(SOPS_FILE)
+secrets-apply:
+	sops --decrypt $(SOPS_FILE) | kubectl apply -f -

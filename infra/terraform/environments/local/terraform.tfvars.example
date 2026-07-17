@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (gitignored) and edit.
+cluster_name      = "apm-local"
+image_tag         = "latest"
+django_secret_key = "please-change-me-to-a-random-value"
+postgres_password = "apm"
+enable_monitoring = false
