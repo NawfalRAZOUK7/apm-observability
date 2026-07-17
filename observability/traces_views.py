@@ -35,8 +35,10 @@ class TraceListView(APIView):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter("since", str), OpenApiParameter("until", str),
-            OpenApiParameter("project", str), OpenApiParameter("limit", int),
+            OpenApiParameter("since", str),
+            OpenApiParameter("until", str),
+            OpenApiParameter("project", str),
+            OpenApiParameter("limit", int),
         ],
         responses={200: None},
     )
@@ -53,8 +55,15 @@ class TraceListView(APIView):
 
         traces: dict[str, list[Span]] = {}
         for span in qs.only(
-            "trace_id", "parent_span_id", "service", "name", "time", "end_time",
-            "duration_ms", "status_code", "http_status_code",
+            "trace_id",
+            "parent_span_id",
+            "service",
+            "name",
+            "time",
+            "end_time",
+            "duration_ms",
+            "status_code",
+            "http_status_code",
         )[:5000]:
             traces.setdefault(span.trace_id, []).append(span)
 

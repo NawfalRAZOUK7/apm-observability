@@ -15,41 +15,111 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Service',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('name', models.CharField(db_index=True, max_length=200)),
                 ('first_seen', models.DateTimeField(auto_now_add=True)),
                 ('last_seen', models.DateTimeField(auto_now=True)),
-                ('project', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='services', to='tenancy.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='services',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['name'],
-                'constraints': [models.UniqueConstraint(fields=('project', 'name'), name='uniq_project_service')],
+                'constraints': [
+                    models.UniqueConstraint(fields=('project', 'name'), name='uniq_project_service')
+                ],
             },
         ),
         migrations.CreateModel(
             name='Span',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('time', models.DateTimeField(db_index=True, help_text='Span start (partition column).')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'time',
+                    models.DateTimeField(db_index=True, help_text='Span start (partition column).'),
+                ),
                 ('end_time', models.DateTimeField(blank=True, null=True)),
                 ('duration_ms', models.PositiveIntegerField(db_index=True, default=0)),
                 ('trace_id', models.CharField(db_index=True, max_length=64)),
                 ('span_id', models.CharField(db_index=True, max_length=32)),
-                ('parent_span_id', models.CharField(blank=True, db_index=True, default='', max_length=32)),
+                (
+                    'parent_span_id',
+                    models.CharField(blank=True, db_index=True, default='', max_length=32),
+                ),
                 ('service', models.CharField(db_index=True, max_length=200)),
                 ('name', models.CharField(max_length=255)),
-                ('kind', models.CharField(choices=[('unspecified', 'unspecified'), ('internal', 'internal'), ('server', 'server'), ('client', 'client'), ('producer', 'producer'), ('consumer', 'consumer')], default='internal', max_length=16)),
-                ('status_code', models.CharField(choices=[('unset', 'unset'), ('ok', 'ok'), ('error', 'error')], db_index=True, default='unset', max_length=8)),
+                (
+                    'kind',
+                    models.CharField(
+                        choices=[
+                            ('unspecified', 'unspecified'),
+                            ('internal', 'internal'),
+                            ('server', 'server'),
+                            ('client', 'client'),
+                            ('producer', 'producer'),
+                            ('consumer', 'consumer'),
+                        ],
+                        default='internal',
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'status_code',
+                    models.CharField(
+                        choices=[('unset', 'unset'), ('ok', 'ok'), ('error', 'error')],
+                        db_index=True,
+                        default='unset',
+                        max_length=8,
+                    ),
+                ),
                 ('http_method', models.CharField(blank=True, default='', max_length=10)),
                 ('http_route', models.CharField(blank=True, default='', max_length=255)),
                 ('http_status_code', models.PositiveSmallIntegerField(blank=True, null=True)),
                 ('attributes', models.JSONField(blank=True, default=dict)),
                 ('resource', models.JSONField(blank=True, default=dict)),
-                ('project', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='spans', to='tenancy.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='spans',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-time'],
-                'indexes': [models.Index(fields=['trace_id', 'time'], name='span_trace_time_idx'), models.Index(fields=['parent_span_id'], name='span_parent_idx'), models.Index(fields=['service', '-time'], name='span_service_time_idx'), models.Index(fields=['project', '-time'], name='span_project_time_idx'), models.Index(condition=models.Q(('status_code', 'error')), fields=['service', '-time'], name='span_err_service_time_idx')],
+                'indexes': [
+                    models.Index(fields=['trace_id', 'time'], name='span_trace_time_idx'),
+                    models.Index(fields=['parent_span_id'], name='span_parent_idx'),
+                    models.Index(fields=['service', '-time'], name='span_service_time_idx'),
+                    models.Index(fields=['project', '-time'], name='span_project_time_idx'),
+                    models.Index(
+                        condition=models.Q(('status_code', 'error')),
+                        fields=['service', '-time'],
+                        name='span_err_service_time_idx',
+                    ),
+                ],
             },
         ),
     ]

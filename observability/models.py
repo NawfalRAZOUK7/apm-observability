@@ -210,8 +210,13 @@ class MetricPoint(models.Model):
 
     time = models.DateTimeField(db_index=True)
     project = models.ForeignKey(
-        "tenancy.Project", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="metric_points", db_index=True, db_constraint=False,
+        "tenancy.Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="metric_points",
+        db_index=True,
+        db_constraint=False,
     )
     service = models.CharField(max_length=200, db_index=True)
     name = models.CharField(max_length=255, db_index=True)
@@ -244,8 +249,13 @@ class LogRecord(models.Model):
 
     time = models.DateTimeField(db_index=True)
     project = models.ForeignKey(
-        "tenancy.Project", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="log_records", db_index=True, db_constraint=False,
+        "tenancy.Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="log_records",
+        db_index=True,
+        db_constraint=False,
     )
     service = models.CharField(max_length=200, db_index=True)
     severity_text = models.CharField(max_length=32, blank=True, default="", db_index=True)
@@ -284,8 +294,12 @@ class Issue(models.Model):
     """
 
     project = models.ForeignKey(
-        "tenancy.Project", null=True, blank=True, on_delete=models.CASCADE,
-        related_name="issues", db_constraint=False,
+        "tenancy.Project",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="issues",
+        db_constraint=False,
     )
     signature = models.CharField(max_length=255, db_index=True)
     title = models.CharField(max_length=255)

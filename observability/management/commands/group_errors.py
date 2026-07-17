@@ -1,9 +1,10 @@
 # observability/management/commands/group_errors.py
 """Recompute error Issues by fingerprinting recent error requests (Phase 13).
 
-    python manage.py group_errors --hours 24        # all projects
-    python manage.py group_errors --project demo
+python manage.py group_errors --hours 24        # all projects
+python manage.py group_errors --project demo
 """
+
 from __future__ import annotations
 
 from datetime import timedelta

@@ -8,11 +8,12 @@ detect, unlike mean/stddev. Start here before any ML (see docs/ROADMAP.md).
 Pure-ORM/Python so it runs on SQLite (tests/dev) and PostgreSQL alike; the
 TimescaleDB `time_bucket` + continuous-aggregate version is the scale optimization.
 """
+
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass, asdict
-from datetime import datetime, timedelta
+from dataclasses import asdict, dataclass
+from datetime import datetime
 
 from observability.models import ApiRequest
 
@@ -98,7 +99,9 @@ def detect_anomalies(
     if endpoint:
         qs = qs.filter(endpoint=endpoint)
 
-    grouped = _bucketed(list(qs.only("service", "endpoint", "time", "status_code", "latency_ms")), bucket)
+    grouped = _bucketed(
+        list(qs.only("service", "endpoint", "time", "status_code", "latency_ms")), bucket
+    )
 
     results: list[dict] = []
     for (svc, ep), buckets in grouped.items():
@@ -108,7 +111,8 @@ def detect_anomalies(
         history_keys, current_key = ordered_keys[:-1], ordered_keys[-1]
 
         for metric in ("latency_ms", "error_rate"):
-            def bucket_value(rows) -> float:
+
+            def bucket_value(rows, metric=metric) -> float:
                 if metric == "latency_ms":
                     return sum(r.latency_ms for r in rows) / len(rows)
                 errors = sum(1 for r in rows if r.status_code >= _ERROR_STATUS)

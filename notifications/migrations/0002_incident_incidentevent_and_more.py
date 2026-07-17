@@ -17,11 +17,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Incident',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('dedup_key', models.CharField(db_index=True, max_length=255)),
                 ('title', models.CharField(max_length=255)),
-                ('severity', models.CharField(choices=[('critical', 'critical'), ('warning', 'warning'), ('info', 'info'), ('unknown', 'unknown')], default='unknown', max_length=16)),
-                ('status', models.CharField(choices=[('open', 'open'), ('acknowledged', 'acknowledged'), ('resolved', 'resolved')], db_index=True, default='open', max_length=16)),
+                (
+                    'severity',
+                    models.CharField(
+                        choices=[
+                            ('critical', 'critical'),
+                            ('warning', 'warning'),
+                            ('info', 'info'),
+                            ('unknown', 'unknown'),
+                        ],
+                        default='unknown',
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('open', 'open'),
+                            ('acknowledged', 'acknowledged'),
+                            ('resolved', 'resolved'),
+                        ],
+                        db_index=True,
+                        default='open',
+                        max_length=16,
+                    ),
+                ),
                 ('description', models.TextField(blank=True, default='')),
                 ('runbook_url', models.URLField(blank=True, default='', max_length=1024)),
                 ('grafana_url', models.URLField(blank=True, default='', max_length=1024)),
@@ -29,9 +58,37 @@ class Migration(migrations.Migration):
                 ('opened_at', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('acknowledged_at', models.DateTimeField(blank=True, null=True)),
                 ('resolved_at', models.DateTimeField(blank=True, null=True)),
-                ('acknowledged_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='acknowledged_incidents', to=settings.AUTH_USER_MODEL)),
-                ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='owned_incidents', to=settings.AUTH_USER_MODEL)),
-                ('project', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incidents', to='tenancy.project')),
+                (
+                    'acknowledged_by',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='acknowledged_incidents',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'owner',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='owned_incidents',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='incidents',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-opened_at'],
@@ -40,12 +97,46 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='IncidentEvent',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('kind', models.CharField(choices=[('opened', 'opened'), ('notification', 'notification'), ('acknowledged', 'acknowledged'), ('assigned', 'assigned'), ('comment', 'comment'), ('resolved', 'resolved')], max_length=16)),
+                (
+                    'kind',
+                    models.CharField(
+                        choices=[
+                            ('opened', 'opened'),
+                            ('notification', 'notification'),
+                            ('acknowledged', 'acknowledged'),
+                            ('assigned', 'assigned'),
+                            ('comment', 'comment'),
+                            ('resolved', 'resolved'),
+                        ],
+                        max_length=16,
+                    ),
+                ),
                 ('message', models.TextField(blank=True, default='')),
-                ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incident_events', to=settings.AUTH_USER_MODEL)),
-                ('incident', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='events', to='notifications.incident')),
+                (
+                    'actor',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='incident_events',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'incident',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='events',
+                        to='notifications.incident',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['at'],

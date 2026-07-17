@@ -2,6 +2,7 @@
 
 Skipped automatically when the optional grpc/proto deps are not installed.
 """
+
 from __future__ import annotations
 
 import unittest
@@ -48,13 +49,13 @@ def _build_trace_request_bytes() -> bytes:
 class ProtobufHttpTests(TestCase):
     def setUp(self):
         org, _ = Organization.objects.get_or_create(slug="default", defaults={"name": "Default"})
-        Project.objects.get_or_create(organization=org, slug="default", defaults={"name": "Default"})
+        Project.objects.get_or_create(
+            organization=org, slug="default", defaults={"name": "Default"}
+        )
 
     def test_protobuf_traces_over_http(self):
         body = _build_trace_request_bytes()
-        resp = APIClient().post(
-            "/v1/traces", data=body, content_type="application/x-protobuf"
-        )
+        resp = APIClient().post("/v1/traces", data=body, content_type="application/x-protobuf")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(Span.objects.count(), 1)
         self.assertEqual(Span.objects.get().service, "pbservice")

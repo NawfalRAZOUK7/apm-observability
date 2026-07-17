@@ -48,7 +48,9 @@ class IncidentAckView(APIView):
 
     def post(self, request, pk):
         incident = get_object_or_404(Incident, pk=pk)
-        acknowledge_incident(incident, user=_actor(request), message=request.data.get("message", ""))
+        acknowledge_incident(
+            incident, user=_actor(request), message=request.data.get("message", "")
+        )
         return Response(IncidentDetailSerializer(incident).data)
 
 

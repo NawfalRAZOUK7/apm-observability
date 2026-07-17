@@ -1,4 +1,5 @@
 """Trace list + waterfall detail endpoints (Phase 12)."""
+
 from __future__ import annotations
 
 from datetime import timedelta

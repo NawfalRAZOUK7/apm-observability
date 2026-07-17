@@ -6,6 +6,7 @@
 Requires grpcio + opentelemetry-proto (in requirements.txt). Point a stock OTel
 exporter's OTLP/gRPC endpoint at this host:4317.
 """
+
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandError
@@ -22,8 +23,11 @@ class Command(BaseCommand):
             from observability.otlp.grpc_server import serve
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise CommandError(
-                "gRPC support needs grpcio + opentelemetry-proto: pip install grpcio opentelemetry-proto"
+                "gRPC support needs grpcio + opentelemetry-proto: "
+                "pip install grpcio opentelemetry-proto"
             ) from exc
         port = opts["port"]
-        self.stdout.write(self.style.SUCCESS(f"OTLP/gRPC receiver listening on :{port} (Ctrl-C to stop)"))
+        self.stdout.write(
+            self.style.SUCCESS(f"OTLP/gRPC receiver listening on :{port} (Ctrl-C to stop)")
+        )
         serve(port)

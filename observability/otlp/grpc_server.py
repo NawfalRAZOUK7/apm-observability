@@ -11,6 +11,7 @@ Runs as its own process (``manage.py otlp_grpc_server``) since it needs a
 long-lived gRPC server, separate from the WSGI app. Imports of grpc/proto are
 done here so the rest of the app never depends on them.
 """
+
 from __future__ import annotations
 
 from concurrent import futures

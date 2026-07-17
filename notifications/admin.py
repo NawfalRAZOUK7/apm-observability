@@ -12,7 +12,15 @@ class IncidentEventInline(admin.TabularInline):
 
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "severity", "status", "opened_at", "acknowledged_at", "resolved_at")
+    list_display = (
+        "id",
+        "title",
+        "severity",
+        "status",
+        "opened_at",
+        "acknowledged_at",
+        "resolved_at",
+    )
     list_filter = ("status", "severity")
     search_fields = ("title", "dedup_key", "trace_id")
     inlines = [IncidentEventInline]

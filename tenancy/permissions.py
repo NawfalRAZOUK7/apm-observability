@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from .models import Membership, ROLE_RANK, Role
+from .models import ROLE_RANK, Membership, Role
 
 
 def user_max_role(user, organization=None) -> str | None:

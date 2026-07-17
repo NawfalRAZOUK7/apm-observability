@@ -5,6 +5,7 @@ Pure-Python normalization + signatures, so it runs on SQLite and PostgreSQL and
 needs no LLM/embeddings. (Embedding-based merging of near-duplicate signatures is
 an optional enhancement layered on top when a provider is configured.)
 """
+
 from __future__ import annotations
 
 import re
@@ -74,7 +75,9 @@ def group_error_rows(rows) -> dict[str, dict]:
 
 
 @transaction.atomic
-def rebuild_issues(*, project=None, since: datetime | None = None, until: datetime | None = None) -> int:
+def rebuild_issues(
+    *, project=None, since: datetime | None = None, until: datetime | None = None
+) -> int:
     """Recompute issues for a project from its error requests. Returns issue count."""
     qs = ApiRequest.objects.filter(status_code__gte=500)
     if project is not None:
@@ -84,7 +87,9 @@ def rebuild_issues(*, project=None, since: datetime | None = None, until: dateti
     if until is not None:
         qs = qs.filter(time__lt=until)
 
-    groups = group_error_rows(qs.only("service", "method", "endpoint", "status_code", "time", "tags"))
+    groups = group_error_rows(
+        qs.only("service", "method", "endpoint", "status_code", "time", "tags")
+    )
     for sig, data in groups.items():
         Issue.objects.update_or_create(
             project=project,

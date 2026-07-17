@@ -15,7 +15,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Issue',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('signature', models.CharField(db_index=True, max_length=255)),
                 ('title', models.CharField(max_length=255)),
                 ('service', models.CharField(blank=True, default='', max_length=200)),
@@ -26,11 +31,25 @@ class Migration(migrations.Migration):
                 ('first_seen', models.DateTimeField(blank=True, null=True)),
                 ('last_seen', models.DateTimeField(blank=True, db_index=True, null=True)),
                 ('sample_message', models.TextField(blank=True, default='')),
-                ('project', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='issues', to='tenancy.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='issues',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-count', '-last_seen'],
-                'constraints': [models.UniqueConstraint(fields=('project', 'signature'), name='uniq_project_issue')],
+                'constraints': [
+                    models.UniqueConstraint(
+                        fields=('project', 'signature'), name='uniq_project_issue'
+                    )
+                ],
             },
         ),
     ]

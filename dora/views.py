@@ -59,7 +59,8 @@ class DoraMetricsView(APIView):
 
         return Response(
             compute_dora(
-                since, until,
+                since,
+                until,
                 environment=request.query_params.get("environment"),
                 project=project,
             )

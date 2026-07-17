@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from notifications.models import Incident
+
 from .metrics import compute_dora
 from .models import Deployment
 
@@ -58,7 +59,12 @@ class DoraMetricsTests(TestCase):
 
     def test_bands_present(self):
         m = self._compute()
-        for key in ("deployment_frequency", "lead_time_for_changes", "change_failure_rate", "time_to_recovery"):
+        for key in (
+            "deployment_frequency",
+            "lead_time_for_changes",
+            "change_failure_rate",
+            "time_to_recovery",
+        ):
             self.assertIn(m[key]["band"], {"Elite", "High", "Medium", "Low", "unknown"})
 
 

@@ -8,6 +8,7 @@ schema change (both emit 768-dim vectors).
     EMBED_PROVIDER=local   -> Ollama nomic-embed-text  (default, free/offline)
     EMBED_PROVIDER=gemini  -> Gemini text-embedding-004
 """
+
 from __future__ import annotations
 
 import os
@@ -26,7 +27,8 @@ def embed_texts(texts: Iterable[str]) -> list[list[float]]:
     """Embed texts using the configured provider. Raises EmbedError on failure."""
     provider = active_provider()
     if provider == "gemini":
-        from .gemini import GeminiEmbedError, embed_texts as gemini_embed
+        from .gemini import GeminiEmbedError
+        from .gemini import embed_texts as gemini_embed
 
         try:
             return gemini_embed(texts)
@@ -34,7 +36,8 @@ def embed_texts(texts: Iterable[str]) -> list[list[float]]:
             raise EmbedError(str(exc)) from exc
 
     # Default: local Ollama.
-    from .local import LocalEmbedError, embed_texts as local_embed
+    from .local import LocalEmbedError
+    from .local import embed_texts as local_embed
 
     try:
         return local_embed(texts)

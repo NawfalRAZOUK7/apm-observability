@@ -9,6 +9,7 @@ sink and incident workflow). Prints the feature URLs at the end.
 Runs against the live server over HTTP so it is a true end-to-end path. Intended
 to be invoked inside the web container (localhost:8000) via `make demo-features`.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,7 +53,18 @@ def _otlp_payload(n_traces: int) -> dict:
         is_error = i % 7 == 0
         slow = 400 if i % 5 == 0 else 90  # occasional slow request (ms)
 
-        def span(service, span_id, parent, kind, name, dur_ms, attrs=None, err=False):
+        def span(
+            service,
+            span_id,
+            parent,
+            kind,
+            name,
+            dur_ms,
+            attrs=None,
+            err=False,
+            base=base,
+            trace_id=trace_id,
+        ):
             start = base
             end = base + dur_ms * 1_000_000
             s = {
@@ -78,19 +90,39 @@ def _otlp_payload(n_traces: int) -> dict:
             }
 
         frontend = [
-            span("frontend", "f1", "", 2, "GET /", slow + 60,
-                 [{"key": "http.request.method", "value": {"stringValue": "GET"}},
-                  {"key": "http.route", "value": {"stringValue": "/"}},
-                  {"key": "http.response.status_code", "value": {"intValue": "200"}}]),
+            span(
+                "frontend",
+                "f1",
+                "",
+                2,
+                "GET /",
+                slow + 60,
+                [
+                    {"key": "http.request.method", "value": {"stringValue": "GET"}},
+                    {"key": "http.route", "value": {"stringValue": "/"}},
+                    {"key": "http.response.status_code", "value": {"intValue": "200"}},
+                ],
+            ),
             span("frontend", "f2", "f1", 3, "call api", slow + 40),
         ]
         api = [
-            span("api", "a1", "f2", 2, "GET /checkout", slow,
-                 [{"key": "http.request.method", "value": {"stringValue": "GET"}},
-                  {"key": "http.route", "value": {"stringValue": "/checkout"}},
-                  {"key": "http.response.status_code",
-                   "value": {"intValue": "500" if is_error else "200"}}],
-                 err=is_error),
+            span(
+                "api",
+                "a1",
+                "f2",
+                2,
+                "GET /checkout",
+                slow,
+                [
+                    {"key": "http.request.method", "value": {"stringValue": "GET"}},
+                    {"key": "http.route", "value": {"stringValue": "/checkout"}},
+                    {
+                        "key": "http.response.status_code",
+                        "value": {"intValue": "500" if is_error else "200"},
+                    },
+                ],
+                err=is_error,
+            ),
             span("api", "a2", "a1", 3, "SELECT orders", 30),
         ]
         postgres = [
@@ -109,7 +141,11 @@ def _alert_payload() -> dict:
             {
                 "status": "firing",
                 "fingerprint": "demo-targetdown",
-                "labels": {"alertname": "TargetDown", "severity": "critical", "instance": "db:5432"},
+                "labels": {
+                    "alertname": "TargetDown",
+                    "severity": "critical",
+                    "instance": "db:5432",
+                },
                 "annotations": {
                     "summary": "Target db is down (demo)",
                     "description": "Synthetic alert fired by make demo-features.",
@@ -142,7 +178,11 @@ class Command(BaseCommand):
         )
         env, _ = Environment.objects.get_or_create(project=project, kind="production")
         api_key, plaintext = ApiKey.generate(project=project, environment=env, name="demo-e2e")
-        self.stdout.write(self.style.SUCCESS(f"[1/3] Seeded tenant {org.slug}/{project.slug} + API key {api_key.prefix}…"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"[1/3] Seeded tenant {org.slug}/{project.slug} + API key {api_key.prefix}…"
+            )
+        )
 
         # 2) Send OTLP traces.
         status, body = _post(

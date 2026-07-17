@@ -1,4 +1,5 @@
 """Dashboard page is served (Phase 12)."""
+
 from django.test import TestCase
 
 

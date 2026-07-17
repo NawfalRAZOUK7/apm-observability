@@ -53,8 +53,7 @@ class AlertmanagerWebhookView(APIView):
                 alertname=labels.get("alertname", ""),
                 summary=annotations.get("summary", ""),
                 description=annotations.get("description", ""),
-                runbook_url=annotations.get("runbook_url", "")
-                or annotations.get("runbook", ""),
+                runbook_url=annotations.get("runbook_url", "") or annotations.get("runbook", ""),
                 labels=labels,
                 annotations=annotations,
                 starts_at=parse_datetime(alert.get("startsAt", "") or "") or None,

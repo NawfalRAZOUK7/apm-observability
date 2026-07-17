@@ -11,6 +11,7 @@ every LLM feature degrades gracefully to a $0 path.
 
 Stdlib-only (urllib), so it adds no dependency.
 """
+
 from __future__ import annotations
 
 import json
@@ -60,7 +61,10 @@ def _post_json(url: str, payload: dict, timeout: float) -> dict:
 def _gemini(prompt: str, system: str | None, timeout: float) -> str:
     key = os.environ.get("GEMINI_API_KEY", "").strip()
     model = os.environ.get("GEMINI_TEXT_MODEL", "gemini-1.5-flash").strip()
-    base = os.environ.get("GEMINI_API_BASE_URL", "").strip() or "https://generativelanguage.googleapis.com"
+    base = (
+        os.environ.get("GEMINI_API_BASE_URL", "").strip()
+        or "https://generativelanguage.googleapis.com"
+    )
     url = f"{base}/v1beta/models/{model}:generateContent?key={key}"
     text = (system + "\n\n" if system else "") + prompt
     data = _post_json(url, {"contents": [{"parts": [{"text": text}]}]}, timeout)

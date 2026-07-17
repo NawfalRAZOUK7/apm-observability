@@ -15,6 +15,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='apirequest',
             name='project',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='api_requests', to='tenancy.project'),
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='api_requests',
+                to='tenancy.project',
+            ),
         ),
     ]

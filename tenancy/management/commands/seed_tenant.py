@@ -5,6 +5,7 @@ Idempotent for the org/project/environment; mints a fresh key each run. With
 ``--quiet`` it prints ONLY the plaintext key on stdout (for capture in scripts);
 otherwise it prints a human-readable summary.
 """
+
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand

@@ -6,6 +6,7 @@ An LLM is used when configured; otherwise a keyword heuristic handles the common
 shapes ("error rate for checkout in the last 6 hours"). Both paths are $0-capable
 and the LLM path always falls back to the heuristic on any failure.
 """
+
 from __future__ import annotations
 
 import json
@@ -71,7 +72,12 @@ def heuristic_parse(question: str, project=None) -> dict:
     if m:
         endpoint = m.group(1)
 
-    return {"metric": metric, "service": service, "endpoint": endpoint, "window_hours": window_hours}
+    return {
+        "metric": metric,
+        "service": service,
+        "endpoint": endpoint,
+        "window_hours": window_hours,
+    }
 
 
 def _llm_parse(question: str, project=None) -> dict | None:

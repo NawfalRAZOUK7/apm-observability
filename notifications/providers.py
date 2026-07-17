@@ -11,6 +11,7 @@ real Slack/Discord webhook or a self-hosted ntfy instance -- no code change.
 
 Delivery uses only the standard library (urllib) so it adds no dependency.
 """
+
 from __future__ import annotations
 
 import json
@@ -40,7 +41,9 @@ def _post_json(url: str, payload: dict, headers: dict | None = None) -> None:
     req.add_header("Content-Type", "application/json")
     for key, value in (headers or {}).items():
         req.add_header(key, value)
-    with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:  # noqa: S310 (trusted internal URLs)
+    with urllib.request.urlopen(
+        req, timeout=_TIMEOUT
+    ) as resp:  # noqa: S310 (trusted internal URLs)
         resp.read()
 
 
@@ -122,11 +125,9 @@ class NtfyProvider(BaseProvider):
         self.topic = topic
 
     def send(self, notification) -> None:
-        priority = {"critical": "urgent", "warning": "high"}.get(
-            notification.severity, "default"
-        )
+        priority = {"critical": "urgent", "warning": "high"}.get(notification.severity, "default")
         url = f"{self.base_url}/{self.topic}"
-        body = f"{notification.summary or notification.alertname}".encode("utf-8")
+        body = f"{notification.summary or notification.alertname}".encode()
         req = urllib.request.Request(url, data=body, method="POST")
         req.add_header("Title", f"[{notification.severity.upper()}] {notification.alertname}")
         req.add_header("Priority", priority)

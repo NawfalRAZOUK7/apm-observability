@@ -107,12 +107,19 @@ class AnomalyRuleTests(TestCase):
         )
 
     def _bucket(self, hours_ago, latency):
-        when = (timezone.now() - timedelta(hours=hours_ago)).replace(minute=0, second=0, microsecond=0)
+        when = (timezone.now() - timedelta(hours=hours_ago)).replace(
+            minute=0, second=0, microsecond=0
+        )
         ApiRequest.objects.bulk_create(
             [
                 ApiRequest(
-                    time=when, service="api", endpoint="/x", method="GET",
-                    status_code=200, latency_ms=latency, project=self.project,
+                    time=when,
+                    service="api",
+                    endpoint="/x",
+                    method="GET",
+                    status_code=200,
+                    latency_ms=latency,
+                    project=self.project,
                 )
                 for _ in range(5)
             ]
@@ -151,7 +158,10 @@ class AlertRuleApiTests(TestCase):
 
     def test_viewer_cannot_create_developer_can(self):
         self._login(Role.VIEWER)
-        self.assertEqual(self.client.post("/api/alerting/rules/", self._payload(), format="json").status_code, 403)
+        self.assertEqual(
+            self.client.post("/api/alerting/rules/", self._payload(), format="json").status_code,
+            403,
+        )
 
         self.client.force_authenticate(None)
         self._login(Role.DEVELOPER)

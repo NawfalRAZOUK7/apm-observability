@@ -17,7 +17,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Organization',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('name', models.CharField(max_length=200)),
                 ('slug', models.SlugField(max_length=100, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
@@ -29,12 +34,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Project',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('name', models.CharField(max_length=200)),
                 ('slug', models.SlugField(max_length=100)),
                 ('monthly_event_quota', models.PositiveBigIntegerField(default=1000000)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to='tenancy.organization')),
+                (
+                    'organization',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='projects',
+                        to='tenancy.organization',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['organization', 'name'],
@@ -43,9 +60,31 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Environment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('kind', models.CharField(choices=[('production', 'production'), ('staging', 'staging'), ('development', 'development')], max_length=16)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='environments', to='tenancy.project')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'kind',
+                    models.CharField(
+                        choices=[
+                            ('production', 'production'),
+                            ('staging', 'staging'),
+                            ('development', 'development'),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='environments',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['project', 'kind'],
@@ -54,7 +93,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ApiKey',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('name', models.CharField(blank=True, default='', max_length=200)),
                 ('prefix', models.CharField(db_index=True, max_length=32)),
                 ('hashed_key', models.CharField(max_length=64, unique=True)),
@@ -63,9 +107,32 @@ class Migration(migrations.Migration):
                 ('last_used_at', models.DateTimeField(blank=True, null=True)),
                 ('expires_at', models.DateTimeField(blank=True, null=True)),
                 ('revoked_at', models.DateTimeField(blank=True, null=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_api_keys', to=settings.AUTH_USER_MODEL)),
-                ('environment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to='tenancy.environment')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to='tenancy.project')),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_api_keys',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'environment',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='api_keys',
+                        to='tenancy.environment',
+                    ),
+                ),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='api_keys',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-created_at'],
@@ -74,35 +141,88 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UsageRecord',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('period', models.DateField(help_text='First day of the month this counts.')),
                 ('event_count', models.PositiveBigIntegerField(default=0)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='usage', to='tenancy.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='usage',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='Membership',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(choices=[('admin', 'admin'), ('operator', 'operator'), ('developer', 'developer'), ('viewer', 'viewer')], default='viewer', max_length=16)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'role',
+                    models.CharField(
+                        choices=[
+                            ('admin', 'admin'),
+                            ('operator', 'operator'),
+                            ('developer', 'developer'),
+                            ('viewer', 'viewer'),
+                        ],
+                        default='viewer',
+                        max_length=16,
+                    ),
+                ),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to=settings.AUTH_USER_MODEL)),
-                ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to='tenancy.organization')),
+                (
+                    'user',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='memberships',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'organization',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='memberships',
+                        to='tenancy.organization',
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('user', 'organization'), name='uniq_user_org_membership')],
+                'constraints': [
+                    models.UniqueConstraint(
+                        fields=('user', 'organization'), name='uniq_user_org_membership'
+                    )
+                ],
             },
         ),
         migrations.AddConstraint(
             model_name='project',
-            constraint=models.UniqueConstraint(fields=('organization', 'slug'), name='uniq_org_project_slug'),
+            constraint=models.UniqueConstraint(
+                fields=('organization', 'slug'), name='uniq_org_project_slug'
+            ),
         ),
         migrations.AddConstraint(
             model_name='environment',
-            constraint=models.UniqueConstraint(fields=('project', 'kind'), name='uniq_project_environment'),
+            constraint=models.UniqueConstraint(
+                fields=('project', 'kind'), name='uniq_project_environment'
+            ),
         ),
         migrations.AddConstraint(
             model_name='usagerecord',
-            constraint=models.UniqueConstraint(fields=('project', 'period'), name='uniq_project_period_usage'),
+            constraint=models.UniqueConstraint(
+                fields=('project', 'period'), name='uniq_project_period_usage'
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
 """OTLP metrics + logs ingestion, tail sampling, and rate limiting (Phase 11)."""
+
 from __future__ import annotations
 
 import os
@@ -17,7 +18,9 @@ def _metrics_payload():
     return {
         "resourceMetrics": [
             {
-                "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "api"}}]},
+                "resource": {
+                    "attributes": [{"key": "service.name", "value": {"stringValue": "api"}}]
+                },
                 "scopeMetrics": [
                     {
                         "metrics": [
@@ -57,7 +60,9 @@ def _logs_payload():
     return {
         "resourceLogs": [
             {
-                "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "api"}}]},
+                "resource": {
+                    "attributes": [{"key": "service.name", "value": {"stringValue": "api"}}]
+                },
                 "scopeLogs": [
                     {
                         "logRecords": [
@@ -98,7 +103,9 @@ class MetricsLogsParseTests(TestCase):
 class SignalEndpointTests(TestCase):
     def setUp(self):
         org, _ = Organization.objects.get_or_create(slug="default", defaults={"name": "Default"})
-        Project.objects.get_or_create(organization=org, slug="default", defaults={"name": "Default"})
+        Project.objects.get_or_create(
+            organization=org, slug="default", defaults={"name": "Default"}
+        )
         ratelimit.reset()
 
     def test_metrics_endpoint(self):
@@ -129,7 +136,11 @@ class TailSamplingTests(TestCase):
         os.environ["OTLP_TAIL_SAMPLE_RATE"] = "0"
         os.environ["OTLP_SLOW_MS"] = "500"
         try:
-            spans = self._spans("t-normal") + self._spans("t-error", error=True) + self._spans("t-slow", dur=999)
+            spans = (
+                self._spans("t-normal")
+                + self._spans("t-error", error=True)
+                + self._spans("t-slow", dur=999)
+            )
             kept, dropped = tail_sample(spans)
         finally:
             os.environ.pop("OTLP_TAIL_SAMPLE_RATE", None)

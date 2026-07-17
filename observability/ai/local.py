@@ -9,6 +9,7 @@ no schema change is needed when switching providers.
     OLLAMA_URL=http://ollama:11434
     OLLAMA_EMBED_MODEL=nomic-embed-text
 """
+
 from __future__ import annotations
 
 import json

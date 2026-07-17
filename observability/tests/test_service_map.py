@@ -1,4 +1,5 @@
 """Service-map derivation tests (Phase 7)."""
+
 from __future__ import annotations
 
 from datetime import timedelta

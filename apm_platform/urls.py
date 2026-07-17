@@ -21,6 +21,13 @@ from django.apps import apps
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
+
+from observability.otlp.views import OTLPLogsView, OTLPMetricsView, OTLPTracesView
 
 
 def dashboard_view(_request):
@@ -29,13 +36,7 @@ def dashboard_view(_request):
     # template engine, so we do NOT use get_template()/render().
     path_ = Path(apps.get_app_config("observability").path) / "templates" / "dashboard.html"
     return HttpResponse(path_.read_text(encoding="utf-8"))
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularRedocView,
-    SpectacularSwaggerView,
-)
 
-from observability.otlp.views import OTLPLogsView, OTLPMetricsView, OTLPTracesView
 
 urlpatterns = [
     path('admin/', admin.site.urls),

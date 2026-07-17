@@ -33,13 +33,19 @@ class Deployment(models.Model):
     )
     caused_incident = models.BooleanField(default=False)
 
-    committed_at = models.DateTimeField(null=True, blank=True, help_text="Commit time (for lead time).")
+    committed_at = models.DateTimeField(
+        null=True, blank=True, help_text="Commit time (for lead time)."
+    )
     deployed_at = models.DateTimeField(db_index=True)
     duration_seconds = models.PositiveIntegerField(null=True, blank=True)
 
     project = models.ForeignKey(
-        "tenancy.Project", null=True, blank=True, on_delete=models.SET_NULL,
-        related_name="deployments", db_constraint=False,
+        "tenancy.Project",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="deployments",
+        db_constraint=False,
     )
     triggered_by = models.CharField(max_length=200, blank=True, default="")
 
@@ -51,7 +57,9 @@ class Deployment(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.environment} {self.version} [{self.status}] @ {self.deployed_at:%Y-%m-%d %H:%M}"
+        return (
+            f"{self.environment} {self.version} [{self.status}] @ {self.deployed_at:%Y-%m-%d %H:%M}"
+        )
 
     @property
     def is_failure(self) -> bool:

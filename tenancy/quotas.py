@@ -8,7 +8,7 @@ from rest_framework.exceptions import Throttled
 from .models import Project, UsageRecord
 
 
-def _current_period() -> "timezone.datetime.date":
+def _current_period() -> timezone.datetime.date:
     today = timezone.now().date()
     return today.replace(day=1)
 

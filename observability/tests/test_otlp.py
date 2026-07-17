@@ -1,4 +1,5 @@
 """OTLP/HTTP JSON trace ingestion tests (Phase 6)."""
+
 from __future__ import annotations
 
 from django.test import TestCase
@@ -16,9 +17,7 @@ def _otlp_payload():
         "resourceSpans": [
             {
                 "resource": {
-                    "attributes": [
-                        {"key": "service.name", "value": {"stringValue": "api"}}
-                    ]
+                    "attributes": [{"key": "service.name", "value": {"stringValue": "api"}}]
                 },
                 "scopeSpans": [
                     {

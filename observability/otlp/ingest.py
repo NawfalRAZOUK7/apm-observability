@@ -1,10 +1,10 @@
 # observability/otlp/ingest.py
 """Persist parsed OTLP spans: service registration, span storage, and
 conversion of HTTP server spans into the ApiRequest analytics model."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -111,9 +111,7 @@ def store_spans(span_dicts: list[dict], project) -> OtlpIngestResult:
         status_class = "error" if s.status_code == "error" else "ok"
         apm_spans_ingested_total.labels(service=s.service, status_class=status_class).inc()
 
-    return OtlpIngestResult(
-        spans=len(spans), services=n_services, analytics_rows=len(api_requests)
-    )
+    return OtlpIngestResult(spans=len(spans), services=n_services, analytics_rows=len(api_requests))
 
 
 @transaction.atomic

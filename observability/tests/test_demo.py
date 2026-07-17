@@ -1,4 +1,5 @@
 """Demo tooling tests: OTLP payload builder + seed_tenant command."""
+
 from __future__ import annotations
 
 from io import StringIO

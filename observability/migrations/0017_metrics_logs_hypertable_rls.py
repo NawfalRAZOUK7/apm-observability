@@ -4,6 +4,7 @@
 PostgreSQL-only, idempotent, no-op on SQLite. Mirrors the span hypertable
 (0014) and the permissive-when-unset RLS policy (0015) for the two new signals.
 """
+
 from __future__ import annotations
 
 import os

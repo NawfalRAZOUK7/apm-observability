@@ -9,10 +9,11 @@ slowest trace, and compare against the previous equal-length window.
 Implemented over the ORM in Python so it runs identically on SQLite (tests/dev)
 and PostgreSQL. A recursive-CTE version is the natural optimization at scale.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from observability.models import Span
 
@@ -44,9 +45,9 @@ class _EdgeAgg:
         return {
             "calls": self.calls,
             "error_rate": round(self.errors / self.calls, 4) if self.calls else 0.0,
-            "avg_latency_ms": round(sum(self.durations) / len(self.durations), 2)
-            if self.durations
-            else 0.0,
+            "avg_latency_ms": (
+                round(sum(self.durations) / len(self.durations), 2) if self.durations else 0.0
+            ),
             "p95_latency_ms": _percentile(self.durations, 95),
             "unhealthy": bool(self.calls) and (self.errors / self.calls) > _UNHEALTHY_ERROR_RATE,
         }

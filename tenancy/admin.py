@@ -31,7 +31,15 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(ApiKey)
 class ApiKeyAdmin(admin.ModelAdmin):
-    list_display = ("prefix", "project", "environment", "can_write", "is_active", "created_at", "last_used_at")
+    list_display = (
+        "prefix",
+        "project",
+        "environment",
+        "can_write",
+        "is_active",
+        "created_at",
+        "last_used_at",
+    )
     list_filter = ("can_write", "project")
     search_fields = ("prefix", "name")
     readonly_fields = ("prefix", "hashed_key", "created_at", "last_used_at")

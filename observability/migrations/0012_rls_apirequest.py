@@ -11,6 +11,7 @@ carry a project and can then switch to FORCE ROW LEVEL SECURITY.
 
 No-op on SQLite (tests/dev), where isolation relies on app-level scoping.
 """
+
 from django.db import migrations
 
 POLICY_NAME = "tenant_isolation"
@@ -24,16 +25,14 @@ def apply_rls(apps, schema_editor):
     with connection.cursor() as cursor:
         cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;")
         cursor.execute(f"DROP POLICY IF EXISTS {POLICY_NAME} ON {table};")
-        cursor.execute(
-            f"""
+        cursor.execute(f"""
             CREATE POLICY {POLICY_NAME} ON {table}
             USING (
                 current_setting('app.current_project', true) IS NULL
                 OR current_setting('app.current_project', true) = ''
                 OR project_id = NULLIF(current_setting('app.current_project', true), '')::bigint
             );
-            """
-        )
+            """)
 
 
 def drop_rls(apps, schema_editor):

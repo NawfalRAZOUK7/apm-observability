@@ -1,12 +1,12 @@
 # notifications/incidents.py
 """Incident lifecycle: open/update from alerts, acknowledge, assign, resolve,
 compute MTTA/MTTR, build Grafana links, and generate postmortems (Phase 9)."""
+
 from __future__ import annotations
 
 import os
 from urllib.parse import urlencode
 
-from django.db.models import Avg
 from django.utils import timezone
 
 from .models import Incident, IncidentEvent, Notification
@@ -192,9 +192,7 @@ def generate_postmortem(incident: Incident) -> str:
 
 
 def _timeline_text(incident: Incident) -> str:
-    rows = [
-        f"- {e.at:%Y-%m-%d %H:%M:%S} [{e.kind}] {e.message}" for e in incident.events.all()
-    ]
+    rows = [f"- {e.at:%Y-%m-%d %H:%M:%S} [{e.kind}] {e.message}" for e in incident.events.all()]
     return "\n".join(rows)
 
 

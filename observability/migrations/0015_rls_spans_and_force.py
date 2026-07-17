@@ -10,6 +10,7 @@ expression short-circuits), so FORCE never breaks owner/migration/aggregate
 queries that set no tenant — it only scopes sessions that DO set the GUC (OTLP
 ingestion via set_current_project). No-op on SQLite.
 """
+
 from __future__ import annotations
 
 from django.db import migrations

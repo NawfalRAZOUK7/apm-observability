@@ -73,9 +73,7 @@ class Project(models.Model):
     class Meta:
         ordering = ["organization", "name"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["organization", "slug"], name="uniq_org_project_slug"
-            )
+            models.UniqueConstraint(fields=["organization", "slug"], name="uniq_org_project_slug")
         ]
 
     def __str__(self) -> str:
@@ -88,17 +86,13 @@ class Environment(models.Model):
         STAGING = "staging", "staging"
         DEVELOPMENT = "development", "development"
 
-    project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="environments"
-    )
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="environments")
     kind = models.CharField(max_length=16, choices=Kind.choices)
 
     class Meta:
         ordering = ["project", "kind"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["project", "kind"], name="uniq_project_environment"
-            )
+            models.UniqueConstraint(fields=["project", "kind"], name="uniq_project_environment")
         ]
 
     def __str__(self) -> str:
@@ -119,9 +113,7 @@ class ApiKey(models.Model):
     PREFIX_LEN = 12
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="api_keys")
-    environment = models.ForeignKey(
-        Environment, on_delete=models.CASCADE, related_name="api_keys"
-    )
+    environment = models.ForeignKey(Environment, on_delete=models.CASCADE, related_name="api_keys")
     name = models.CharField(max_length=200, blank=True, default="")
 
     prefix = models.CharField(max_length=32, db_index=True)

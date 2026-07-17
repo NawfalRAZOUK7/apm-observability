@@ -6,6 +6,7 @@ default lowerCamelCase output matches the OTLP/JSON field names our parsers
 already understand (resourceSpans, scopeSpans, startTimeUnixNano, …). Imports are
 lazy so the JSON path never requires protobuf/grpc.
 """
+
 from __future__ import annotations
 
 CONTENT_TYPE = "application/x-protobuf"

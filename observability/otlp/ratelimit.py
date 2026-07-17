@@ -7,6 +7,7 @@ per-worker limiting; for cluster-wide limits back this with Redis in production.
     OTLP_RATE_LIMIT_PER_SEC   sustained points/sec per project (0 = unlimited)
     OTLP_RATE_LIMIT_BURST     bucket capacity (default = 2x rate, min 1)
 """
+
 from __future__ import annotations
 
 import os

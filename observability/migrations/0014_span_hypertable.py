@@ -5,6 +5,7 @@ Mirrors 0002_timescale: PostgreSQL-only, idempotent, drops the id PK (Timescale
 requires unique indexes to include the partition column) before create_hypertable.
 No-op on SQLite.
 """
+
 from __future__ import annotations
 
 import os

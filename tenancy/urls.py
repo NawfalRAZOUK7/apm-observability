@@ -23,7 +23,9 @@ urlpatterns = [
     path("auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     # Tenant management.
     path("projects/", ProjectListView.as_view(), name="project_list"),
-    path("projects/<int:project_id>/keys/", ApiKeyListCreateView.as_view(), name="apikey_list_create"),
+    path(
+        "projects/<int:project_id>/keys/", ApiKeyListCreateView.as_view(), name="apikey_list_create"
+    ),
     path(
         "projects/<int:project_id>/keys/<int:key_id>/rotate/",
         ApiKeyRotateView.as_view(),

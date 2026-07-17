@@ -1,4 +1,5 @@
 """LLM intelligence: provider, AI postmortems, error grouping, NL queries (Phase 13)."""
+
 from __future__ import annotations
 
 import os
@@ -12,16 +13,21 @@ from notifications.incidents import generate_ai_postmortem
 from notifications.models import Incident, IncidentEvent
 from observability.ai import llm
 from observability.analytics.issues import group_error_rows, normalize, rebuild_issues
-from observability.analytics.nlquery import answer_question, execute, heuristic_parse
+from observability.analytics.nlquery import execute, heuristic_parse
 from observability.models import ApiRequest, Issue
-from tenancy.models import Organization, Project
 
 
-def _error_request(service="api", endpoint="/checkout", status=500, message="timeout after 30s", when=None):
+def _error_request(
+    service="api", endpoint="/checkout", status=500, message="timeout after 30s", when=None
+):
     return ApiRequest.objects.create(
         time=when or timezone.now(),
-        service=service, endpoint=endpoint, method="GET",
-        status_code=status, latency_ms=100, tags={"error": message},
+        service=service,
+        endpoint=endpoint,
+        method="GET",
+        status_code=status,
+        latency_ms=100,
+        tags={"error": message},
     )
 
 
@@ -95,8 +101,12 @@ class NLQueryTests(TestCase):
             _error_request(service="checkout")
         for _ in range(2):
             ApiRequest.objects.create(
-                time=timezone.now(), service="checkout", endpoint="/checkout",
-                method="GET", status_code=200, latency_ms=50,
+                time=timezone.now(),
+                service="checkout",
+                endpoint="/checkout",
+                method="GET",
+                status_code=200,
+                latency_ms=50,
             )
 
     def test_heuristic_parse(self):

@@ -59,9 +59,7 @@ class AlertRule(models.Model):
     z_threshold = models.FloatField(default=3.0)
 
     window_minutes = models.PositiveIntegerField(default=5)
-    severity = models.CharField(
-        max_length=16, choices=Severity.choices, default=Severity.WARNING
-    )
+    severity = models.CharField(max_length=16, choices=Severity.choices, default=Severity.WARNING)
     runbook_url = models.URLField(max_length=1024, blank=True, default="")
 
     # Evaluation bookkeeping (for state-transition detection + observability).

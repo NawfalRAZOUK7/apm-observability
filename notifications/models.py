@@ -58,7 +58,10 @@ class Notification(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"[{self.received_at:%Y-%m-%d %H:%M:%S}] {self.severity} {self.alertname} ({self.status})"
+        return (
+            f"[{self.received_at:%Y-%m-%d %H:%M:%S}] "
+            f"{self.severity} {self.alertname} ({self.status})"
+        )
 
 
 class Incident(models.Model):
@@ -154,9 +157,7 @@ class IncidentEvent(models.Model):
         COMMENT = "comment", "comment"
         RESOLVED = "resolved", "resolved"
 
-    incident = models.ForeignKey(
-        Incident, on_delete=models.CASCADE, related_name="events"
-    )
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name="events")
     at = models.DateTimeField(auto_now_add=True, db_index=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
     message = models.TextField(blank=True, default="")

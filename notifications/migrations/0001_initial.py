@@ -7,19 +7,50 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Notification',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('received_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('fingerprint', models.CharField(blank=True, db_index=True, default='', max_length=128)),
-                ('status', models.CharField(choices=[('firing', 'firing'), ('resolved', 'resolved')], db_index=True, default='firing', max_length=16)),
-                ('severity', models.CharField(choices=[('critical', 'critical'), ('warning', 'warning'), ('info', 'info'), ('unknown', 'unknown')], db_index=True, default='unknown', max_length=16)),
-                ('alertname', models.CharField(blank=True, db_index=True, default='', max_length=255)),
+                (
+                    'fingerprint',
+                    models.CharField(blank=True, db_index=True, default='', max_length=128),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[('firing', 'firing'), ('resolved', 'resolved')],
+                        db_index=True,
+                        default='firing',
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'severity',
+                    models.CharField(
+                        choices=[
+                            ('critical', 'critical'),
+                            ('warning', 'warning'),
+                            ('info', 'info'),
+                            ('unknown', 'unknown'),
+                        ],
+                        db_index=True,
+                        default='unknown',
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'alertname',
+                    models.CharField(blank=True, db_index=True, default='', max_length=255),
+                ),
                 ('summary', models.TextField(blank=True, default='')),
                 ('description', models.TextField(blank=True, default='')),
                 ('runbook_url', models.URLField(blank=True, default='', max_length=1024)),
@@ -34,7 +65,11 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['-received_at'],
-                'indexes': [models.Index(fields=['severity', '-received_at'], name='notif_sev_time_idx'), models.Index(fields=['status', '-received_at'], name='notif_status_time_idx'), models.Index(fields=['alertname', '-received_at'], name='notif_alert_time_idx')],
+                'indexes': [
+                    models.Index(fields=['severity', '-received_at'], name='notif_sev_time_idx'),
+                    models.Index(fields=['status', '-received_at'], name='notif_status_time_idx'),
+                    models.Index(fields=['alertname', '-received_at'], name='notif_alert_time_idx'),
+                ],
             },
         ),
     ]

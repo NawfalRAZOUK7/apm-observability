@@ -6,6 +6,7 @@ and the subset of OpenTelemetry semantic conventions we denormalize. No protobuf
 dependency: OTLP defines a stable JSON mapping, and stock SDK exporters can emit
 it (OTEL_EXPORTER_OTLP_PROTOCOL=http/json).
 """
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -90,9 +91,7 @@ def parse_traces(payload: dict) -> list[dict[str, Any]]:
                 if start and end:
                     duration_ms = max(int((end - start).total_seconds() * 1000), 0)
 
-                http_status = _first(
-                    attrs, "http.response.status_code", "http.status_code"
-                )
+                http_status = _first(attrs, "http.response.status_code", "http.status_code")
                 try:
                     http_status = int(http_status) if http_status is not None else None
                 except (TypeError, ValueError):

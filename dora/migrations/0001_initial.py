@@ -16,22 +16,74 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Deployment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('environment', models.CharField(choices=[('production', 'production'), ('staging', 'staging'), ('development', 'development')], db_index=True, default='production', max_length=16)),
-                ('version', models.CharField(help_text='Image tag / release version.', max_length=100)),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'environment',
+                    models.CharField(
+                        choices=[
+                            ('production', 'production'),
+                            ('staging', 'staging'),
+                            ('development', 'development'),
+                        ],
+                        db_index=True,
+                        default='production',
+                        max_length=16,
+                    ),
+                ),
+                (
+                    'version',
+                    models.CharField(help_text='Image tag / release version.', max_length=100),
+                ),
                 ('commit_sha', models.CharField(blank=True, default='', max_length=64)),
                 ('service', models.CharField(blank=True, default='', max_length=200)),
-                ('status', models.CharField(choices=[('success', 'success'), ('failed', 'failed'), ('rolled_back', 'rolled_back')], db_index=True, default='success', max_length=16)),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('success', 'success'),
+                            ('failed', 'failed'),
+                            ('rolled_back', 'rolled_back'),
+                        ],
+                        db_index=True,
+                        default='success',
+                        max_length=16,
+                    ),
+                ),
                 ('caused_incident', models.BooleanField(default=False)),
-                ('committed_at', models.DateTimeField(blank=True, help_text='Commit time (for lead time).', null=True)),
+                (
+                    'committed_at',
+                    models.DateTimeField(
+                        blank=True, help_text='Commit time (for lead time).', null=True
+                    ),
+                ),
                 ('deployed_at', models.DateTimeField(db_index=True)),
                 ('duration_seconds', models.PositiveIntegerField(blank=True, null=True)),
                 ('triggered_by', models.CharField(blank=True, default='', max_length=200)),
-                ('project', models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='deployments', to='tenancy.project')),
+                (
+                    'project',
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='deployments',
+                        to='tenancy.project',
+                    ),
+                ),
             ],
             options={
                 'ordering': ['-deployed_at'],
-                'indexes': [models.Index(fields=['environment', '-deployed_at'], name='deploy_env_time_idx'), models.Index(fields=['status', '-deployed_at'], name='deploy_status_time_idx')],
+                'indexes': [
+                    models.Index(
+                        fields=['environment', '-deployed_at'], name='deploy_env_time_idx'
+                    ),
+                    models.Index(fields=['status', '-deployed_at'], name='deploy_status_time_idx'),
+                ],
             },
         ),
     ]

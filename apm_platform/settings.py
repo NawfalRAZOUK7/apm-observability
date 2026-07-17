@@ -300,12 +300,8 @@ REST_FRAMEWORK = {
 from datetime import timedelta as _timedelta  # noqa: E402
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": _timedelta(
-        minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "30"))
-    ),
-    "REFRESH_TOKEN_LIFETIME": _timedelta(
-        days=int(os.environ.get("JWT_REFRESH_DAYS", "7"))
-    ),
+    "ACCESS_TOKEN_LIFETIME": _timedelta(minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "30"))),
+    "REFRESH_TOKEN_LIFETIME": _timedelta(days=int(os.environ.get("JWT_REFRESH_DAYS", "7"))),
     "ROTATE_REFRESH_TOKENS": True,
 }
 

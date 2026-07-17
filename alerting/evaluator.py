@@ -6,6 +6,7 @@ channels and opens an incident); on firing->OK we emit a resolved Notification
 (which auto-resolves the incident). Only transitions notify, so a rule that
 stays firing does not re-page every tick.
 """
+
 from __future__ import annotations
 
 from datetime import timedelta

@@ -6,6 +6,7 @@ Scheduling options (pick one):
   - sidecar:   python manage.py evaluate_alert_rules --loop --interval 60
   - external:  a Kubernetes CronJob invoking the one-shot form
 """
+
 from __future__ import annotations
 
 import time
@@ -21,19 +22,18 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--loop", action="store_true", help="Run continuously.")
         parser.add_argument(
-            "--interval", type=int, default=60, help="Seconds between passes when --loop (default 60)."
+            "--interval",
+            type=int,
+            default=60,
+            help="Seconds between passes when --loop (default 60).",
         )
 
     def _run_once(self):
         results = evaluate_all()
         fired = [r for r in results if r["transitioned"]]
-        self.stdout.write(
-            f"evaluated {len(results)} rule(s); {len(fired)} state transition(s)"
-        )
+        self.stdout.write(f"evaluated {len(results)} rule(s); {len(fired)} state transition(s)")
         for r in fired:
-            self.stdout.write(
-                f"  -> {r['project']}/{r['rule']}: {r['state']} (value={r['value']})"
-            )
+            self.stdout.write(f"  -> {r['project']}/{r['rule']}: {r['state']} (value={r['value']})")
         return results
 
     def handle(self, *args, **opts):

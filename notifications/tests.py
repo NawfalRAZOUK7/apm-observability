@@ -1,10 +1,9 @@
 # notifications/tests.py
 from __future__ import annotations
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
-
-from django.contrib.auth import get_user_model
 
 from . import providers
 from .incidents import incident_metrics
@@ -119,9 +118,7 @@ class WebhookViewTests(TestCase):
 
     def test_unknown_severity_is_normalized(self):
         payload = {
-            "alerts": [
-                {"status": "firing", "labels": {"alertname": "Weird", "severity": "bogus"}}
-            ]
+            "alerts": [{"status": "firing", "labels": {"alertname": "Weird", "severity": "bogus"}}]
         }
         request = APIRequestFactory().post("/sink/notify", payload, format="json")
         response = AlertmanagerWebhookView.as_view()(request)
