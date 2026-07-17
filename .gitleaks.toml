@@ -1,0 +1,27 @@
+# gitleaks config (Phase 15). Extends the default rules and allowlists the
+# intentional placeholder/example files so they don't trip the scan.
+title = "apm-observability gitleaks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders and examples that contain no real secrets."
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.docker$''',
+  '''.*\.tfvars\.example$''',
+  '''deploy/helm/apm-observability/values.*\.yaml$''',
+  '''docs/.*''',
+  # ExternalSecret/SecretStore manifests hold only *pointers* into a secret store
+  # (remoteRef.key is a path like "apm/observability"), never secret material --
+  # that is the point of External Secrets. The generic-api-key rule matches the
+  # "key:" + path shape anyway.
+  '''infra/secrets/external-secrets/.*\.yaml$''',
+]
+regexes = [
+  '''change-me''',
+  '''please-change-me.*''',
+  '''apm_writer_pass''',
+  '''apm_reader_pass''',
+]

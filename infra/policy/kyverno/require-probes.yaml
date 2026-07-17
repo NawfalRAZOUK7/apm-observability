@@ -1,0 +1,61 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require readiness and liveness probes
+    policies.kyverno.io/category: Reliability
+    # Autogen expands a Pod rule to the pod controllers. Job/CronJob are omitted on
+    # purpose: an autogen'd rule validates the *Job* object, which has no
+    # ownerReferences, so the "skip pods owned by a Job" precondition below can
+    # never match there and the migrate hook gets denied outright. Without a Job
+    # rule, the Job is admitted and its Pod is matched by the base rule -- where the
+    # precondition does see ownerReferences[0].kind=Job and skips it.
+    pod-policies.kyverno.io/autogen-controllers: Deployment,StatefulSet,DaemonSet,ReplicaSet,ReplicationController
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-readiness-liveness
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      exclude:
+        any:
+          - resources:
+              # Trusted infrastructure namespaces -- these rules target THIS app's
+              # workloads, not the platform underneath it. Enforcing them cluster-wide
+              # blocks the components this repo itself installs (infra/terraform/modules):
+              # argo-rollouts ships from quay.io, kube-prometheus-stack/loki run root
+              # sidecars, and dynamic volume provisioners (kind's rancher.io/local-path)
+              # run short-lived root, probe-less helper pods -- which stalls EVERY PVC in
+              # the cluster at Pending. Add your cluster's own infra namespaces here.
+              namespaces:
+                - kube-system
+                - kyverno
+                - local-path-storage
+                - argo-rollouts
+                - external-secrets
+                - monitoring
+      # Probes are for long-running workloads. Batch Job/CronJob pods (e.g. the
+      # chart's pre-upgrade migrate hook) run to completion and must NOT define
+      # probes, so skip pods owned by a Job.
+      preconditions:
+        all:
+          - key: "{{ request.object.metadata.ownerReferences[0].kind || '' }}"
+            operator: NotEquals
+            value: Job
+      validate:
+        message: "Every container must define readiness and liveness probes."
+        foreach:
+          - list: request.object.spec.containers
+            deny:
+              conditions:
+                any:
+                  - key: "{{ element.readinessProbe || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.livenessProbe || '' }}"
+                    operator: Equals
+                    value: ""

@@ -1,0 +1,73 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: apm-admission-policies
+policies:
+  - ../disallow-latest-tag.yaml
+  - ../require-requests-limits.yaml
+  - ../require-nonroot.yaml
+  - ../restrict-registries.yaml
+  - ../require-probes.yaml
+resources:
+  - resources.yaml
+results:
+  # good-pod satisfies every policy.
+  - policy: disallow-latest-tag
+    rule: require-image-tag
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: require-requests-limits
+    rule: require-cpu-memory
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: require-nonroot-hardening
+    rule: run-as-non-root
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: restrict-image-registries
+    rule: allowed-registries
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: require-probes
+    rule: require-readiness-liveness
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  # each bad pod violates exactly one policy.
+  - policy: disallow-latest-tag
+    rule: require-image-tag
+    resources: [bad-latest-pod]
+    kind: Pod
+    result: fail
+  - policy: require-nonroot-hardening
+    rule: run-as-non-root
+    resources: [bad-root-pod]
+    kind: Pod
+    result: fail
+  - policy: require-requests-limits
+    rule: require-cpu-memory
+    resources: [bad-noresources-pod]
+    kind: Pod
+    result: fail
+  - policy: require-probes
+    rule: require-readiness-liveness
+    resources: [bad-noprobes-pod]
+    kind: Pod
+    result: fail
+  - policy: restrict-image-registries
+    rule: allowed-registries
+    resources: [bad-registry-pod]
+    kind: Pod
+    result: fail
+  # A Job-owned pod (the chart's migrate hook) must be waved through by
+  # require-probes. The CLI reports a precondition-skipped rule as `skip`, NOT
+  # `pass` -- asserting `pass` here fails with "Want pass, got skip".
+  - policy: require-probes
+    rule: require-readiness-liveness
+    resources: [migrate-job-pod]
+    kind: Pod
+    result: skip

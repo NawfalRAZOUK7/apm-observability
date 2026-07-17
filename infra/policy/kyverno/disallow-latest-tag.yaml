@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow :latest tag
+    policies.kyverno.io/category: Supply Chain
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      exclude:
+        any:
+          - resources:
+              # Trusted infrastructure namespaces -- these rules target THIS app's
+              # workloads, not the platform underneath it. Enforcing them cluster-wide
+              # blocks the components this repo itself installs (infra/terraform/modules):
+              # argo-rollouts ships from quay.io, kube-prometheus-stack/loki run root
+              # sidecars, and dynamic volume provisioners (kind's rancher.io/local-path)
+              # run short-lived root, probe-less helper pods -- which stalls EVERY PVC in
+              # the cluster at Pending. Add your cluster's own infra namespaces here.
+              namespaces:
+                - kube-system
+                - kyverno
+                - local-path-storage
+                - argo-rollouts
+                - external-secrets
+                - monitoring
+      validate:
+        message: "An explicit image tag is required (':latest' or no tag is not allowed)."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"

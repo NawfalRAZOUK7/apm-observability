@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+  annotations:
+    policies.kyverno.io/title: Restrict image registries
+    policies.kyverno.io/category: Supply Chain
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: allowed-registries
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      exclude:
+        any:
+          - resources:
+              # Trusted infrastructure namespaces -- these rules target THIS app's
+              # workloads, not the platform underneath it. Enforcing them cluster-wide
+              # blocks the components this repo itself installs (infra/terraform/modules):
+              # argo-rollouts ships from quay.io, kube-prometheus-stack/loki run root
+              # sidecars, and dynamic volume provisioners (kind's rancher.io/local-path)
+              # run short-lived root, probe-less helper pods -- which stalls EVERY PVC in
+              # the cluster at Pending. Add your cluster's own infra namespaces here.
+              namespaces:
+                - kube-system
+                - kyverno
+                - local-path-storage
+                - argo-rollouts
+                - external-secrets
+                - monitoring
+      validate:
+        message: "Images must come from an approved registry (ghcr.io or docker.io library mirrors)."
+        pattern:
+          spec:
+            containers:
+              - image: "ghcr.io/* | registry.k8s.io/* | docker.io/*"

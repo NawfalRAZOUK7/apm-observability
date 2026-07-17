@@ -1,0 +1,30 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify Cosign image signatures
+    policies.kyverno.io/category: Supply Chain
+spec:
+  # Enforce at admission what the release pipeline signs (keyless Cosign).
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 30
+  background: false
+  rules:
+    - name: verify-ghcr-keyless
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/nawfalrazouk7/apm-observability*"
+          # Keyless verification against the GitHub Actions OIDC identity that
+          # signed the image in .github/workflows/release.yml (Cosign + Fulcio).
+          attestors:
+            - entries:
+                - keyless:
+                    issuer: "https://token.actions.githubusercontent.com"
+                    subject: "https://github.com/NawfalRAZOUK7/apm-observability/.github/workflows/release.yml@refs/tags/*"
+                    rekor:
+                      url: https://rekor.sigstore.dev
