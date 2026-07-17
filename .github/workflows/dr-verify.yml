@@ -1,0 +1,58 @@
+name: DR restore verification
+
+# Track B: prove the backups restore — automatically, every week.
+# Brings up the pgBackRest + MinIO stack, takes a backup, then runs the restore
+# verification drill and publishes the resulting metrics as an artifact.
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Restore + verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate pgBackRest mTLS certs
+        run: bash docker/certs/gen_pgbackrest_mtls.sh || echo "cert step skipped"
+
+      - name: Bring up backup stack
+        run: |
+          docker compose -p apm-data -f docker/docker-compose.backup.yml up -d --build
+          sleep 20
+
+      - name: Create stanza + take a backup
+        run: |
+          docker compose -p apm-data -f docker/docker-compose.backup.yml \
+            exec -T pgbackrest pgbackrest --stanza=apm stanza-create || true
+          docker compose -p apm-data -f docker/docker-compose.backup.yml \
+            exec -T pgbackrest pgbackrest --stanza=apm --type=full backup
+
+      - name: Run restore verification
+        run: |
+          chmod +x scripts/drills/verify_restore.sh
+          scripts/drills/verify_restore.sh
+
+      - name: Summarize
+        if: always()
+        run: |
+          echo "### DR restore verification" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat docker/monitoring/node-exporter-textfile/dr_verify.prom >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish DR results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dr-verify-metrics
+          path: docker/monitoring/node-exporter-textfile/dr_verify.prom
+          if-no-files-found: warn
+
+      - name: Tear down
+        if: always()
+        run: docker compose -p apm-data -f docker/docker-compose.backup.yml down -v || true

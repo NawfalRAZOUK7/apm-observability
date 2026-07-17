@@ -24,6 +24,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      # The Helm chart's appVersion is the default deployed image tag, so it must
+      # match the released tag. Fail the release if they drift (keeps chart +
+      # image versions honest without a bot commit).
+      - name: Assert Chart appVersion matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          appv="$(grep -E '^appVersion:' deploy/helm/apm-observability/Chart.yaml | sed 's/.*"\(.*\)".*/\1/')"
+          echo "tag=$tag  chart appVersion=$appv"
+          if [ "$tag" != "$appv" ]; then
+            echo "::error::Chart.yaml appVersion ($appv) != release tag ($tag). Bump appVersion before tagging." && exit 1
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -120,6 +133,12 @@ jobs:
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
+        with:
+          # Pin cosign 2.x: it writes the legacy `sha256-<digest>.sig` signature
+          # tag. cosign 3.x defaults to OCI 1.1 referrers / new-bundle format,
+          # which the Kyverno 1.18 verifyImages policy (infra/policy/kyverno/
+          # verify-image-signatures.yaml) cannot find ("no signatures found").
+          cosign-release: v2.4.3
 
       - name: Sign image using GitHub OIDC
         env:

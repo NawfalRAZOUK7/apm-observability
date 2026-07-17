@@ -1,0 +1,103 @@
+name: Verify image signature (integration)
+
+# Proves the verify-image-signatures Kyverno policy actually admits the real,
+# Cosign-signed release image on a live (kind) cluster — the one thing that can't
+# be checked without a signed image + registry auth. Runs after a release
+# publishes+signs the image, or on demand.
+
+on:
+  workflow_run:
+    workflows: ["Release container image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Signed image tag to verify (defaults to Chart appVersion)."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write # push a throwaway UNSIGNED image for the negative test
+
+jobs:
+  verify:
+    name: Admit signed image on kind
+    runs-on: ubuntu-latest
+    # Only run for a successful release (or manual dispatch).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          tag="${{ github.event.inputs.image_tag }}"
+          if [ -z "$tag" ]; then
+            tag="$(grep -E '^appVersion:' deploy/helm/apm-observability/Chart.yaml | sed 's/.*"\(.*\)".*/\1/')"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Verifying ghcr.io/${GITHUB_REPOSITORY,,}:$tag"
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+
+      - name: Install Kyverno
+        run: |
+          helm repo add kyverno https://kyverno.github.io/kyverno/
+          helm repo update
+          helm install kyverno kyverno/kyverno -n kyverno --create-namespace --wait
+
+      - name: Apply the signature-verification policy
+        run: kubectl apply -f infra/policy/kyverno/verify-image-signatures.yaml
+
+      - name: GHCR pull secret
+        run: |
+          kubectl create secret docker-registry ghcr \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Signed image must be ADMITTED
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: signed-probe
+          spec:
+            imagePullSecrets: [{ name: ghcr }]
+            restartPolicy: Never
+            containers:
+              - name: probe
+                image: ${repo}:${{ steps.tag.outputs.tag }}
+                command: ["sleep", "30"]
+          EOF
+          echo "Admitted: Kyverno verified the Cosign signature."
+
+      - name: Build + push a genuinely UNSIGNED image (negative fixture)
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          # Distinct content => distinct digest => no signature attached to it
+          # (a re-tag of the signed image would share the signed digest and pass).
+          echo "FROM alpine:3.20" > Dockerfile.unsigned
+          docker build -f Dockerfile.unsigned -t "${repo}:unsigned-probe" .
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "${repo}:unsigned-probe"
+
+      - name: Unsigned image must be DENIED (for the RIGHT reason)
+        run: |
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          if kubectl run unsigned-probe --image="${repo}:unsigned-probe" \
+               --overrides='{"spec":{"imagePullSecrets":[{"name":"ghcr"}]}}' \
+               --restart=Never --command -- sleep 30 2>/tmp/err; then
+            echo "::error::Unsigned image was admitted — policy is not enforcing." && exit 1
+          fi
+          cat /tmp/err
+          # The denial must be about the signature, not a missing manifest.
+          if grep -qiE "signature|verif" /tmp/err && ! grep -qi "MANIFEST_UNKNOWN" /tmp/err; then
+            echo "Correctly denied UNSIGNED (existing) image on signature grounds."
+          else
+            echo "::error::Denied for the wrong reason (expected a signature failure)." && exit 1
+          fi

@@ -1,0 +1,87 @@
+name: Deploy (staging -> production)
+
+# Track A: continuous deployment after a release image is published.
+#   Tag -> deploy staging -> smoke -> [manual approval] -> deploy production ->
+#   smoke -> auto-rollback on failure (helm --atomic).
+#
+# Approval gate: the `production` GitHub Environment must have required reviewers
+# configured (Settings -> Environments -> production). The job will pause there.
+#
+# Required secrets/vars:
+#   KUBE_CONFIG_STAGING / KUBE_CONFIG_PRODUCTION  (base64 kubeconfig)
+#   vars.GRAFANA_URL, secrets.GRAFANA_TOKEN       (optional deploy annotations)
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy"
+        required: true
+        default: "latest"
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve image tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+      - name: Deploy + smoke
+        env:
+          GRAFANA_URL: ${{ vars.GRAFANA_URL }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          chmod +x scripts/deploy/*.sh
+          scripts/deploy/deploy-k8s.sh staging "${{ needs.resolve.outputs.tag }}"
+
+  deploy-production:
+    name: Deploy to production
+    needs: [resolve, deploy-staging]
+    runs-on: ubuntu-latest
+    # Pauses here for manual approval (required reviewers on this environment).
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v4
+      - uses: azure/setup-kubectl@v4
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > "$HOME/.kube/config"
+      - name: Deploy + smoke (auto-rollback on failure)
+        env:
+          GRAFANA_URL: ${{ vars.GRAFANA_URL }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_TOKEN }}
+        run: |
+          chmod +x scripts/deploy/*.sh
+          scripts/deploy/deploy-k8s.sh production "${{ needs.resolve.outputs.tag }}"

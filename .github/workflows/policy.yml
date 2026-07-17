@@ -1,0 +1,33 @@
+name: Policy (Kyverno)
+
+# Phase 16: unit-test the admission policies with the Kyverno CLI against
+# known-good and known-bad manifests before they ever reach a cluster.
+
+on:
+  push:
+    paths:
+      - "infra/policy/**"
+      - ".github/workflows/policy.yml"
+  pull_request:
+    paths:
+      - "infra/policy/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kyverno-test:
+    name: kyverno test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Kyverno CLI
+        uses: kyverno/action-install-cli@v0.2.0
+
+      - name: Validate policy manifests
+        run: kyverno version
+
+      - name: Run policy tests
+        run: kyverno test infra/policy/kyverno/tests

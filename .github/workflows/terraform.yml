@@ -1,0 +1,65 @@
+name: Terraform IaC
+
+# Phase 14: validate + scan Terraform. Format, per-environment validate, lint,
+# and a tfsec-style security scan. No apply here — apply is manual/gated.
+
+on:
+  push:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fmt-validate:
+    name: Format, validate, lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.5"
+
+      - name: Terraform fmt (check)
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Validate each environment
+        run: |
+          for env in infra/terraform/environments/*/; do
+            echo "== validating $env =="
+            terraform -chdir="$env" init -backend=false -input=false
+            terraform -chdir="$env" validate
+          done
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: TFLint
+        run: |
+          for dir in infra/terraform/environments/*/ infra/terraform/modules/*/; do
+            echo "== tflint $dir =="
+            tflint --chdir="$dir" --init || true
+            tflint --chdir="$dir" -f compact
+          done
+
+  security-scan:
+    name: tfsec / trivy config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Trivy config scan (IaC misconfigurations)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: infra/terraform
+          severity: CRITICAL,HIGH
+          exit-code: "0" # report but do not fail the build (tighten later)
+          format: table

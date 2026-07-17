@@ -256,7 +256,7 @@ jobs:
 
     services:
       db:
-        image: timescale/timescaledb:latest-pg16
+        image: timescale/timescaledb:2.17.2-pg16
         env:
           POSTGRES_DB: apm
           POSTGRES_USER: apm
@@ -358,7 +358,7 @@ jobs:
 
     services:
       db:
-        image: timescale/timescaledb:latest-pg16
+        image: timescale/timescaledb:2.17.2-pg16
         env:
           POSTGRES_DB: apm
           POSTGRES_USER: apm

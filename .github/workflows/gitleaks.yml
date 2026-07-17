@@ -1,0 +1,27 @@
+name: Secret scan (gitleaks)
+
+# Phase 15: fail the build if a plaintext secret is committed. Runs on pushes,
+# PRs, and weekly (full-history scan catches secrets added earlier).
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history for the scheduled deep scan
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
