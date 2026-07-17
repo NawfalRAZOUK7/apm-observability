@@ -9,7 +9,7 @@ Au-delà du socle initial, la plateforme a été industrialisée sur plusieurs a
 \begin{itemize}
     \item alerting orienté SLO avec règles de \emph{burn-rate} multi-fenêtres sur le budget d’erreur ;
     \item traçage distribué OpenTelemetry exporté vers Tempo, et journaux structurés corrélés dans Loki ;
-    \item cycle de vie des données : compression et rétention TimescaleDB, plus un contrôle automatisé de la qualité des données ;
+    \item cycle de vie des données : rétention TimescaleDB, plus un contrôle automatisé de la qualité des données ;
     \item documentation d’API auto-générée (OpenAPI / Swagger) et tests de charge k6 servant de garde-fou de performance ;
     \item chaîne CI/CD sécurisée : lint, tests, scan de vulnérabilités (Trivy), analyse statique (CodeQL), SBOM et signature d’image (Cosign) ;
     \item déploiement Kubernetes via un chart Helm et une livraison GitOps avec Argo CD.

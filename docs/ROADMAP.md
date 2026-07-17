@@ -19,9 +19,11 @@ Each item is tagged with the profile(s) it strengthens and a rough effort
 - **Phase 1 — done.** k6 load test (`loadtest/`), OpenAPI/Swagger
   (`drf-spectacular`, `/api/docs/`), one-command `make demo` + README polish.
 - **Phase 2 — done.** OpenTelemetry tracing + Tempo (2a), structured JSON logs +
-  Loki (2b), SLO burn-rate alerts (2c), TimescaleDB retention/compression +
+  Loki (2b), SLO burn-rate alerts (2c), TimescaleDB retention +
   `check_data_quality` (2d), Trivy + CodeQL CI (2e). The three observability
-  pillars (metrics/logs/traces) are complete.
+  pillars (metrics/logs/traces) are complete. (Native columnar compression was
+  later removed — TimescaleDB refuses it on tables with Row-Level Security, added
+  in Phase 5; see [ADR 0001](adr/0001-multi-tenant-isolation.md).)
 - **Phase 3 — done.** Helm chart (`deploy/helm/apm-observability`) + ArgoCD
   Application (`deploy/argocd`) for Kubernetes GitOps.
 
@@ -329,6 +331,16 @@ Foundations-first: provision declaratively, secure it, gate it, then get fancy.
 managed secrets, enforced supply-chain policy, progressive delivery, and the
 DORA delivery scorecard. Combined with Phases 4–13, the platform is a full
 platform-engineering showcase.
+
+**Verified end-to-end on a `kind` cluster** (not just structurally): Kyverno
+admits the hardened app *and* the migrate Job while rejecting non-compliant
+pods; the Argo Rollouts canary promotes on healthy metrics and **auto-aborts +
+rolls back on a real SLI breach**, with the analysis scoped to the canary pods
+(0.16 canary error-rate caught where the Service-wide average of 0.98 would have
+shipped it); migrations run as a pre-upgrade Job against the correct revision's
+config; RLS + hypertables apply on TimescaleDB; and the Terraform `local`
+environment stands the whole thing up. Cosign signing/verification is proven at
+release time (the policy needs a real signed image).
 
 ---
 

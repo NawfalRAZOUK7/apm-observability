@@ -93,11 +93,13 @@ méthodologie du \emph{Google SRE Workbook}~\cite{google-sre-slo}.
 \end{figure}
 
 \subsection{Cycle de vie et qualité des données}
-La migration \texttt{0009\_retention\_compression} active la compression
-colonnaire native de TimescaleDB (par défaut au-delà de
-\texttt{APM\_COMPRESS\_AFTER\_DAYS} = 7 jours) ainsi qu'une politique de rétention
-(\texttt{APM\_RETENTION\_DAYS} = 90 jours) sur l'hypertable brute, les vues
-continues conservant l'historique agrégé de long terme~\cite{timescaledb-compression}.
+La migration \texttt{0009\_retention\_compression} applique une politique de
+rétention (\texttt{APM\_RETENTION\_DAYS} = 90 jours) sur l'hypertable brute, les
+vues continues conservant l'historique agrégé de long terme. La compression
+colonnaire native de TimescaleDB~\cite{timescaledb-compression} n'est
+\emph{pas} activée : elle est incompatible avec la sécurité au niveau ligne
+(Row-Level Security) introduite ultérieurement pour le multi-locataire,
+l'isolation des locataires primant sur le gain de stockage.
 
 Une commande \texttt{check\_data\_quality} vérifie l'absence de valeurs manquantes,
 la validité des plages (\texttt{status\_code}, \texttt{latency\_ms}), le taux de

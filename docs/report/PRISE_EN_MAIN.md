@@ -127,13 +127,13 @@ Note: certificat local auto-signe => accepter l'avertissement du navigateur.
 
 ## Captures de validation (UI)
 Admin Django (liste des requetes):
-![Admin Django - ApiRequest](images/django-admin-apirequest.png)
+![Admin Django - ApiRequest](../images/django-admin-apirequest.png)
 
 Grafana datasources (TimescaleDB + Prometheus):
-![Grafana datasources](images/grafana-datasources.png)
+![Grafana datasources](../images/grafana-datasources.png)
 
 Dashboard Grafana (APM):
-![Grafana dashboard](images/grafana-dashboard.png)
+![Grafana dashboard](../images/grafana-dashboard.png)
 
 ## 11) Arret des services (optionnel)
 ```

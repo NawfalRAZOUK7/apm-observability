@@ -136,7 +136,7 @@ Le projet utilise les particularités de TimescaleDB pour :
 \begin{itemize}
     \item Créer des hypertables pour le partitionnement automatique.
     \item Mettre en place des agrégats continus (hourly/daily) pour accélérer les requêtes analytiques.
-    \item Appliquer des politiques de compression colonnaire et de rétention sur l’hypertable brute (cf. chapitre~\ref{sec:avance} pour le cycle de vie des données).
+    \item Appliquer une politique de rétention sur l’hypertable brute (la compression colonnaire n’est pas utilisée : incompatible avec le Row-Level Security multi-locataire ; cf. chapitre~\ref{sec:avance}).
     \item Assurer un fallback sur PostgreSQL standard si TimescaleDB n’est pas disponible.
 \end{itemize}
 

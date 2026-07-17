@@ -56,6 +56,14 @@ tested against Postgres in CI (Phase 6). A forgotten `set_current_project` under
 mode. Existing rows were backfilled to a `default/default` project
 (`observability` migration `0011`).
 
+**Trade-off — no columnar compression.** TimescaleDB refuses native columnar
+compression on a table with Row-Level Security enabled (`columnstore cannot be
+used on table with row security`). Choosing RLS therefore means dropping the
+compression policy that Phase 2 had enabled on `observability_apirequest`;
+retention + continuous aggregates are unaffected. Tenant isolation is judged more
+valuable than the storage saving. (Migration `0009` was updated to keep retention
+and remove compression.)
+
 ## References
 
 - `tenancy/models.py`, `tenancy/middleware.py`, `tenancy/authentication.py`

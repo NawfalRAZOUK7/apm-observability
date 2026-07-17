@@ -15,7 +15,7 @@ make up-app
 ```
 
 Lien projet:
-- Runbook complet: `docs/PRISE_EN_MAIN.md`
+- Runbook complet: `docs/report/PRISE_EN_MAIN.md`
 - Compose principal: `docker/docker-compose.yml`
 - Compose cluster: `docker/cluster/docker-compose.*.yml`
 
@@ -141,7 +141,7 @@ Variables reseau:
 
 ## 2.7 Validation via interfaces
 Admin Django (liste des requetes):
-![Admin Django - ApiRequest](../images/django-admin-apirequest.png)
+![Admin Django - ApiRequest](../../images/django-admin-apirequest.png)
 
 Grafana datasources (TimescaleDB + Prometheus):
-![Grafana datasources](../images/grafana-datasources.png)
+![Grafana datasources](../../images/grafana-datasources.png)
