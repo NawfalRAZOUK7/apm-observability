@@ -1,5 +1,6 @@
 Django>=5.2.16,<6.0
 djangorestframework
+djangorestframework-simplejwt
 django-filter
 django-prometheus
 prometheus-client
@@ -9,6 +10,9 @@ opentelemetry-sdk
 opentelemetry-exporter-otlp-proto-http
 opentelemetry-instrumentation-django
 opentelemetry-instrumentation-psycopg
+# Native OTLP gRPC (:4317) + protobuf ingestion (Phase 11)
+opentelemetry-proto
+grpcio
 python-json-logger
 psycopg[binary]
 python-dotenv
