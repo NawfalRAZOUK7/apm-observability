@@ -14,7 +14,7 @@ charset-normalizer==3.4.7
     # via requests
 click==8.4.2
     # via black
-django==5.2.16
+django==6.0.7
     # via
     #   -r requirements.in
     #   django-filter
@@ -161,8 +161,6 @@ typing-extensions==4.15.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-    #   psycopg
-    #   referencing
 unittest-xml-reporting==4.0.0
     # via -r requirements.in
 uritemplate==4.2.0
