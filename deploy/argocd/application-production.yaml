@@ -1,0 +1,30 @@
+# ArgoCD Application — production (Track A).
+# Production keeps automated self-heal but disables auto-prune, and syncs the
+# chart with production overrides into the `production` namespace. Promotion is
+# gated by the deploy workflow's production Environment approval.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apm-observability-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NawfalRAZOUK7/apm-observability.git
+    targetRevision: main
+    path: deploy/helm/apm-observability
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-production.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

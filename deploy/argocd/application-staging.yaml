@@ -1,0 +1,28 @@
+# ArgoCD Application — staging (Track A).
+# Auto-syncs the chart with staging overrides into the `staging` namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apm-observability-staging
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NawfalRAZOUK7/apm-observability.git
+    targetRevision: main
+    path: deploy/helm/apm-observability
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-staging.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
