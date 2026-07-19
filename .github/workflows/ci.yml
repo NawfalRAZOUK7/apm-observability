@@ -199,55 +199,6 @@ jobs:
         with:
           fail-on-severity: high
 
-  test-sqlite:
-    name: Tests (SQLite)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: preflight
-
-    env:
-      FORCE_SQLITE: "1"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            requirements.in
-
-      - name: Install dependencies
-        run: |
-          set -euxo pipefail
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Select CI settings module (committed apm_platform/ci_settings.py)
-        run: echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
-
-      - name: Apply migrations (SQLite)
-        run: |
-          set -euxo pipefail
-          python manage.py migrate --noinput --verbosity 2
-
-      - name: Run tests (SQLite)
-        run: |
-          set -euxo pipefail
-          python manage.py test -v 2 2>&1 | tee test-sqlite.log
-
-      - name: Upload logs (SQLite) on failure
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: sqlite-logs
-          path: |
-            test-sqlite.log
-
   test-timescale:
     name: Tests (TimescaleDB pg16)
     runs-on: ubuntu-latest
@@ -584,11 +535,35 @@ jobs:
   coverage:
     name: Coverage gate
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     needs: preflight
 
+    # Measure coverage against TimescaleDB (not SQLite): the PostgreSQL-only
+    # analytics tests (KPIs, hourly/daily aggregates, top-endpoints, RLS) skip on
+    # SQLite, so measuring there both understates coverage and inflates the skip
+    # count. Running on Timescale exercises those paths for real.
+    services:
+      db:
+        image: timescale/timescaledb:2.17.2-pg16
+        env:
+          POSTGRES_DB: apm
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apm -d apm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
     env:
-      FORCE_SQLITE: "1"
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      POSTGRES_TEST_DB: apm_test
 
     steps:
       - name: Checkout
@@ -613,17 +588,27 @@ jobs:
       - name: Select CI settings module (committed apm_platform/ci_settings.py)
         run: echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings" >> "$GITHUB_ENV"
 
-      - name: Apply migrations (SQLite)
+      - name: Install postgres client + enable extension
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}"
+          psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" -c "create extension if not exists timescaledb;"
+
+      - name: Apply migrations (Timescale)
         run: |
           set -euxo pipefail
           python manage.py migrate --noinput
 
-      - name: Run tests under coverage (enforces .coveragerc fail_under)
+      - name: Run tests under coverage
         run: |
           set -euxo pipefail
           coverage run manage.py test -v 2
-          coverage report
+          # Produce the XML artifact BEFORE the enforcing report, so the upload
+          # step still has a file even when the fail_under gate trips.
           coverage xml
+          coverage report   # enforces .coveragerc fail_under (may fail the gate)
 
       - name: Coverage summary → job summary
         if: always()
@@ -654,7 +639,6 @@ jobs:
       - workflow-security
       - dockerfile-lint
       - dependency-review
-      - test-sqlite
       - test-timescale
       - demo-sql
       - docker-compose-smoke

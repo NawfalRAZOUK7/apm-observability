@@ -15,11 +15,6 @@ set -euo pipefail
 : "${DB_CONNECT_DELAY:=1}"
 
 wait_for_db() {
-  if [[ "${FORCE_SQLITE:-0}" == "1" ]]; then
-    echo "FORCE_SQLITE=1; skipping DB readiness check."
-    return 0
-  fi
-
   echo "Waiting for DB at ${DB_HOST}:${DB_PORT} ..."
   for i in $(seq 1 "${DB_CONNECT_RETRIES}"); do
     # TCP-level check (fast)

@@ -3,9 +3,8 @@
 # Differences vs application.yaml:
 #   - uses a locally-built image (apm-web:local) instead of GHCR, so no release
 #     image is required;
-#   - runs on SQLite (postgres.enabled=false, FORCE_SQLITE=1) to minimise the
-#     number of container images the cluster must pull -> easier to reach a
-#     Synced/Healthy state on constrained networks.
+#   - runs the in-cluster TimescaleDB (postgres.enabled=true) — the platform's
+#     one and only backend — so the local demo behaves exactly like production.
 #
 # Argo CD syncs the Helm chart FROM Git (deploy/helm on the tracked branch).
 # `bootstrap.sh` overwrites `targetRevision` below with your current branch and can
@@ -32,9 +31,7 @@ spec:
         - name: image.pullPolicy
           value: IfNotPresent
         - name: postgres.enabled
-          value: "false"
-        - name: config.FORCE_SQLITE
-          value: "1"
+          value: "true"
   destination:
     server: https://kubernetes.default.svc
     namespace: apm

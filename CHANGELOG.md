@@ -53,6 +53,13 @@ Engineering practices & supply chain:
   GitHub Actions), grouped and labelled.
 - **MkDocs Material** documentation site published to GitHub Pages from `docs/`.
 
+### Changed
+- **Standardized on a single database: PostgreSQL + TimescaleDB** (with pgvector).
+  Removed the SQLite dev/test fallback (`FORCE_SQLITE`, the `demo-lite` target and
+  its compose overlay, and the SQLite CI job). Dev, CI, and production now run the
+  same engine, so tests exercise the real backend and the PostgreSQL-only analytics
+  tests no longer skip. Coverage is measured on TimescaleDB.
+
 ### Added
 - OpenAPI 3 schema with Swagger UI and ReDoc (`drf-spectacular`) at `/api/docs/`,
   `/api/redoc/`, `/api/schema/`.

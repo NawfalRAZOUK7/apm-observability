@@ -104,14 +104,20 @@ WSGI_APPLICATION = 'apm_platform.wsgi.application'
 
 RUNNING_TESTS = any(arg in sys.argv for arg in ["test", "pytest"])
 
-FORCE_SQLITE = env_bool("FORCE_SQLITE", False)
-
-POSTGRES_NAME = env("POSTGRES_DB") or env("DB_NAME")
+# PostgreSQL + TimescaleDB is the ONE and only backend. TimescaleDB and pgvector
+# are Postgres extensions, so "Postgres + TimescaleDB + pgvector" is a single
+# engine — dev, CI, and production all run it, and behaviour is identical
+# everywhere (no SQLite path, no feature skips, tests match prod exactly).
+#
+# Values default to the local docker-compose credentials so DB-less management
+# commands (check, makemigrations --check, collectstatic) work without any env
+# set; anything that runs queries needs a real Postgres reachable via these.
+POSTGRES_NAME = env("POSTGRES_DB") or env("DB_NAME") or "apm"
 POSTGRES_HOST = env("POSTGRES_HOST") or env("DB_HOST", "localhost")
 POSTGRES_PORT = env("POSTGRES_PORT") or env("DB_PORT", "5432")
 
-ADMIN_USER = env("POSTGRES_USER") or env("DB_USER")
-ADMIN_PASSWORD = env("POSTGRES_PASSWORD") or env("DB_PASSWORD")
+ADMIN_USER = env("POSTGRES_USER") or env("DB_USER") or "apm"
+ADMIN_PASSWORD = env("POSTGRES_PASSWORD") or env("DB_PASSWORD") or "apm"
 
 WRITER_USER = env("POSTGRES_WRITER_USER") or env("POSTGRES_APP_USER") or ADMIN_USER
 WRITER_PASSWORD = env("POSTGRES_WRITER_PASSWORD") or env("POSTGRES_APP_PASSWORD") or ADMIN_PASSWORD
@@ -121,11 +127,6 @@ READER_PASSWORD = (
     env("POSTGRES_READER_PASSWORD") or env("POSTGRES_READONLY_PASSWORD") or WRITER_PASSWORD
 )
 
-if not ADMIN_USER:
-    ADMIN_USER = WRITER_USER
-if not ADMIN_PASSWORD:
-    ADMIN_PASSWORD = WRITER_PASSWORD
-
 CLUSTER_DB_PRIMARY_HOST = env("CLUSTER_DB_PRIMARY_HOST") or POSTGRES_HOST
 CLUSTER_DB_REPLICA_HOSTS = env("CLUSTER_DB_REPLICA_HOSTS")
 
@@ -134,76 +135,59 @@ DB_SSLMODE = env("DB_SSLMODE")
 DB_OPTIONS = {"sslmode": DB_SSLMODE} if DB_SSLMODE else {}
 READ_AFTER_WRITE_TTL = int(env("READ_AFTER_WRITE_TTL", "2") or "2")
 
-HAS_POSTGRES_ENV = all([POSTGRES_NAME, WRITER_USER, WRITER_PASSWORD])
-
 REPLICA_DATABASES: list[str] = []
 
-if (not FORCE_SQLITE) and HAS_POSTGRES_ENV:
-    primary_host, primary_port = split_host_port(
-        CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432")
-    )
-    default_db = {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": POSTGRES_NAME,
-        "USER": ADMIN_USER,
-        "PASSWORD": ADMIN_PASSWORD,
-        "HOST": primary_host,
-        "PORT": str(primary_port),
-        "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
-        # psycopg/Django expects a dict here
-        "OPTIONS": DB_OPTIONS,
-        "TEST": {
-            "NAME": env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
-        },
-    }
-    writer_db = default_db.copy()
-    writer_db["USER"] = WRITER_USER
-    writer_db["PASSWORD"] = WRITER_PASSWORD
+primary_host, primary_port = split_host_port(
+    CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432")
+)
+default_db = {
+    "ENGINE": "django.db.backends.postgresql",
+    "NAME": POSTGRES_NAME,
+    "USER": ADMIN_USER,
+    "PASSWORD": ADMIN_PASSWORD,
+    "HOST": primary_host,
+    "PORT": str(primary_port),
+    "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+    # psycopg/Django expects a dict here
+    "OPTIONS": DB_OPTIONS,
+    "TEST": {
+        "NAME": env("POSTGRES_TEST_DB", f"{POSTGRES_NAME}_test"),
+    },
+}
+writer_db = default_db.copy()
+writer_db["USER"] = WRITER_USER
+writer_db["PASSWORD"] = WRITER_PASSWORD
 
-    reader_db = default_db.copy()
-    reader_db["USER"] = READER_USER
-    reader_db["PASSWORD"] = READER_PASSWORD
+reader_db = default_db.copy()
+reader_db["USER"] = READER_USER
+reader_db["PASSWORD"] = READER_PASSWORD
 
-    DATABASES = {
-        "default": default_db,
-        "writer": writer_db,
-        "reader": reader_db,
-    }
+DATABASES = {
+    "default": default_db,
+    "writer": writer_db,
+    "reader": reader_db,
+}
 
-    if CLUSTER_DB_REPLICA_HOSTS:
-        for idx, (host, port) in enumerate(
-            parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1
-        ):
-            alias = f"replica_{idx}"
-            replica_db = reader_db.copy()
-            replica_db["HOST"] = host
-            replica_db["PORT"] = str(port)
-            DATABASES[alias] = replica_db
-            REPLICA_DATABASES.append(alias)
+if CLUSTER_DB_REPLICA_HOSTS:
+    for idx, (host, port) in enumerate(
+        parse_host_list(CLUSTER_DB_REPLICA_HOSTS, primary_port), start=1
+    ):
+        alias = f"replica_{idx}"
+        replica_db = reader_db.copy()
+        replica_db["HOST"] = host
+        replica_db["PORT"] = str(port)
+        DATABASES[alias] = replica_db
+        REPLICA_DATABASES.append(alias)
 
-    # The router sends writes to "writer" and reads to "reader"/replicas. Django's
-    # TestCase only permits queries on "default" unless every test class opts in via
-    # `databases`, so with the router installed each write raises
-    # DatabaseOperationForbidden. All three aliases address the same physical
-    # database (writer/reader differ only in credentials) and there are no replicas
-    # under test, so skipping the router keeps a Postgres test run equivalent to the
-    # SQLite one instead of exercising a split that does not exist here.
-    if not RUNNING_TESTS:
-        DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
-else:
-    # SQLite fallback (great for quick local runs / CI without Postgres)
-    BASE_DIR = globals().get("BASE_DIR")  # in case you already defined it above
-    if BASE_DIR is None:
-        from pathlib import Path
-
-        BASE_DIR = Path(__file__).resolve().parent.parent
-
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": ":memory:" if RUNNING_TESTS else (BASE_DIR / "db.sqlite3"),
-        }
-    }
+# The router sends writes to "writer" and reads to "reader"/replicas. Django's
+# TestCase only permits queries on "default" unless every test class opts in via
+# `databases`, so with the router installed each write raises
+# DatabaseOperationForbidden. All three aliases address the same physical
+# database (writer/reader differ only in credentials) and there are no replicas
+# under test, so skipping the router under tests keeps a single-connection view
+# instead of exercising a split that does not exist here.
+if not RUNNING_TESTS:
+    DATABASE_ROUTERS = ["apm_platform.db_router.PrimaryReplicaRouter"]
 
 
 # Password validation

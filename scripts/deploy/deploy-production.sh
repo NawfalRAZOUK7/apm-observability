@@ -187,7 +187,6 @@ POSTGRES_PORT=5432
 SECRET_KEY=your-secret-key-here
 DEBUG=False
 DJANGO_ALLOWED_HOSTS=localhost,$DOMAIN
-FORCE_SQLITE=False
 
 # SSL Configuration
 SSL_VERIFY=true

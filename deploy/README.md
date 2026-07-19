@@ -73,7 +73,7 @@ cluster converges — no manual `helm upgrade` needed.
 `make argocd-up` (script: `deploy/argocd/bootstrap.sh`) installs ArgoCD into the
 current kube-context, optionally builds the app image locally, and applies the
 **local** Application (`deploy/argocd/application-local.yaml`), which uses the
-locally-built image on SQLite to minimise external image pulls.
+locally-built image with the in-cluster TimescaleDB.
 
 ```bash
 PUSH=1 make argocd-up   # push current branch + install ArgoCD + deploy via GitOps
@@ -93,8 +93,8 @@ The script removes the two usual friction points:
   `PYTHON_IMAGE` build-arg), so a blocked Docker Hub does not break the build.
   Override with `BASE_IMAGE=...`, or skip building with `BUILD_IMAGE=0`.
 
-The local Application runs on SQLite (`postgres.enabled=false`, `FORCE_SQLITE=1`)
-so only the app image is needed — easiest path to a `Synced/Healthy` screenshot.
+The local Application runs the in-cluster TimescaleDB (`postgres.enabled=true`) —
+the same single backend as production — so the demo behaves identically.
 
 Requirements: a running cluster in the current context (docker-desktop k8s, kind,
 or minikube), plus `docker`, `kubectl`, and `git`. ArgoCD's own images come from

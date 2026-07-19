@@ -12,11 +12,12 @@ Prerequisites: Python 3.12, Docker + Docker Compose, and (optionally) `make`.
 python -m venv .venv && . .venv/bin/activate
 make install                # pip install -r requirements.txt
 
-# 2. Run the app locally (SQLite fast path)
-FORCE_SQLITE=1 python manage.py migrate
-FORCE_SQLITE=1 python manage.py runserver
+# 2. Start PostgreSQL + TimescaleDB (the one and only backend), then run the app
+docker compose -f docker/docker-compose.yml up -d db
+python manage.py migrate
+python manage.py runserver
 
-# 3. Or bring up the full single-node stack
+# 3. Or bring up the full single-node stack in one command
 make demo                   # API + Postgres + Prometheus/Grafana/Tempo/Loki/Alertmanager
 ```
 
@@ -33,7 +34,7 @@ ruff check .                # lint
 black --check .             # formatting (run `black .` to fix)
 python manage.py check
 python manage.py makemigrations --check --dry-run
-python manage.py test       # SQLite; CI also runs against TimescaleDB
+python manage.py test       # requires PostgreSQL/TimescaleDB (step 2 above)
 ```
 
 For data changes, the data-quality gate must pass:

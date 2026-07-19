@@ -31,12 +31,12 @@ irreversible once data accumulates.
 
 Adopt **option 3: shared schema with a `project_id` on every tenant row,
 enforced by PostgreSQL Row-Level Security**, with app-level scoping as
-defense-in-depth (and the sole mechanism on SQLite dev/test).
+defense-in-depth.
 
 - The tenant is bound to the DB session via a GUC, `app.current_project`, set by
   `tenancy.middleware.set_current_project()` using `set_config(..., is_local :=
   true)` so it is transaction-scoped.
-- RLS policies live in Postgres-only migrations (`RunPython`, no-op on SQLite).
+- RLS policies live in dedicated migrations (`RunPython`).
 - **Enforcement is phased.** On `ApiRequest` we `ENABLE` (not `FORCE`) RLS now:
   the owner role used by migrations bypasses it, while the non-owner
   `apm_writer` / `apm_reader` roles are already subject to it. Phase 6 reshapes
@@ -46,8 +46,7 @@ defense-in-depth (and the sole mechanism on SQLite dev/test).
 ## Consequences
 
 **Positive:** single hypertable set and aggregates; indexes preserved; DB-level
-isolation; cheap cross-tenant admin analytics; SQLite tests still exercise the
-app-level path.
+isolation; cheap cross-tenant admin analytics.
 
 **Negative / risks:** every tenant table must carry `project_id` and every
 policy must be correct — a missing policy is a silent leak, so policies are

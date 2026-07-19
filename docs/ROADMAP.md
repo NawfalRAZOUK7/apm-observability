@@ -44,7 +44,7 @@ Already implemented (strong baseline):
   `apm_ingest_latency_seconds`).
 - Backups: pgBackRest hot/cold to MinIO (S3-compatible).
 - Ansible deployment; single-node and multi-node cluster topologies.
-- CI (lint, format, tests on SQLite + TimescaleDB, compose smoke, pip-audit) and
+- CI (lint, format, tests on TimescaleDB, compose smoke, pip-audit) and
   CD (`release.yml`: GHCR build/push + SBOM + provenance + Cosign signing).
 
 **Observability pillar status:** metrics ✅, logs ⚠️ (unstructured), traces ❌.
@@ -205,7 +205,7 @@ and rough effort (`S` = hours, `M` = 1–2 days, `L` = 3+ days).
 - **Phase 7 — done.** Service map at `/api/service-map/`: dependency topology
   from `parent_span_id` edges, per-edge call volume / error rate / avg+p95
   latency, per-node health, critical-path of the slowest trace, and
-  period-over-period deltas. Tenant-scoped, pure-ORM (runs on SQLite + PG). 5
+  period-over-period deltas. Tenant-scoped, pure-ORM (PostgreSQL/TimescaleDB). 5
   unit tests, full suite green (75 passed).
 - **Phase 8 — done.** Statistical anomaly detection at `/api/anomalies/`: robust
   median/MAD baselines per service+endpoint over time buckets, for latency and

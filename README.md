@@ -31,7 +31,8 @@ make loadtest        # drive traffic with k6 and watch dashboards/alerts react
 make demo-down       # tear it all down
 ```
 
-`make demo-lite` runs an offline SQLite variant. Requires Docker Compose ≥ 2.24.
+Requires Docker + Compose ≥ 2.24. The stack runs PostgreSQL + TimescaleDB — the
+platform's single backend — everywhere (dev, CI, prod), so behaviour is identical.
 
 ## Capabilities
 
@@ -160,8 +161,9 @@ bash scripts/run_all_tests.sh
 coverage run manage.py test && coverage report   # enforced in CI (see .coveragerc)
 ```
 
-CI runs the suite on **both SQLite and TimescaleDB**, plus a Docker Compose
-build-migrate-test smoke, and enforces a coverage floor as a required gate.
+CI runs the suite against **TimescaleDB** (the one backend — no SQLite path, so
+tests exercise the real engine), plus a Docker Compose build-migrate-test smoke,
+and enforces a coverage floor as a required gate.
 
 ## Documentation
 

@@ -14,7 +14,6 @@ MAIN_ENV_ARGS := $(foreach f,$(ENV_DOCKER) $(ENV_PORTS) $(ENV_PORTS_LOCAL),$(if 
 CLUSTER_ENV_ARGS := $(foreach f,$(ENV_DOCKER) $(ENV_PORTS) $(ENV_PORTS_LOCAL) $(ENV_CLUSTER),$(if $(wildcard $(f)),--env-file $(f),))
 
 COMPOSE := docker compose $(MAIN_ENV_ARGS) -f docker/docker-compose.yml
-DEMO_COMPOSE := docker compose $(MAIN_ENV_ARGS) -f docker/docker-compose.yml -f docker/docker-compose.demo.yml
 
 # Cluster stack envs + compose files
 CONFIG ?= configs/cluster/cluster.yml
@@ -50,7 +49,6 @@ help:
 	@echo ""
 	@echo "Quick demo (single-node):"
 	@echo "  make demo        # FULL stack (TimescaleDB + 3 pillars) + seed + URLs"
-	@echo "  make demo-lite   # offline SQLite variant (no TimescaleDB/nginx/collector)"
 	@echo "  make loadtest    # drive traffic with k6 (BASE_URL/BATCH/ERROR_RATIO)"
 	@echo "  make demo-down   # tear down the demo stack"
 	@echo ""
@@ -167,7 +165,7 @@ BASE_URL ?= https://localhost:8443
 SEED_COUNT ?= 2000
 SEED_DAYS ?= 2
 
-.PHONY: demo demo-lite demo-down _demo-urls loadtest
+.PHONY: demo demo-down _demo-urls loadtest
 # Full single-node stack: TimescaleDB + analytics + the three observability pillars.
 demo:
 	@echo ">> Generating local TLS assets (idempotent)..."
@@ -183,26 +181,6 @@ demo:
 	@$(COMPOSE) exec -T web python manage.py seed_apirequests --count $(SEED_COUNT) --days $(SEED_DAYS) || \
 		echo "(seed skipped/failed - check 'make logs')"
 	@$(MAKE) --no-print-directory _demo-urls
-
-# Lightweight/offline variant: SQLite, no TimescaleDB/nginx/collector/pg-exporter.
-# Use on machines that cannot pull all Docker Hub images. Analytics endpoints
-# (kpis/hourly/daily) return 501 and the TimescaleDB dashboard is empty in this mode.
-# nginx is disabled here, so the API is reached directly on http://localhost:8000.
-LITE_URL := http://localhost:8000
-demo-lite:
-	@echo ">> Generating local TLS assets (idempotent)..."
-	@bash docker/certs/setup-ssl.sh >/dev/null 2>&1 || true
-	@echo ">> Building and starting the LITE single-node stack (SQLite, requires Compose >= 2.24)..."
-	$(DEMO_COMPOSE) up -d --build
-	@echo ">> Waiting for the API to become healthy..."
-	@for i in $$(seq 1 60); do \
-		if curl -fsS $(LITE_URL)/api/health/ >/dev/null 2>&1; then echo "API is up."; break; fi; \
-		sleep 2; \
-	done
-	@echo ">> Seeding $(SEED_COUNT) events over $(SEED_DAYS) day(s)..."
-	@$(DEMO_COMPOSE) exec -T web python manage.py seed_apirequests --count $(SEED_COUNT) --days $(SEED_DAYS) || \
-		echo "(seed skipped/failed - check 'make logs')"
-	@$(MAKE) --no-print-directory _demo-urls BASE_URL=$(LITE_URL)
 
 _demo-urls:
 	@echo ""
@@ -223,7 +201,7 @@ _demo-urls:
 # Seeds a demo tenant + ingestion API key, sends sample OTLP traces to
 # /v1/traces (span storage + service map), and fires a test alert at
 # /sink/notify (notification sink + incident workflow). Requires the stack to be
-# up ('make demo' or 'make demo-lite'); runs inside the web container.
+# up ('make demo'); runs inside the web container.
 DEMO_TRACES ?= 25
 .PHONY: demo-features
 demo-features:
@@ -231,9 +209,9 @@ demo-features:
 	@$(COMPOSE) exec -T web python manage.py demo_e2e --traces $(DEMO_TRACES) || \
 		echo "(demo-features failed - is the stack up? run 'make demo' first)"
 
-# Tears down either variant (same compose project).
+# Tears down the demo stack.
 demo-down:
-	$(DEMO_COMPOSE) down -v --remove-orphans
+	$(COMPOSE) down -v --remove-orphans
 
 # --- Load test (k6) ---
 loadtest:

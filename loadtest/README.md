@@ -12,8 +12,8 @@ iteration:
 
 1. `POST /api/requests/ingest/` — a batch of realistic events (default 50).
 2. `GET /api/requests/` — paginated reads.
-3. `GET /api/requests/kpis/` — analytics read (200 on TimescaleDB stacks, 501 on
-   the SQLite dev DB).
+3. `GET /api/requests/kpis/` — analytics read (200; served by TimescaleDB
+   continuous aggregates, the platform's one backend).
 
 A configurable share of ingested events carry a `5xx` status (`ERROR_RATIO`,
 default `0.1`), so the **application error rate rises** and the `HighErrorRate`
