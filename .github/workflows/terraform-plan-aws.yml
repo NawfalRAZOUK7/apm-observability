@@ -1,0 +1,59 @@
+name: Terraform plan (AWS, OIDC)
+
+# Manual, keyless plan against the AWS reference environment. Authenticates to
+# AWS with a short-lived GitHub OIDC token (no stored access keys) by assuming
+# the role created by infra/terraform/modules/github_oidc. Plan only — never
+# applies. Requires the AWS_ROLE_ARN repo secret; skips cleanly without it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: "AWS region to plan against"
+        required: false
+        default: "eu-west-1"
+
+permissions:
+  contents: read
+  id-token: write # required to request the OIDC token
+
+env:
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+  TF_ROOT: infra/terraform/environments/aws
+
+jobs:
+  plan:
+    name: terraform plan (aws)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip notice (no role configured)
+        if: env.AWS_ROLE_ARN == ''
+        run: |
+          echo "AWS_ROLE_ARN not set — apply the github_oidc module and set the" \
+               "role ARN as a repo secret to enable keyless AWS plans."
+
+      - name: Checkout
+        if: env.AWS_ROLE_ARN != ''
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC — no static keys)
+        if: env.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ github.event.inputs.aws_region }}
+          role-session-name: gha-terraform-plan
+
+      - name: Setup Terraform
+        if: env.AWS_ROLE_ARN != ''
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.5"
+
+      - name: Terraform init
+        if: env.AWS_ROLE_ARN != ''
+        run: terraform -chdir="${TF_ROOT}" init -input=false
+
+      - name: Terraform plan
+        if: env.AWS_ROLE_ARN != ''
+        run: terraform -chdir="${TF_ROOT}" plan -input=false -no-color

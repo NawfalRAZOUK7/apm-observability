@@ -1,0 +1,33 @@
+# Coverage config for the Django test suite. The fail_under threshold below is
+# the enforced floor — raise it as coverage improves (ratchet, never lower to
+# pass). Measured on the app packages only; infra/generated code is excluded.
+[run]
+source =
+    apm_platform
+    observability
+    tenancy
+    notifications
+    alerting
+    dora
+branch = True
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    */__pycache__/*
+    manage.py
+    */wsgi.py
+    */asgi.py
+    */settings*.py
+    */ci_settings.py
+    .venv/*
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 70
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    def __repr__

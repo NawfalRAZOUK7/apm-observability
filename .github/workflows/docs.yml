@@ -1,0 +1,72 @@
+name: Docs site (MkDocs → Pages)
+
+# Build the MkDocs Material site from docs/ and publish it to GitHub Pages on
+# every push to main. PRs build (to catch breakage) but do not deploy.
+# Enable once under Settings → Pages → Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs Material
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+
+      # Not --strict: several docs intentionally link to repo files outside
+      # docs/ (infra/README.md, the top-level README) which MkDocs can't resolve
+      # into the site tree. Warnings still print in the build log.
+      - name: Build site
+        run: mkdocs build
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to Pages
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

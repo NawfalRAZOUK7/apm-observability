@@ -6,6 +6,7 @@
 [![Secret scan](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/gitleaks.yml)
 [![Terraform](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml)
 [![Policy](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml)
+[![Docs](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
@@ -51,7 +52,7 @@ make demo-down       # tear it all down
 
 | Area | What it does |
 |---|---|
-| **Infrastructure as Code** | Terraform/OpenTofu — local `kind` env ($0) + reference AWS (VPC/EKS/RDS/S3); fmt/validate/tflint/tfsec in CI ([`infra/terraform`](infra/terraform)) |
+| **Infrastructure as Code** | Terraform/OpenTofu — local `kind` env ($0) + reference AWS (VPC/EKS/RDS/S3); fmt/validate/tflint/tfsec **+ Infracost cost-diff** on PRs, keyless AWS auth via GitHub OIDC ([`infra/terraform`](infra/terraform)) |
 | **Secrets management** | External Secrets Operator, Sealed Secrets, or SOPS+age; no plaintext in git, enforced by gitleaks ([`infra/secrets`](infra/secrets)) |
 | **Policy & supply chain** | Kyverno admission policies incl. **Cosign signature verification** at admit; images are signed (SBOM + provenance) in CI ([`infra/policy`](infra/policy)) |
 | **Progressive delivery** | Argo Rollouts canary with Prometheus **metric analysis** — auto-promote or auto-rollback ([docs](docs/PROGRESSIVE_DELIVERY.md)) |
@@ -139,20 +140,28 @@ and [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) for details.
 
 ## Security & supply chain
 
-- Images built in CI are scanned (Trivy), SBOM + provenance attested, and **signed
-  with Cosign** (keyless); Kyverno **verifies those signatures at admission**.
+- Images built in CI are scanned (Trivy), get a CycloneDX **SBOM** and a signed
+  **SLSA build-provenance** attestation, and are **signed with Cosign** (keyless);
+  Kyverno **verifies those signatures at admission**.
 - Secrets never live in git (empty chart defaults, gitleaks CI, External
-  Secrets/Sealed Secrets/SOPS at deploy).
+  Secrets/Sealed Secrets/SOPS at deploy). CI authenticates to AWS via **GitHub
+  OIDC** (short-lived tokens, no stored cloud keys — see
+  [`infra/terraform/modules/github_oidc`](infra/terraform/modules/github_oidc)).
 - Pods run non-root with dropped capabilities (restricted Pod Security Standard);
   optional default-deny NetworkPolicy.
-- CodeQL static analysis + `pip-audit` in CI.
+- CodeQL static analysis, `pip-audit`, and **Dependabot** (pip, Actions, Docker,
+  Terraform) keep dependencies patched.
 
 ## Testing
 
 ```bash
 python manage.py test        # unit/API suite (128 tests)
 bash scripts/run_all_tests.sh
+coverage run manage.py test && coverage report   # enforced in CI (see .coveragerc)
 ```
+
+CI runs the suite on **both SQLite and TimescaleDB**, plus a Docker Compose
+build-migrate-test smoke, and enforces a coverage floor as a required gate.
 
 ## Documentation
 
@@ -163,6 +172,9 @@ bash scripts/run_all_tests.sh
 - [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) — canary + analysis.
 - [`infra/README.md`](infra/README.md) — IaC, policy, secrets index.
 - [`docs/report/`](docs/report) — original academic report and section write-ups.
+
+> The docs in [`docs/`](docs) are also published as a **MkDocs Material site** to
+> GitHub Pages on every push to `main` (see the Docs badge above).
 
 ## Project files
 

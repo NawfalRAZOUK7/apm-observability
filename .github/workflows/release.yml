@@ -124,8 +124,12 @@ jobs:
           sbom: true
           provenance: mode=max
 
-      - name: Generate GitHub build attestation
-        uses: actions/attest@v4
+      # SLSA build provenance (v1 predicate): a signed, verifiable record of how
+      # and where this image was built. Pushed to the registry as a referring
+      # attestation so `gh attestation verify` / `cosign verify-attestation` can
+      # check it. Complements the SBOM + provenance=max emitted by buildx above.
+      - name: Attest SLSA build provenance
+        uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
           subject-digest: ${{ steps.push.outputs.digest }}

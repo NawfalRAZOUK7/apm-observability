@@ -40,6 +40,19 @@ Platform engineering & delivery:
 - Reliability/DR: automated restore verification with RPO/RTO metrics + chaos
   drills.
 
+Engineering practices & supply chain:
+- **SLSA build-provenance** attestation on released images (`actions/attest-build-provenance`),
+  alongside the existing SBOM + Cosign keyless signing.
+- **GitHub OIDC → AWS** Terraform module (`infra/terraform/modules/github_oidc`)
+  and a manual OIDC-authenticated `terraform plan` workflow — no long-lived cloud
+  keys in CI.
+- **Infracost** cost-diff comments on Terraform pull requests.
+- **Coverage gate**: `coverage.py` run wired into CI as a required quality gate
+  (`.coveragerc`, ratcheting `fail_under`).
+- **Dependabot** extended to Docker and Terraform (in addition to pip and
+  GitHub Actions), grouped and labelled.
+- **MkDocs Material** documentation site published to GitHub Pages from `docs/`.
+
 ### Added
 - OpenAPI 3 schema with Swagger UI and ReDoc (`drf-spectacular`) at `/api/docs/`,
   `/api/redoc/`, `/api/schema/`.

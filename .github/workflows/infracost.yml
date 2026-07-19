@@ -1,0 +1,70 @@
+name: Infracost (Terraform cost diff)
+
+# FinOps: on any PR that touches Terraform, post a cost-impact comment (monthly
+# delta of the change) against the AWS reference environment. Runs a plan-time
+# estimate only — never applies. Skips cleanly when INFRACOST_API_KEY is unset
+# (e.g. on forks), so it can't red-out a contributor's PR.
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/infracost.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+  # Cost the reference cloud env; the local kind env has no billable resources.
+  TF_ROOT: infra/terraform/environments/aws
+
+jobs:
+  infracost:
+    name: Cost estimate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip notice (no API key)
+        if: env.INFRACOST_API_KEY == ''
+        run: echo "INFRACOST_API_KEY not set — skipping cost estimate."
+
+      - name: Checkout base branch
+        if: env.INFRACOST_API_KEY != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Setup Infracost
+        if: env.INFRACOST_API_KEY != ''
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ env.INFRACOST_API_KEY }}
+
+      - name: Baseline cost (base branch)
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost breakdown --path "${TF_ROOT}" \
+            --format json \
+            --out-file /tmp/infracost-base.json
+
+      - name: Checkout PR branch
+        if: env.INFRACOST_API_KEY != ''
+        uses: actions/checkout@v4
+
+      - name: Cost diff vs base
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost diff --path "${TF_ROOT}" \
+            --compare-to /tmp/infracost-base.json \
+            --format json \
+            --out-file /tmp/infracost.json
+
+      - name: Post cost comment on PR
+        if: env.INFRACOST_API_KEY != ''
+        run: |
+          infracost comment github --path /tmp/infracost.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --github-token "${{ github.token }}" \
+            --pull-request "${{ github.event.pull_request.number }}" \
+            --behavior update

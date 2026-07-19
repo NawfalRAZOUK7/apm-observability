@@ -1,0 +1,56 @@
+site_name: APM Observability Platform
+site_description: >-
+  Multi-tenant, OpenTelemetry-native observability platform on Django + TimescaleDB,
+  with a full platform-engineering delivery chain (IaC, policy, progressive delivery, DORA).
+repo_url: https://github.com/NawfalRAZOUK7/apm-observability
+repo_name: NawfalRAZOUK7/apm-observability
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+
+# The French academic archive and its LaTeX/image assets are provenance, not
+# site content — keep them in the repo but out of the published site.
+exclude_docs: |
+  report/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - content.code.copy
+    - search.suggest
+    - toc.follow
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format

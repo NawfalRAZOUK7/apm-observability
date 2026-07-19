@@ -1,12 +1,58 @@
+# Dependabot: automated dependency-update PRs across every ecosystem this repo
+# ships. Grouped so related bumps land in one PR (less review churn), weekly.
+# Security updates are raised immediately regardless of schedule.
 version: 2
 updates:
+  # Python runtime + dev tooling (requirements.txt is pip-compiled from .in).
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "chore(deps)"
 
+  # GitHub Actions (all workflows are SHA-pinned; Dependabot bumps the pins).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+  # Base image in the application Dockerfile.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+
+  # Terraform providers + modules (environments and reusable modules).
+  - package-ecosystem: "terraform"
+    directories:
+      - "/infra/terraform/environments/*"
+      - "/infra/terraform/modules/*"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      terraform:
+        patterns: ["*"]
+    labels: ["dependencies", "terraform"]
+    commit-message:
+      prefix: "chore(iac)"
