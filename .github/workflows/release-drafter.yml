@@ -1,0 +1,25 @@
+name: Release Drafter
+
+# Maintains a draft GitHub Release, continuously updating the notes from merged
+# PRs (categorized by label) so a release is one click away. Config in
+# .github/release-drafter.yml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create/update the draft release
+      pull-requests: write # autolabel PRs
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,80 @@
+name: Nightly performance (k6)
+
+# Scheduled load test: bring up db + web (the same proven compose path CI's
+# smoke job uses), drive traffic with the k6 suite, and fail if its thresholds
+# (p95 latency, error rate) are breached. Nightly + manual only — never gates a
+# PR, so a transient perf blip doesn't block merges.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    name: k6 load test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: apm-perf
+      COMPOSE: docker compose -f docker/docker-compose.yml --env-file .env.docker.ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare CI env
+        run: |
+          set -euxo pipefail
+          cp .env.docker .env.docker.ci
+          {
+            echo "DJANGO_SETTINGS_MODULE=apm_platform.ci_settings"
+            echo "DJANGO_SECURE_SSL_REDIRECT=0"
+            echo "POSTGRES_HOST=db"
+            echo "POSTGRES_PORT=5432"
+            echo "GUNICORN_WORKERS=2"
+          } >> .env.docker.ci
+
+      - name: Build + start db and web
+        run: |
+          set -euxo pipefail
+          $COMPOSE build web
+          $COMPOSE up -d db
+          for i in {1..40}; do
+            if $COMPOSE exec -T db pg_isready -U apm -d apm >/dev/null 2>&1; then break; fi
+            echo "waiting for db ($i/40)"; sleep 2
+          done
+          $COMPOSE exec -T db psql -U apm -d apm -c "create extension if not exists timescaledb;"
+          $COMPOSE exec -T db psql -U apm -d apm -f /docker-entrypoint-initdb.d/001_roles.sql || true
+          $COMPOSE up -d web
+
+      - name: Wait for the API
+        run: |
+          set -euxo pipefail
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8000/api/health/ >/dev/null 2>&1; then echo "API up"; exit 0; fi
+            echo "waiting for api ($i/60)"; sleep 2
+          done
+          echo "API never became healthy"; $COMPOSE logs web --tail=200 || true; exit 1
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 load test (thresholds enforced)
+        env:
+          BASE_URL: http://localhost:8000
+        run: k6 run loadtest/ingest_and_read.js
+
+      - name: Dump web logs on failure
+        if: failure()
+        run: $COMPOSE logs web --no-color --tail=300 || true
+
+      - name: Tear down
+        if: always()
+        run: $COMPOSE down -v --remove-orphans || true

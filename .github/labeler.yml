@@ -1,0 +1,40 @@
+# actions/labeler v5 config — path globs → labels.
+"app: observability":
+  - changed-files:
+      - any-glob-to-any-file: ["observability/**"]
+
+"app: tenancy":
+  - changed-files:
+      - any-glob-to-any-file: ["tenancy/**"]
+
+"app: alerting/notifications":
+  - changed-files:
+      - any-glob-to-any-file: ["alerting/**", "notifications/**"]
+
+"app: dora":
+  - changed-files:
+      - any-glob-to-any-file: ["dora/**"]
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: [".github/**"]
+
+infra:
+  - changed-files:
+      - any-glob-to-any-file: ["infra/**", "deploy/**"]
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file: ["docker/**", "Dockerfile"]
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "**/*.md", "mkdocs.yml"]
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ["requirements*.txt", "requirements*.in"]
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ["**/tests/**", "**/tests.py", "**/test_*.py"]

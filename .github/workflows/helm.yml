@@ -1,0 +1,68 @@
+name: Helm chart CI
+
+# Validate the Helm chart we ship: lint it, render the templates with default
+# values, and schema-validate the resulting manifests with kubeconform. CRDs the
+# cluster installs separately (Argo Rollouts, PodMonitor) are ignored rather than
+# failing the run.
+
+on:
+  push:
+    paths:
+      - "deploy/helm/**"
+      - ".github/workflows/helm.yml"
+  pull_request:
+    paths:
+      - "deploy/helm/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHART: deploy/helm/apm-observability
+
+jobs:
+  lint-and-validate:
+    name: helm lint + kubeconform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm lint
+        run: |
+          set -euxo pipefail
+          helm dependency build "${CHART}" || true
+          helm lint "${CHART}"
+
+      - name: Render templates (default values)
+        run: |
+          set -euxo pipefail
+          helm template apm "${CHART}" > rendered.yaml
+          wc -l rendered.yaml
+
+      - name: Install kubeconform
+        run: |
+          set -euxo pipefail
+          curl -sSLf https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - name: Validate rendered manifests
+        run: |
+          set -euxo pipefail
+          kubeconform -strict -summary \
+            -ignore-missing-schemas \
+            -kubernetes-version 1.29.0 \
+            rendered.yaml
+
+      - name: Upload rendered manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-rendered
+          path: rendered.yaml
+          retention-days: 5

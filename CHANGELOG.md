@@ -52,6 +52,14 @@ Engineering practices & supply chain:
 - **Dependabot** extended to Docker and Terraform (in addition to pip and
   GitHub Actions), grouped and labelled.
 - **MkDocs Material** documentation site published to GitHub Pages from `docs/`.
+- **Test matrix**: the suite runs across Python 3.12/3.13 × PostgreSQL 15/16.
+- **OpenSSF Scorecard** workflow (supply-chain posture → code scanning + badge)
+  and **Codecov** coverage upload (badge + per-PR coverage).
+- **Helm chart CI**: `helm lint` + template render + `kubeconform` schema validation.
+- **PR hygiene**: Conventional-Commit PR-title check, Release Drafter, path
+  labeler, stale bot, and Dependabot auto-merge for minor/patch updates.
+- **Nightly k6 performance** run (threshold-gated) and Terraform IaC scan
+  (Trivy config) now fails the build on HIGH/CRITICAL.
 
 ### Changed
 - **Standardized on a single database: PostgreSQL + TimescaleDB** (with pgvector).

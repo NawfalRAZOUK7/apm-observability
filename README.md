@@ -7,6 +7,9 @@
 [![Terraform](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/terraform.yml)
 [![Policy](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml)
 [![Docs](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml)
+[![Helm](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/helm.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/helm.yml)
+[![codecov](https://codecov.io/gh/NawfalRAZOUK7/apm-observability/graph/badge.svg)](https://codecov.io/gh/NawfalRAZOUK7/apm-observability)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/NawfalRAZOUK7/apm-observability/badge)](https://securityscorecards.dev/viewer/?uri=github.com/NawfalRAZOUK7/apm-observability)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 
@@ -161,9 +164,10 @@ bash scripts/run_all_tests.sh
 coverage run manage.py test && coverage report   # enforced in CI (see .coveragerc)
 ```
 
-CI runs the suite against **TimescaleDB** (the one backend — no SQLite path, so
-tests exercise the real engine), plus a Docker Compose build-migrate-test smoke,
-and enforces a coverage floor as a required gate.
+CI runs the suite as a **matrix** — Python 3.12/3.13 × PostgreSQL 15/16 (with the
+TimescaleDB extension, the one backend — no SQLite path, so tests exercise the
+real engine) — plus a Docker Compose build-migrate-test smoke, and enforces a
+coverage floor as a required gate.
 
 ## Documentation
 

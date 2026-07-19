@@ -1,0 +1,37 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "🚀 Features"
+    labels: ["feat", "feature", "enhancement"]
+  - title: "🐛 Fixes"
+    labels: ["fix", "bug"]
+  - title: "🔒 Security"
+    labels: ["security"]
+  - title: "⚡ Performance"
+    labels: ["perf"]
+  - title: "🧰 Maintenance & CI"
+    labels: ["chore", "ci", "refactor", "build"]
+  - title: "📦 Dependencies"
+    labels: ["dependencies"]
+  - title: "📝 Documentation"
+    labels: ["docs"]
+
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels: ["major", "breaking"]
+  minor:
+    labels: ["minor", "feat", "feature"]
+  patch:
+    labels: ["patch", "fix", "chore", "docs", "dependencies"]
+  default: patch
+
+template: |
+  ## Changes
+
+  $CHANGES
+
+  **Full changelog**: https://github.com/NawfalRAZOUK7/apm-observability/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

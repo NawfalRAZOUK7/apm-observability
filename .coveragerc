@@ -25,10 +25,10 @@ omit =
 [report]
 show_missing = True
 skip_covered = False
-# Floor set just under the current measured coverage (~56%) so the gate passes
-# today and can only move up. Ratchet this toward 70+ as tests are added; never
-# lower it to make a red build pass.
-fail_under = 55
+# Enforced coverage floor. Measured on TimescaleDB (the real backend), where the
+# PostgreSQL-only analytics tests run instead of skipping. Ratchet upward as
+# coverage grows; never lower it to make a red build pass.
+fail_under = 70
 exclude_lines =
     pragma: no cover
     raise NotImplementedError
