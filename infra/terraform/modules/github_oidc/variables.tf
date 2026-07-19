@@ -11,7 +11,7 @@ variable "github_repo" {
 }
 
 variable "allowed_subjects" {
-  type        = string
+  type        = list(string)
   description = <<-EOT
     List of GitHub OIDC `sub` claims allowed to assume the role. Scope this as
     tightly as the workflows need. Examples:
@@ -20,7 +20,6 @@ variable "allowed_subjects" {
       repo:OWNER/REPO:pull_request
     Leave empty to auto-derive `ref:refs/heads/main` + `environment:production`.
   EOT
-  type        = list(string)
   default     = []
 }
 
