@@ -21,9 +21,9 @@ jobs:
     name: Format, validate, lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.9.5"
 
@@ -39,7 +39,7 @@ jobs:
           done
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
 
       - name: TFLint
         run: |
@@ -53,7 +53,7 @@ jobs:
     name: tfsec / trivy config
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Trivy config scan (IaC misconfigurations)
         uses: aquasecurity/trivy-action@v0.36.0

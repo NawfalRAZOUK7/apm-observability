@@ -34,11 +34,11 @@ jobs:
 
       - name: Checkout
         if: env.AWS_ROLE_ARN != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure AWS credentials (OIDC — no static keys)
         if: env.AWS_ROLE_ARN != ''
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ github.event.inputs.aws_region }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Setup Terraform
         if: env.AWS_ROLE_ARN != ''
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.9.5"
 
