@@ -137,9 +137,7 @@ READ_AFTER_WRITE_TTL = int(env("READ_AFTER_WRITE_TTL", "2") or "2")
 
 REPLICA_DATABASES: list[str] = []
 
-primary_host, primary_port = split_host_port(
-    CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432")
-)
+primary_host, primary_port = split_host_port(CLUSTER_DB_PRIMARY_HOST, int(POSTGRES_PORT or "5432"))
 default_db = {
     "ENGINE": "django.db.backends.postgresql",
     "NAME": POSTGRES_NAME,
