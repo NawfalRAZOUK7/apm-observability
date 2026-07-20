@@ -33,6 +33,7 @@ media/
 # Generated project outputs
 reports/
 archive/legacy/
+slo/rules.gen.yml
 
 # Generated local TLS / SSH material
 docker/certs/private.key

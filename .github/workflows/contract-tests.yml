@@ -1,0 +1,111 @@
+name: Contract tests (schemathesis)
+
+# Property-based API contract testing. Generates the OpenAPI schema from
+# drf-spectacular, runs the app against TimescaleDB, and lets schemathesis fuzz
+# every documented operation — asserting no 5xx and that responses conform to the
+# declared schema. Catches schema drift and unhandled-input crashes that
+# example-based tests miss.
+
+on:
+  push:
+    paths:
+      - "**/*.py"
+      - "**/urls.py"
+      - ".github/workflows/contract-tests.yml"
+  pull_request:
+    paths:
+      - "**/*.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schemathesis:
+    name: OpenAPI contract fuzzing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      db:
+        image: timescale/timescaledb:2.17.2-pg16
+        env:
+          POSTGRES_DB: apm
+          POSTGRES_USER: apm
+          POSTGRES_PASSWORD: apm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U apm -d apm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+
+    env:
+      DJANGO_SETTINGS_MODULE: apm_platform.ci_settings
+      DJANGO_SECURE_SSL_REDIRECT: "0"
+      POSTGRES_DB: apm
+      POSTGRES_USER: apm
+      POSTGRES_PASSWORD: apm
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements.in
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "schemathesis>=3.36,<4"
+
+      - name: Enable TimescaleDB + migrate
+        run: |
+          set -euxo pipefail
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql "postgresql://apm:apm@127.0.0.1:5432/apm" -c "create extension if not exists timescaledb;"
+          python manage.py migrate --noinput
+
+      - name: Generate OpenAPI schema
+        run: |
+          set -euxo pipefail
+          python manage.py spectacular --file schema.yml --validate
+          head -n 20 schema.yml
+
+      - name: Start the app
+        run: |
+          set -euxo pipefail
+          python manage.py runserver 0.0.0.0:8000 --noreload &
+          for i in {1..40}; do
+            if curl -fsS http://localhost:8000/api/health/ >/dev/null 2>&1; then echo "app up"; break; fi
+            echo "waiting for app ($i/40)"; sleep 2
+          done
+
+      - name: Run schemathesis
+        run: |
+          set -euxo pipefail
+          schemathesis run schema.yml \
+            --base-url http://localhost:8000 \
+            --checks all \
+            --hypothesis-max-examples 15 \
+            --hypothesis-suppress-health-check filter_too_much \
+            --show-errors-tracebacks
+
+      - name: Upload schema artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-schema
+          path: schema.yml
+          retention-days: 5

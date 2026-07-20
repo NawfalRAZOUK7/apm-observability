@@ -8,6 +8,7 @@
 [![Policy](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/policy.yml)
 [![Docs](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/docs.yml)
 [![Helm](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/helm.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/helm.yml)
+[![Contract tests](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/contract-tests.yml/badge.svg)](https://github.com/NawfalRAZOUK7/apm-observability/actions/workflows/contract-tests.yml)
 [![codecov](https://codecov.io/gh/NawfalRAZOUK7/apm-observability/graph/badge.svg)](https://codecov.io/gh/NawfalRAZOUK7/apm-observability)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/NawfalRAZOUK7/apm-observability/badge)](https://securityscorecards.dev/viewer/?uri=github.com/NawfalRAZOUK7/apm-observability)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -62,6 +63,7 @@ platform's single backend — everywhere (dev, CI, prod), so behaviour is identi
 | **Progressive delivery** | Argo Rollouts canary with Prometheus **metric analysis** — auto-promote or auto-rollback ([docs](docs/PROGRESSIVE_DELIVERY.md)) |
 | **CD** | Tag → staging → smoke → approval → production → smoke → rollback; Helm + ArgoCD GitOps |
 | **DORA metrics** | Deployment frequency, lead time, change-failure rate, MTTR — Elite/High/Medium/Low bands, in the API + Grafana + dashboard |
+| **SLOs as code** | Objectives declared in a Sloth spec → generated Prometheus burn-rate rules + multi-window alerts ([`slo/`](slo)) |
 | **Reliability / DR** | pgBackRest backups + automated **restore verification** (RPO/RTO metrics) + chaos drills |
 
 > The full phase-by-phase build log is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -167,7 +169,8 @@ coverage run manage.py test && coverage report   # enforced in CI (see .coverage
 CI runs the suite as a **matrix** — Python 3.12/3.13 × PostgreSQL 15/16 (with the
 TimescaleDB extension, the one backend — no SQLite path, so tests exercise the
 real engine) — plus a Docker Compose build-migrate-test smoke, and enforces a
-coverage floor as a required gate.
+coverage floor as a required gate. **OpenAPI contract tests** (schemathesis) fuzz
+every documented endpoint against the generated schema.
 
 ## Documentation
 
@@ -177,6 +180,8 @@ coverage floor as a required gate.
 - [`docs/adr/`](docs/adr) — architecture decision records.
 - [`docs/runbooks/`](docs/runbooks) — operational runbooks (TargetDown, DR, secret rotation).
 - [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) — canary + analysis.
+- [`docs/OTEL_COLLECTOR.md`](docs/OTEL_COLLECTOR.md) — the collector front-door pattern.
+- [`slo/`](slo) — SLO-as-code (Sloth) → generated burn-rate rules + alerts.
 - [`infra/README.md`](infra/README.md) — IaC, policy, secrets index.
 - [`docs/DEMO_RECORDING.md`](docs/DEMO_RECORDING.md) — how the demo GIF is produced.
 - [`deploy/fly/`](deploy/fly) — deploy a public demo (app + dashboard) to Fly.io.

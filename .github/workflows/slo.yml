@@ -1,0 +1,56 @@
+name: SLO rules (Sloth)
+
+# SLO-as-code: validate the SLO spec and generate the Prometheus recording rules,
+# error-budget series, and multi-window burn-rate alerts from it. Runs on any
+# change to slo/. The generated rules are published as an artifact; wire
+# slo/rules.gen.yml into Prometheus rule_files to activate them.
+
+on:
+  push:
+    paths:
+      - "slo/**"
+      - ".github/workflows/slo.yml"
+  pull_request:
+    paths:
+      - "slo/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SLOTH_VERSION: v0.11.0
+
+jobs:
+  generate:
+    name: validate + generate SLO rules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Sloth
+        run: |
+          set -euxo pipefail
+          curl -sSLf "https://github.com/slok/sloth/releases/download/${SLOTH_VERSION}/sloth-linux-amd64" -o sloth
+          chmod +x sloth
+          sudo mv sloth /usr/local/bin/sloth
+          sloth version
+
+      - name: Validate SLO spec
+        run: sloth validate -i slo/apm-observability.slo.yaml
+
+      - name: Generate Prometheus rules
+        run: |
+          set -euxo pipefail
+          sloth generate -i slo/apm-observability.slo.yaml -o slo/rules.gen.yml
+          echo "----- generated rules (head) -----"
+          head -n 40 slo/rules.gen.yml
+
+      - name: Upload generated rules
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slo-rules
+          path: slo/rules.gen.yml
+          retention-days: 5

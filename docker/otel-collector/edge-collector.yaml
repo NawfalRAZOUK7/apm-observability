@@ -1,0 +1,56 @@
+# Reference "edge" OpenTelemetry Collector — the front-door pattern.
+#
+# Any OTel SDK or downstream collector points here (OTLP gRPC :4317 / HTTP :4318);
+# the collector batches and forwards traces, metrics, AND logs into this platform's
+# native OTLP ingestion (/v1/traces, /v1/metrics, /v1/logs), authenticating with a
+# tenant API key. This is how you put the platform behind a standard collector
+# rather than exposing ingestion directly to every service.
+#
+# This is a REFERENCE config (not the in-stack collector, which forwards app traces
+# to Tempo). Run it with:
+#   APM_PLATFORM_OTLP_ENDPOINT=http://web:8000 \
+#   APM_INGEST_API_KEY=<tenant-api-key> \
+#   otelcol-contrib --config docker/otel-collector/edge-collector.yaml
+# See docs/OTEL_COLLECTOR.md.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  batch:
+    send_batch_size: 512
+    timeout: 5s
+
+exporters:
+  # Forward to the platform's native OTLP ingestion. otlphttp appends /v1/traces,
+  # /v1/metrics, /v1/logs to the base endpoint. Tenant is resolved from the API key.
+  otlphttp/platform:
+    endpoint: ${env:APM_PLATFORM_OTLP_ENDPOINT}
+    headers:
+      Authorization: "Api-Key ${env:APM_INGEST_API_KEY}"
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/platform, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/platform]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/platform]

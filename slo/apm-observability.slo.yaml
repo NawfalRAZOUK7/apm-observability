@@ -1,0 +1,55 @@
+# SLO-as-code (Sloth spec). This is the source of truth; the Prometheus recording
+# rules, error-budget series, and multi-window burn-rate alerts are GENERATED from
+# it with `sloth generate` (see slo/README.md and `make slo-generate`).
+#
+# Generating rules from declarative SLOs (rather than hand-writing burn-rate
+# PromQL) keeps objectives, error budgets, and alerts consistent and reviewable.
+version: "prometheus/v1"
+service: "apm-observability"
+labels:
+  team: "platform"
+  app: "apm-observability"
+slos:
+  # Availability: share of HTTP responses that are not 5xx, over the API surface
+  # (django-prometheus exposes responses labelled by status).
+  - name: "requests-availability"
+    objective: 99.9
+    description: "99.9% of HTTP requests succeed (non-5xx) over a 30-day window."
+    sli:
+      events:
+        error_query: sum(rate(django_http_responses_total_by_status_total{status=~"5.."}[{{.window}}]))
+        total_query: sum(rate(django_http_responses_total_by_status_total[{{.window}}]))
+    alerting:
+      name: APMRequestsAvailability
+      labels:
+        category: availability
+      page_alert:
+        labels:
+          severity: page
+      ticket_alert:
+        labels:
+          severity: ticket
+
+  # Latency: share of ingestion requests served within 500ms, from the ingest
+  # histogram (apm_ingest_latency_seconds).
+  - name: "ingest-latency"
+    objective: 99.0
+    description: "99% of ingestion requests complete within 500ms over a 30-day window."
+    sli:
+      raw:
+        error_ratio_query: >
+          1 - (
+            sum(rate(apm_ingest_latency_seconds_bucket{le="0.5"}[{{.window}}]))
+            /
+            sum(rate(apm_ingest_latency_seconds_count[{{.window}}]))
+          )
+    alerting:
+      name: APMIngestLatency
+      labels:
+        category: latency
+      page_alert:
+        labels:
+          severity: page
+      ticket_alert:
+        labels:
+          severity: ticket

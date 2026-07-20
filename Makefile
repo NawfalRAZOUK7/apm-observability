@@ -222,6 +222,13 @@ loadtest:
 data-quality:
 	$(COMPOSE) exec -T web python manage.py check_data_quality --max-age-minutes 1440
 
+# --- SLO-as-code (Sloth) ---
+# Generate Prometheus SLI/burn-rate rules + alerts from the declarative SLO spec.
+.PHONY: slo-generate
+slo-generate:
+	sloth generate -i slo/apm-observability.slo.yaml -o slo/rules.gen.yml
+	@echo ">> Wrote slo/rules.gen.yml — add it to your Prometheus rule_files."
+
 # --- Kubernetes (Helm + ArgoCD) ---
 HELM_CHART := deploy/helm/apm-observability
 K8S_NAMESPACE ?= apm

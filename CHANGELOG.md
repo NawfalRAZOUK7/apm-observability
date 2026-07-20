@@ -60,6 +60,12 @@ Engineering practices & supply chain:
   labeler, stale bot, and Dependabot auto-merge for minor/patch updates.
 - **Nightly k6 performance** run (threshold-gated) and Terraform IaC scan
   (Trivy config) now fails the build on HIGH/CRITICAL.
+- **OpenAPI contract tests** (schemathesis) — fuzz every documented endpoint
+  against the generated schema, asserting no 5xx and schema conformance.
+- **SLO-as-code** (Sloth): objectives declared in [`slo/`](slo) generate
+  Prometheus SLI/error-budget/burn-rate rules + multi-window alerts.
+- **OpenTelemetry Collector front-door** reference config + guide — any OTel SDK →
+  collector → the platform's `/v1/*` ingestion, tenant-scoped by API key.
 
 ### Changed
 - **Standardized on a single database: PostgreSQL + TimescaleDB** (with pgvector).
