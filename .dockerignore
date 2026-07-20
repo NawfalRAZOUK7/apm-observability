@@ -38,11 +38,11 @@ docker/
 !docker/entrypoint.sh
 scripts/
 
-docs/report/latex/*.aux
-docs/report/latex/*.blg
-docs/report/latex/*.fdb_latexmk
-docs/report/latex/*.fls
-docs/report/latex/*.log
-docs/report/latex/*.lof
-docs/report/latex/*.out
-docs/report/latex/*.toc
+report/latex/*.aux
+report/latex/*.blg
+report/latex/*.fdb_latexmk
+report/latex/*.fls
+report/latex/*.log
+report/latex/*.lof
+report/latex/*.out
+report/latex/*.toc

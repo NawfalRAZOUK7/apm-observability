@@ -8,8 +8,8 @@ core, backups, and the monitoring stack).
 > For the **current platform** — Phases 4–18: multi-tenancy, native OTLP,
 > alerting/incidents, the dashboard, IaC, policy, and delivery — see the
 > up-to-date docs one level up:
-> [`../ARCHITECTURE.md`](../ARCHITECTURE.md), [`../ROADMAP.md`](../ROADMAP.md),
-> and the [top-level README](../../README.md).
+> [`../ARCHITECTURE.md`](../docs/ARCHITECTURE.md), [`../ROADMAP.md`](../docs/ROADMAP.md),
+> and the [top-level README](../README.md).
 
 ## Contents
 
@@ -22,5 +22,5 @@ core, backups, and the monitoring stack).
 > **Note:** the LaTeX sources were corrected to match the current code (the
 > data-lifecycle section no longer claims columnar compression — it was dropped
 > because TimescaleDB refuses it on Row-Level-Security tables; see
-> [ADR 0001](../adr/0001-multi-tenant-isolation.md)). Recompile the PDF to pick
+> [ADR 0001](../docs/adr/0001-multi-tenant-isolation.md)). Recompile the PDF to pick
 > this up: `cd latex && latexmk -pdf main.tex`.

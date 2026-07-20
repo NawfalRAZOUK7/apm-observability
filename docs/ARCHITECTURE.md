@@ -102,7 +102,8 @@ docker/        # images + compose stacks + monitoring configs
 deploy/        # Helm chart + ArgoCD applications
 infra/         # terraform · policy (kyverno) · secrets · ansible   (see infra/README.md)
 scripts/       # deploy, drills, test runners, cluster helpers
-docs/          # architecture, roadmap, ADRs, runbooks, report/ (academic)
+docs/          # architecture, case study, roadmap, ADRs, runbooks
+report/        # academic report — LaTeX sources + compiled PDF (archived)
 loadtest/      # k6 suite     postman/  configs/     Makefile  manage.py
 ```
 

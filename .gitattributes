@@ -7,6 +7,6 @@ Makefile text eol=lf
 
 # Mark generated/vendored files so GitHub's language stats and diffs are cleaner.
 requirements.txt linguist-generated=true
-docs/report/latex/main.pdf binary
+report/latex/main.pdf binary
 *.png binary
 *.pdf binary

@@ -83,16 +83,16 @@ Lien projet:
 
 ## 3.6 Captures (backups et tests)
 Flux de sauvegarde pgBackRest vers MinIO:
-![Backup flow](../../images/backup-flow.png)
+![Backup flow](../../docs/images/backup-flow.png)
 
 MinIO - bucket hot (pgbackrest):
-![MinIO hot](../../images/minio-pgbackrest-hot.png)
+![MinIO hot](../../docs/images/minio-pgbackrest-hot.png)
 
 MinIO - bucket cold (pgbackrest-cold):
-![MinIO cold](../../images/minio-pgbackrest-cold.png)
+![MinIO cold](../../docs/images/minio-pgbackrest-cold.png)
 
 Rapport de tests (Step 1):
-![Tests step1](../../images/tests-step1-report.png)
+![Tests step1](../../docs/images/tests-step1-report.png)
 
 Rapport de tests (Step 5):
-![Tests step5](../../images/tests-step5-report.png)
+![Tests step5](../../docs/images/tests-step5-report.png)

@@ -33,14 +33,6 @@ media/
 # Generated project outputs
 reports/
 archive/legacy/
-docs/report/latex/*.aux
-docs/report/latex/*.bbl
-docs/report/latex/*.blg
-docs/report/latex/*.fdb_latexmk
-docs/report/latex/*.fls
-docs/report/latex/*.lof
-docs/report/latex/*.out
-docs/report/latex/*.toc
 
 # Generated local TLS / SSH material
 docker/certs/private.key
@@ -70,3 +62,15 @@ infra/secrets/**/*.dec.yaml
 infra/secrets/**/*.plain.yaml
 key.txt
 *.agekey
+
+# LaTeX build artifacts (report/)
+report/latex/*.aux
+report/latex/*.bbl
+report/latex/*.blg
+report/latex/*.out
+report/latex/*.toc
+report/latex/*.lof
+report/latex/*.fls
+report/latex/*.log
+report/latex/*.fdb_latexmk
+report/latex/*.synctex.gz

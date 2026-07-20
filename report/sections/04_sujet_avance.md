@@ -43,10 +43,10 @@ Lien projet:
 
 ## 4.4 Captures (monitoring)
 Grafana - infra overview:
-![Grafana infra](../../images/grafana-infra.png)
+![Grafana infra](../../docs/images/grafana-infra.png)
 
 Grafana - Prometheus targets dashboard:
-![Grafana targets](../../images/grafana-targets.png)
+![Grafana targets](../../docs/images/grafana-targets.png)
 
 Prometheus /targets:
-![Prometheus targets](../../images/prometheus-targets.png)
+![Prometheus targets](../../docs/images/prometheus-targets.png)

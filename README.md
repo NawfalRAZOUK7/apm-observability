@@ -171,13 +171,16 @@ coverage floor as a required gate.
 
 ## Documentation
 
+- [`docs/CASE_STUDY.md`](docs/CASE_STUDY.md) — **the problem, key decisions & trade-offs, and verified results.** Start here.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — full capability + implementation history (Phases 1–18).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components and repo structure.
 - [`docs/adr/`](docs/adr) — architecture decision records.
 - [`docs/runbooks/`](docs/runbooks) — operational runbooks (TargetDown, DR, secret rotation).
 - [`docs/PROGRESSIVE_DELIVERY.md`](docs/PROGRESSIVE_DELIVERY.md) — canary + analysis.
 - [`infra/README.md`](infra/README.md) — IaC, policy, secrets index.
-- [`docs/report/`](docs/report) — original academic report and section write-ups.
+- [`docs/DEMO_RECORDING.md`](docs/DEMO_RECORDING.md) — how the demo GIF is produced.
+- [`deploy/fly/`](deploy/fly) — deploy a public demo (app + dashboard) to Fly.io.
+- [`report/`](report) — original academic report and section write-ups.
 
 > The docs in [`docs/`](docs) are also published as a **MkDocs Material site** to
 > GitHub Pages on every push to `main` (see the Docs badge above).
