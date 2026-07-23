@@ -1,0 +1,2397 @@
+openapi: 3.0.3
+info:
+  title: APM Observability API
+  version: 1.0.0
+  description: 'Application Performance Monitoring backend: batch ingestion of API
+    request events, time-series analytics (hourly/daily aggregates, KPIs, top endpoints),
+    and semantic search over errors.'
+paths:
+  /api/alerting/rules/:
+    get:
+      operationId: api_alerting_rules_list
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlertRuleList'
+          description: ''
+    post:
+      operationId: api_alerting_rules_create
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /api/alerting/rules/{id}/:
+    get:
+      operationId: api_alerting_rules_retrieve
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+    put:
+      operationId: api_alerting_rules_update
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+    patch:
+      operationId: api_alerting_rules_partial_update
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+    delete:
+      operationId: api_alerting_rules_destroy
+      description: |-
+        Tenant-scoped CRUD for alert rules.
+
+        Reads require viewer+, writes require developer+ (HasMinimumRole default).
+        Rules are visible/editable only within the caller's organizations.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/alerting/rules/{id}/evaluate/:
+    post:
+      operationId: api_alerting_rules_evaluate_create
+      description: Evaluate this rule immediately (useful for testing a rule).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /api/anomalies/:
+    get:
+      operationId: api_anomalies_retrieve
+      description: Robust (median/MAD) anomaly detection over API request latency
+        and error rate, per service+endpoint.
+      parameters:
+      - in: query
+        name: bucket
+        schema:
+          type: string
+        description: minute | hour | day (default hour).
+      - in: query
+        name: endpoint
+        schema:
+          type: string
+      - in: query
+        name: project
+        schema:
+          type: string
+        description: Project slug.
+      - in: query
+        name: service
+        schema:
+          type: string
+      - in: query
+        name: since
+        schema:
+          type: string
+        description: 'ISO datetime/date (default: 24h ago).'
+      - in: query
+        name: until
+        schema:
+          type: string
+        description: 'ISO datetime/date (default: now).'
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/dora/deployments/:
+    get:
+      operationId: api_dora_deployments_list
+      description: |-
+        Record a deployment (POST, called by CD) or list recent ones (GET).
+
+        Unauthenticated for internal pipeline use; protect with an ingest key or
+        network policy in production.
+      parameters:
+      - in: query
+        name: environment
+        schema:
+          type: string
+          enum:
+          - development
+          - production
+          - staging
+        description: |-
+          * `production` - production
+          * `staging` - staging
+          * `development` - development
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - failed
+          - rolled_back
+          - success
+        description: |-
+          * `success` - success
+          * `failed` - failed
+          * `rolled_back` - rolled_back
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeploymentList'
+          description: ''
+    post:
+      operationId: api_dora_deployments_create
+      description: |-
+        Record a deployment (POST, called by CD) or list recent ones (GET).
+
+        Unauthenticated for internal pipeline use; protect with an ingest key or
+        network policy in production.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+          description: ''
+  /api/dora/metrics/:
+    get:
+      operationId: api_dora_metrics_retrieve
+      description: The four DORA metrics + Elite/High/Medium/Low bands over a window.
+      parameters:
+      - in: query
+        name: environment
+        schema:
+          type: string
+        description: production|staging|development.
+      - in: query
+        name: project
+        schema:
+          type: string
+        description: Project slug.
+      - in: query
+        name: since
+        schema:
+          type: string
+        description: ISO datetime/date (default 30d ago).
+      - in: query
+        name: until
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/health/:
+    get:
+      operationId: api_health_retrieve
+      description: |-
+        GET /api/health/
+        Optional DB check: /api/health/?db=1  (or db=true/yes/on)
+      summary: Liveness/readiness health check
+      tags:
+      - api
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/issues/:
+    get:
+      operationId: api_issues_retrieve
+      description: Grouped errors ranked by count.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/nl-query/:
+    get:
+      operationId: api_nl_query_retrieve
+      description: |-
+        Natural-language telemetry query (Phase 13).
+
+        ``?q=error rate for checkout in the last 6 hours`` -> parsed params + result.
+        Uses an LLM when configured, otherwise a keyword heuristic (both $0-capable).
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Natural-language question.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/requests/:
+    get:
+      operationId: api_requests_list
+      parameters:
+      - in: query
+        name: endpoint
+        schema:
+          type: string
+      - in: query
+        name: latency_max
+        schema:
+          type: integer
+      - in: query
+        name: latency_min
+        schema:
+          type: integer
+      - in: query
+        name: latency_ms
+        schema:
+          type: integer
+      - in: query
+        name: method
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: service
+        schema:
+          type: string
+      - in: query
+        name: status_code
+        schema:
+          type: integer
+      - in: query
+        name: status_code__in
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
+        name: time_after
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: time_before
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: trace_id
+        schema:
+          type: string
+      - in: query
+        name: user_ref
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApiRequestList'
+          description: ''
+    post:
+      operationId: api_requests_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiRequest'
+          description: ''
+  /api/requests/{id}/:
+    get:
+      operationId: api_requests_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api request.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiRequest'
+          description: ''
+    put:
+      operationId: api_requests_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api request.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiRequest'
+          description: ''
+    patch:
+      operationId: api_requests_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api request.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApiRequestRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiRequest'
+          description: ''
+    delete:
+      operationId: api_requests_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this api request.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/requests/daily/:
+    get:
+      operationId: api_requests_daily_retrieve
+      summary: Daily aggregated metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/requests/hourly/:
+    get:
+      operationId: api_requests_hourly_retrieve
+      summary: Hourly aggregated metrics
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/requests/ingest/:
+    post:
+      operationId: api_requests_ingest_create
+      summary: Bulk-ingest API request events
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/requests/kpis/:
+    get:
+      operationId: api_requests_kpis_retrieve
+      summary: KPIs (requests, error rate, latency)
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/requests/semantic-search/:
+    get:
+      operationId: api_requests_semantic_search_retrieve
+      summary: Semantic search over errors (pgvector)
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/requests/top-endpoints/:
+    get:
+      operationId: api_requests_top_endpoints_retrieve
+      summary: Top endpoints by hits/errors/latency
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/service-map/:
+    get:
+      operationId: api_service_map_retrieve
+      description: 'Service map: nodes, dependency edges with rate/error/latency,
+        critical path, and period-over-period deltas.'
+      parameters:
+      - in: query
+        name: project
+        schema:
+          type: string
+        description: Project slug to scope to.
+      - in: query
+        name: since
+        schema:
+          type: string
+        description: 'ISO datetime/date (default: 1h ago).'
+      - in: query
+        name: until
+        schema:
+          type: string
+        description: 'ISO datetime/date (default: now).'
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/tenancy/auth/token/:
+    post:
+      operationId: api_tenancy_auth_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/tenancy/auth/token/refresh/:
+    post:
+      operationId: api_tenancy_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/tenancy/auth/token/verify/:
+    post:
+      operationId: api_tenancy_auth_token_verify_create
+      description: |-
+        Takes a token and indicates if it is valid.  This view provides no
+        information about a token's fitness for a particular use.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerifyRequest'
+        required: true
+      responses:
+        '200':
+          description: No response body
+  /api/tenancy/projects/:
+    get:
+      operationId: api_tenancy_projects_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectList'
+          description: ''
+  /api/tenancy/projects/{project_id}/keys/:
+    get:
+      operationId: api_tenancy_projects_keys_list
+      description: List keys for a project, or mint a new one (returned in plaintext
+        once).
+      parameters:
+      - in: path
+        name: project_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKey'
+          description: ''
+    post:
+      operationId: api_tenancy_projects_keys_create
+      description: List keys for a project, or mint a new one (returned in plaintext
+        once).
+      parameters:
+      - in: path
+        name: project_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiKeyCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          description: No response body
+  /api/tenancy/projects/{project_id}/keys/{key_id}/revoke/:
+    post:
+      operationId: api_tenancy_projects_keys_revoke_create
+      parameters:
+      - in: path
+        name: key_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: project_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/tenancy/projects/{project_id}/keys/{key_id}/rotate/:
+    post:
+      operationId: api_tenancy_projects_keys_rotate_create
+      parameters:
+      - in: path
+        name: key_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: project_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/tenancy/projects/{project_id}/usage/:
+    get:
+      operationId: api_tenancy_projects_usage_retrieve
+      parameters:
+      - in: path
+        name: project_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/traces/:
+    get:
+      operationId: api_traces_retrieve
+      description: Recent trace summaries (Phase 12) for the UI trace list.
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: project
+        schema:
+          type: string
+      - in: query
+        name: since
+        schema:
+          type: string
+      - in: query
+        name: until
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/traces/{trace_id}/:
+    get:
+      operationId: api_traces_retrieve_2
+      description: All spans of one trace with waterfall offsets (Phase 12).
+      parameters:
+      - in: path
+        name: trace_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/:
+    get:
+      operationId: sink_list
+      description: Recent notifications (the dashboard-only channel + audit trail).
+      parameters:
+      - in: query
+        name: alertname
+        schema:
+          type: string
+      - in: query
+        name: delivered
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - critical
+          - info
+          - unknown
+          - warning
+        description: |-
+          * `critical` - critical
+          * `warning` - warning
+          * `info` - info
+          * `unknown` - unknown
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - firing
+          - resolved
+        description: |-
+          * `firing` - firing
+          * `resolved` - resolved
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /sink/incidents/:
+    get:
+      operationId: sink_incidents_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - critical
+          - info
+          - unknown
+          - warning
+        description: |-
+          * `critical` - critical
+          * `warning` - warning
+          * `info` - info
+          * `unknown` - unknown
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - acknowledged
+          - open
+          - resolved
+        description: |-
+          * `open` - open
+          * `acknowledged` - acknowledged
+          * `resolved` - resolved
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIncidentList'
+          description: ''
+  /sink/incidents/{id}/:
+    get:
+      operationId: sink_incidents_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentDetail'
+          description: ''
+  /sink/incidents/{id}/ack/:
+    post:
+      operationId: sink_incidents_ack_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/incidents/{id}/assign/:
+    post:
+      operationId: sink_incidents_assign_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/incidents/{id}/postmortem/:
+    get:
+      operationId: sink_incidents_postmortem_retrieve
+      description: Blameless postmortem (markdown). Add ?ai=1 for an LLM-drafted version
+        (falls back to the template when no LLM is configured).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/incidents/{id}/resolve/:
+    post:
+      operationId: sink_incidents_resolve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/incidents/metrics/:
+    get:
+      operationId: sink_incidents_metrics_retrieve
+      description: MTTA/MTTR and open/resolved counts.
+      tags:
+      - sink
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sink/notify:
+    post:
+      operationId: sink_notify_create
+      description: Alertmanager webhook receiver. Stores each alert and fans it out
+        to severity-mapped channels (pager/chat).
+      tags:
+      - sink
+      security:
+      - {}
+      responses:
+        '201':
+          description: No response body
+  /sink/notify/:
+    post:
+      operationId: sink_notify_create_2
+      description: Alertmanager webhook receiver. Stores each alert and fans it out
+        to severity-mapped channels (pager/chat).
+      tags:
+      - sink
+      security:
+      - {}
+      responses:
+        '201':
+          description: No response body
+  /v1/logs:
+    post:
+      operationId: v1_logs_create
+      description: OTLP logs ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /v1/logs/:
+    post:
+      operationId: v1_logs_create_2
+      description: OTLP logs ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /v1/metrics:
+    post:
+      operationId: v1_metrics_create
+      description: OTLP metrics ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /v1/metrics/:
+    post:
+      operationId: v1_metrics_create_2
+      description: OTLP metrics ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /v1/traces:
+    post:
+      operationId: v1_traces_create
+      description: OTLP trace ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /v1/traces/:
+    post:
+      operationId: v1_traces_create_2
+      description: OTLP trace ingestion.
+      tags:
+      - v1
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AlertRule:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        project:
+          type: integer
+        project_slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        enabled:
+          type: boolean
+        kind:
+          $ref: '#/components/schemas/AlertRuleKindEnum'
+        metric:
+          $ref: '#/components/schemas/MetricEnum'
+        service:
+          type: string
+          maxLength: 100
+        endpoint:
+          type: string
+          maxLength: 255
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+        z_threshold:
+          type: number
+          format: double
+        window_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        severity:
+          $ref: '#/components/schemas/AlertRuleSeverityEnum'
+        runbook_url:
+          type: string
+          format: uri
+          maxLength: 1024
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          readOnly: true
+        last_value:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+        last_evaluated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - last_evaluated_at
+      - last_value
+      - name
+      - project
+      - project_slug
+      - state
+      - updated_at
+    AlertRuleKindEnum:
+      enum:
+      - threshold
+      - anomaly
+      type: string
+      description: |-
+        * `threshold` - threshold
+        * `anomaly` - anomaly
+    AlertRuleRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        enabled:
+          type: boolean
+        kind:
+          $ref: '#/components/schemas/AlertRuleKindEnum'
+        metric:
+          $ref: '#/components/schemas/MetricEnum'
+        service:
+          type: string
+          maxLength: 100
+        endpoint:
+          type: string
+          maxLength: 255
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+        z_threshold:
+          type: number
+          format: double
+        window_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        severity:
+          $ref: '#/components/schemas/AlertRuleSeverityEnum'
+        runbook_url:
+          type: string
+          format: uri
+          maxLength: 1024
+      required:
+      - name
+      - project
+    AlertRuleSeverityEnum:
+      enum:
+      - critical
+      - warning
+      - info
+      type: string
+      description: |-
+        * `critical` - critical
+        * `warning` - warning
+        * `info` - info
+    ApiKey:
+      type: object
+      description: Read view of a key. Never exposes the plaintext or hash.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        prefix:
+          type: string
+          maxLength: 32
+        environment:
+          type: string
+          readOnly: true
+        can_write:
+          type: boolean
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - created_at
+      - environment
+      - id
+      - is_active
+      - prefix
+    ApiKeyCreateRequest:
+      type: object
+      properties:
+        environment:
+          $ref: '#/components/schemas/EnvironmentEnum'
+        name:
+          type: string
+          default: ''
+      required:
+      - environment
+    ApiRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        time:
+          type: string
+          format: date-time
+        service:
+          type: string
+          maxLength: 100
+        endpoint:
+          type: string
+          maxLength: 255
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        status_code:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        latency_ms:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        trace_id:
+          type: string
+          nullable: true
+          maxLength: 128
+        user_ref:
+          type: string
+          nullable: true
+          maxLength: 128
+        tags: {}
+      required:
+      - endpoint
+      - id
+      - latency_ms
+      - method
+      - service
+      - status_code
+      - time
+    ApiRequestRequest:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+        service:
+          type: string
+          minLength: 1
+          maxLength: 100
+        endpoint:
+          type: string
+          minLength: 1
+          maxLength: 255
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        status_code:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        latency_ms:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        trace_id:
+          type: string
+          nullable: true
+          maxLength: 128
+        user_ref:
+          type: string
+          nullable: true
+          maxLength: 128
+        tags: {}
+      required:
+      - endpoint
+      - latency_ms
+      - method
+      - service
+      - status_code
+      - time
+    ComparatorEnum:
+      enum:
+      - gt
+      - gte
+      - lt
+      - lte
+      type: string
+      description: |-
+        * `gt` - >
+        * `gte` - >=
+        * `lt` - <
+        * `lte` - <=
+    Deployment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        environment:
+          $ref: '#/components/schemas/EnvironmentEnum'
+        version:
+          type: string
+          description: Image tag / release version.
+          maxLength: 100
+        commit_sha:
+          type: string
+          maxLength: 64
+        service:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/DeploymentStatusEnum'
+        caused_incident:
+          type: boolean
+        committed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Commit time (for lead time).
+        deployed_at:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        triggered_by:
+          type: string
+          maxLength: 200
+        lead_time_seconds:
+          type: number
+          format: double
+          readOnly: true
+        is_failure:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - is_failure
+      - lead_time_seconds
+      - version
+    DeploymentRequest:
+      type: object
+      properties:
+        environment:
+          $ref: '#/components/schemas/EnvironmentEnum'
+        version:
+          type: string
+          minLength: 1
+          description: Image tag / release version.
+          maxLength: 100
+        commit_sha:
+          type: string
+          maxLength: 64
+        service:
+          type: string
+          maxLength: 200
+        status:
+          $ref: '#/components/schemas/DeploymentStatusEnum'
+        caused_incident:
+          type: boolean
+        committed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Commit time (for lead time).
+        deployed_at:
+          type: string
+          format: date-time
+        duration_seconds:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        triggered_by:
+          type: string
+          maxLength: 200
+      required:
+      - version
+    DeploymentStatusEnum:
+      enum:
+      - success
+      - failed
+      - rolled_back
+      type: string
+      description: |-
+        * `success` - success
+        * `failed` - failed
+        * `rolled_back` - rolled_back
+    Environment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/Kind7c6Enum'
+      required:
+      - id
+      - kind
+    EnvironmentEnum:
+      enum:
+      - production
+      - staging
+      - development
+      type: string
+      description: |-
+        * `production` - production
+        * `staging` - staging
+        * `development` - development
+    Incident:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        dedup_key:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        severity:
+          $ref: '#/components/schemas/Severity4c2Enum'
+        status:
+          $ref: '#/components/schemas/StatusFb8Enum'
+        description:
+          type: string
+        runbook_url:
+          type: string
+          format: uri
+          maxLength: 1024
+        grafana_url:
+          type: string
+          format: uri
+          maxLength: 1024
+        trace_id:
+          type: string
+          maxLength: 128
+        opened_at:
+          type: string
+          format: date-time
+          readOnly: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledged_by:
+          type: string
+          readOnly: true
+        owner:
+          type: string
+          readOnly: true
+        mtta_seconds:
+          type: number
+          format: double
+          readOnly: true
+        mttr_seconds:
+          type: number
+          format: double
+          readOnly: true
+      required:
+      - acknowledged_by
+      - dedup_key
+      - id
+      - mtta_seconds
+      - mttr_seconds
+      - opened_at
+      - owner
+      - title
+    IncidentDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        dedup_key:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        severity:
+          $ref: '#/components/schemas/Severity4c2Enum'
+        status:
+          $ref: '#/components/schemas/StatusFb8Enum'
+        description:
+          type: string
+        runbook_url:
+          type: string
+          format: uri
+          maxLength: 1024
+        grafana_url:
+          type: string
+          format: uri
+          maxLength: 1024
+        trace_id:
+          type: string
+          maxLength: 128
+        opened_at:
+          type: string
+          format: date-time
+          readOnly: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledged_by:
+          type: string
+          readOnly: true
+        owner:
+          type: string
+          readOnly: true
+        mtta_seconds:
+          type: number
+          format: double
+          readOnly: true
+        mttr_seconds:
+          type: number
+          format: double
+          readOnly: true
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncidentEvent'
+          readOnly: true
+      required:
+      - acknowledged_by
+      - dedup_key
+      - events
+      - id
+      - mtta_seconds
+      - mttr_seconds
+      - opened_at
+      - owner
+      - title
+    IncidentEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        at:
+          type: string
+          format: date-time
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/IncidentEventKindEnum'
+        message:
+          type: string
+        actor:
+          type: string
+          readOnly: true
+      required:
+      - actor
+      - at
+      - id
+      - kind
+    IncidentEventKindEnum:
+      enum:
+      - opened
+      - notification
+      - acknowledged
+      - assigned
+      - comment
+      - resolved
+      type: string
+      description: |-
+        * `opened` - opened
+        * `notification` - notification
+        * `acknowledged` - acknowledged
+        * `assigned` - assigned
+        * `comment` - comment
+        * `resolved` - resolved
+    Kind7c6Enum:
+      enum:
+      - production
+      - staging
+      - development
+      type: string
+      description: |-
+        * `production` - production
+        * `staging` - staging
+        * `development` - development
+    MethodEnum:
+      enum:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - HEAD
+      - OPTIONS
+      type: string
+      description: |-
+        * `GET` - GET
+        * `POST` - POST
+        * `PUT` - PUT
+        * `PATCH` - PATCH
+        * `DELETE` - DELETE
+        * `HEAD` - HEAD
+        * `OPTIONS` - OPTIONS
+    MetricEnum:
+      enum:
+      - error_rate
+      - latency_avg
+      - latency_p95
+      - request_count
+      type: string
+      description: |-
+        * `error_rate` - error rate
+        * `latency_avg` - avg latency (ms)
+        * `latency_p95` - p95 latency (ms)
+        * `request_count` - request count
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+        fingerprint:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/NotificationStatusEnum'
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/Severity4c2Enum'
+          readOnly: true
+        alertname:
+          type: string
+          readOnly: true
+        summary:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        runbook_url:
+          type: string
+          format: uri
+          readOnly: true
+        labels:
+          readOnly: true
+        annotations:
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        channels:
+          readOnly: true
+        delivered:
+          type: boolean
+          readOnly: true
+        delivery_error:
+          type: string
+          readOnly: true
+      required:
+      - alertname
+      - annotations
+      - channels
+      - delivered
+      - delivery_error
+      - description
+      - ends_at
+      - fingerprint
+      - id
+      - labels
+      - received_at
+      - runbook_url
+      - severity
+      - starts_at
+      - status
+      - summary
+    NotificationStatusEnum:
+      enum:
+      - firing
+      - resolved
+      type: string
+      description: |-
+        * `firing` - firing
+        * `resolved` - resolved
+    PaginatedAlertRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertRule'
+    PaginatedApiRequestList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiRequest'
+    PaginatedDeploymentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deployment'
+    PaginatedIncidentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedProjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+    PatchedAlertRuleRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        enabled:
+          type: boolean
+        kind:
+          $ref: '#/components/schemas/AlertRuleKindEnum'
+        metric:
+          $ref: '#/components/schemas/MetricEnum'
+        service:
+          type: string
+          maxLength: 100
+        endpoint:
+          type: string
+          maxLength: 255
+        comparator:
+          $ref: '#/components/schemas/ComparatorEnum'
+        threshold:
+          type: number
+          format: double
+        z_threshold:
+          type: number
+          format: double
+        window_minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        severity:
+          $ref: '#/components/schemas/AlertRuleSeverityEnum'
+        runbook_url:
+          type: string
+          format: uri
+          maxLength: 1024
+    PatchedApiRequestRequest:
+      type: object
+      properties:
+        time:
+          type: string
+          format: date-time
+        service:
+          type: string
+          minLength: 1
+          maxLength: 100
+        endpoint:
+          type: string
+          minLength: 1
+          maxLength: 255
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+        status_code:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        latency_ms:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        trace_id:
+          type: string
+          nullable: true
+          maxLength: 128
+        user_ref:
+          type: string
+          nullable: true
+          maxLength: 128
+        tags: {}
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        monthly_event_quota:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        environments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - environments
+      - id
+      - name
+      - organization
+      - slug
+    Severity4c2Enum:
+      enum:
+      - critical
+      - warning
+      - info
+      - unknown
+      type: string
+      description: |-
+        * `critical` - critical
+        * `warning` - warning
+        * `info` - info
+        * `unknown` - unknown
+    StateEnum:
+      enum:
+      - ok
+      - firing
+      type: string
+      description: |-
+        * `ok` - ok
+        * `firing` - firing
+    StatusFb8Enum:
+      enum:
+      - open
+      - acknowledged
+      - resolved
+      type: string
+      description: |-
+        * `open` - open
+        * `acknowledged` - acknowledged
+        * `resolved` - resolved
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TokenVerifyRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - token
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

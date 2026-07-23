@@ -77,6 +77,11 @@ jobs:
           psql "postgresql://apm:apm@127.0.0.1:5432/apm" -c "create extension if not exists timescaledb;"
           python manage.py migrate --noinput
 
+      - name: Bootstrap contract test user
+        run: |
+          set -euxo pipefail
+          python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='schemathesis').delete(); User.objects.create_superuser(username='schemathesis', password='schemathesis-pass')"
+
       - name: Generate OpenAPI schema
         run: |
           set -euxo pipefail
@@ -95,8 +100,13 @@ jobs:
       - name: Run schemathesis
         run: |
           set -euxo pipefail
+          export AUTH_TOKEN="$(curl -sS -X POST http://localhost:8000/api/tenancy/auth/token/ \
+            -H "Content-Type: application/json" \
+            -d '{"username":"schemathesis","password":"schemathesis-pass"}' \
+            | python -c 'import sys, json; print(json.load(sys.stdin)["access"])')"
           schemathesis run schema.yml \
             --base-url http://localhost:8000 \
+            --header "Authorization: Bearer ${AUTH_TOKEN}" \
             --checks all \
             --hypothesis-max-examples 15 \
             --hypothesis-suppress-health-check filter_too_much \
