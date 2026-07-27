@@ -12,7 +12,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.8"
+  version = "~> 6.6"
 
   name = "${var.name}-vpc"
   cidr = var.vpc_cidr
@@ -31,7 +31,7 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.8"
+  version = "~> 21.24"
 
   cluster_name    = "${var.name}-eks"
   cluster_version = var.kubernetes_version
@@ -56,7 +56,7 @@ module "eks" {
 
 module "rds" {
   source  = "terraform-aws-modules/rds/aws"
-  version = "~> 6.7"
+  version = "~> 7.2"
 
   identifier = "${var.name}-db"
 
@@ -86,7 +86,7 @@ module "rds" {
 
 module "rds_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.1"
+  version = "~> 6.0"
 
   name        = "${var.name}-rds-sg"
   description = "Allow Postgres from within the VPC"
@@ -104,7 +104,7 @@ module "rds_sg" {
 # Object storage for pgBackRest backups (encrypted, versioned, private).
 module "backups_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 4.1"
+  version = "~> 5.15"
 
   bucket = "${var.name}-backups"
 
