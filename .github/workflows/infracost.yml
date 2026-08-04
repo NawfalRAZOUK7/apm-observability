@@ -31,13 +31,13 @@ jobs:
 
       - name: Checkout base branch
         if: env.INFRACOST_API_KEY != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.base.ref }}
 
       - name: Setup Infracost
         if: env.INFRACOST_API_KEY != ''
-        uses: infracost/actions/setup@v3
+        uses: infracost/actions/setup@v4
         with:
           api-key: ${{ env.INFRACOST_API_KEY }}
 
@@ -50,7 +50,7 @@ jobs:
 
       - name: Checkout PR branch
         if: env.INFRACOST_API_KEY != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cost diff vs base
         if: env.INFRACOST_API_KEY != ''

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Generate pgBackRest mTLS certs
         run: bash docker/certs/gen_pgbackrest_mtls.sh || echo "cert step skipped"
@@ -47,7 +47,7 @@ jobs:
 
       - name: Publish DR results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dr-verify-metrics
           path: docker/monitoring/node-exporter-textfile/dr_verify.prom
