@@ -27,7 +27,7 @@ jobs:
     # Only run for a successful release (or manual dispatch).
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Resolve image tag
         id: tag
