@@ -150,7 +150,7 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-ruff==0.15.20
+ruff==0.15.21
     # via -r requirements.in
 sqlparse==0.5.5
     # via django
@@ -161,8 +161,6 @@ typing-extensions==4.15.0
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-    #   psycopg
-    #   referencing
 unittest-xml-reporting==4.0.0
     # via -r requirements.in
 uritemplate==4.2.0
