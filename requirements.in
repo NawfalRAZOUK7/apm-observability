@@ -1,4 +1,4 @@
-Django>=5.2.16,<6.0
+Django>=6.0.7,<7.0
 djangorestframework
 djangorestframework-simplejwt
 django-filter
